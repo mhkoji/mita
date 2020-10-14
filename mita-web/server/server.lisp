@@ -35,6 +35,7 @@
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.web.server.ningle:route-image app connector)
                       (mita.web.server.ningle:route-album app connector)
+                      (mita.web.server.ningle:route-view app connector)
                       (mita.web.server.ningle:route-page app connector)
                       app))
                    :port port)))

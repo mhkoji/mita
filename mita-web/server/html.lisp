@@ -2,7 +2,9 @@
   (:use :cl)
   (:export :pages
            :page
+           :view
            :albums
+           :album
            :not-found
            :internal-server-error))
 (in-package :mita.web.server.html)
@@ -90,12 +92,13 @@
       :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
       :crossorigin "anonymous"))))
 
-
 (defun albums (albums)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
-     (:title "mita"))
+     (:title "mita")
+     (:link :rel "stylesheet"
+            :href "/static/gen/albums.bundle.css"))
     (:body
      (cl-who:htm
       (:script :type "text/javascript"
@@ -108,9 +111,13 @@
                        (jsown:new-js
                          ("id"
                           (mita.id:to-string (mita.album:album-id album)))
+                         ("url"
+                          (format nil "/albums/~A"
+                                  (mita.id:to-string
+                                   (mita.album:album-id album))))
                          ("name"
                           (mita.album:album-name album))
-                         ("thumbnailImage"
+                         ("thumbnail"
                           (jsown:new-js
                             ("url"
                              (format nil "/images/~A"
@@ -128,3 +135,74 @@
       :src "https://code.jquery.com/jquery-2.2.2.min.js"
       :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
       :crossorigin "anonymous"))))
+
+(defun album (gw album)
+  (cl-who:with-html-output-to-string (s nil :prologue t)
+    (:head
+     (:meta :charset "utf-8")
+     (:title "mita")
+     (:link :rel "stylesheet"
+            :href "/static/gen/album.bundle.css"))
+    (:body
+     (cl-who:htm
+      (:script :type "text/javascript"
+       (cl-who:str
+        (format nil "window['$mita'] = ~A;"
+         (jsown:to-json
+          (jsown:new-js
+            ("album"
+             (jsown:new-js
+               ("id"
+                (mita.id:to-string (mita.album:album-id album)))
+               ("name"
+                (mita.album:album-name album))
+               ("images"
+                (mapcar (lambda (image)
+                          (jsown:new-js
+                            ("id"
+                             (mita.id:to-string
+                              (mita.image:image-id image)))
+                            ("url"
+                             (format nil "/images/~A"
+                                     (mita.id:to-string
+                                      (mita.image:image-id image))))))
+                        (mita.album:album-images gw album)))))))))))
+     (:div :id "app")
+     (:script
+      :type "text/javascript"
+      :src "/static/gen/album.bundle.js")
+     (:script
+      :type "text/javascript"
+      :src "https://code.jquery.com/jquery-2.2.2.min.js"
+      :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
+      :crossorigin "anonymous"))))
+
+(defun view (images)
+  (cl-who:with-html-output-to-string (s nil :prologue t)
+    (:head
+     (:meta :charset "utf-8")
+     (:title "mita")
+     (:link :rel "stylesheet"
+            :href "/static/gen/view.bundle.css"))
+    (:body
+     (cl-who:htm
+      (:script :type "text/javascript"
+       (cl-who:str
+        (format nil "window['$mita'] = ~A;"
+         (jsown:to-json
+          (jsown:new-js
+            ("images"
+             (mapcar (lambda (image)
+                       (jsown:new-js
+                         ("id"
+                          (mita.id:to-string
+                           (mita.image:image-id image)))
+                         ("url"
+                          (format nil "/images/~A"
+                                  (mita.id:to-string
+                                   (mita.image:image-id image))))))
+                     images))))))))
+     (:div :id "app")
+     (:script
+      :type "text/javascript"
+      :src "/static/gen/view.bundle.js"))))

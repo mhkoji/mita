@@ -3,6 +3,7 @@
   (:import-from :alexandria
                 :when-let*)
   (:export :route-page
+           :route-view
            :route-image
            :route-album))
 (in-package :mita.web.server.ningle)
@@ -117,4 +118,32 @@
               (let ((offset (or (q params "offset") 0))
                     (limit  (or (q params "limit") 50)))
                 (mita.web.server.html:albums
-                 (mita.album:load-albums gw offset limit))))))))
+                 (mita.album:load-albums gw offset limit)))))))
+
+  (setf (ningle:route app "/albums/:album-id")
+        (lambda (params)
+          (with-safe-html-response
+            (mita:with-gateway (gw connector)
+              (or (when-let*
+                      ((album-id
+                        (mita.id:parse-or-nil
+                         (cdr (assoc :album-id params))))
+                       (album
+                        (mita.album:load-album-by-id gw album-id)))
+                    (mita.web.server.html:album gw album))
+                  +response-404+))))))
+
+(defun route-view (app connector)
+  (setf (ningle:route app "/view/album/:album-id")
+        (lambda (params)
+          (with-safe-html-response
+            (mita:with-gateway (gw connector)
+              (or (when-let*
+                      ((album-id
+                        (mita.id:parse-or-nil
+                         (cdr (assoc :album-id params))))
+                       (album
+                        (mita.album:load-album-by-id gw album-id)))
+                    (mita.web.server.html:view
+                     (mita.album:album-images gw album)))
+                  +response-404+))))))

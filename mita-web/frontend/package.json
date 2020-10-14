@@ -7,7 +7,7 @@
     "build": "webpack --config webpack.prod.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "mhkoji",
   "license": "ISC",
   "repository": {
     "type": "git",

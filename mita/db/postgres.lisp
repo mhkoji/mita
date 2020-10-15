@@ -79,7 +79,7 @@
                            (funcall k
                             (format nil "(~A ~A ~A)" column-name op cond)
                             acc-values)))))
-                     (:e
+                     (:p
                       (let ((values (second clause)))
                         (funcall k
                          (format nil "(~{~A~^,~})"
@@ -137,7 +137,7 @@
   (when page-id-list
     (delete-from db "pages"
      `(:where (:in "page_id"
-                   (:e ,(mapcar #'mita.id:to-string page-id-list)))))))
+                   (:p ,(mapcar #'mita.id:to-string page-id-list)))))))
 
 (defmethod mita.db:page-insert ((db postgres)
                                 (page-id mita.id:id))
@@ -152,7 +152,7 @@
   (single #'parse-page
           (select-from db "*" "pages"
            `(:where (:= "page_id"
-                        (:e ,(mita.id:to-string page-id)))))))
+                        (:p ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-select ((db postgres))
   (mapcar #'parse-page (query db "SELECT * FROM pages" nil)))
@@ -163,7 +163,7 @@
   (when page-id-list
     (delete-from db "page_text"
       `(:where (:in "page_id"
-                    (:e ,(mapcar #'mita.id:to-string page-id-list)))))))
+                    (:p ,(mapcar #'mita.id:to-string page-id-list)))))))
 
 (defmethod mita.db:page-text-insert ((db postgres)
                                      (page-id mita.id:id)
@@ -176,7 +176,7 @@
                                      (page-id mita.id:id))
   (single #'first
           (select-from db "string" "page"
-           `(:where (:= "page_id" (:e ,(mita.id:to-string page-id)))))))
+           `(:where (:= "page_id" (:p ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-text-update ((db postgres)
                                      (page-id mita.id:id)
@@ -196,7 +196,7 @@
   (mapcar #'parse-image
           (select-from db "*" "images"
            `(:where (:in "image_id"
-                         (:e ,(mapcar #'mita.id:to-string
+                         (:p ,(mapcar #'mita.id:to-string
                                       image-id-list)))))))
 
 (defmethod mita.db:image-insert ((db postgres)
@@ -224,7 +224,7 @@
 (defmethod mita.db:page-image-delete ((db postgres)
                                       (page-id mita.id:id))
   (delete-from db "page_image"
-   `(:where (:= "page_id" (:e ,(mita.id:to-string page-id))))))
+   `(:where (:= "page_id" (:p ,(mita.id:to-string page-id))))))
 
 (defmethod mita.db:page-image-select ((db postgres)
                                       (page-id mita.id:id))
@@ -236,7 +236,7 @@
                           ON
                             i.image_id = page_image.image_id"
            `(:where (:= "page_image.page_id"
-                        (:e ,(mita.id:to-string page-id)))))))
+                        (:p ,(mita.id:to-string page-id)))))))
 
 
 (defmethod mita.db:album-delete ((db postgres)
@@ -244,7 +244,7 @@
   (when album-id-list
     (delete-from db "albums"
      `(:where (:in "album_id"
-                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
+                   (:p ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-insert ((db postgres)
                                  (albums list))
@@ -269,7 +269,7 @@
                :created-on (local-time:universal-to-timestamp (third row))))
             (select-from db "*" "albums"
              `(:where (:in "album_id"
-                           (:e ,(mapcar #'mita.id:to-string
+                           (:p ,(mapcar #'mita.id:to-string
                                         album-id-list))))))))
 
 (defmethod mita.db:album-select-album-ids ((db postgres) offset limit)
@@ -285,7 +285,7 @@
   (when album-id-list
     (delete-from db "album_thumbnail_image"
                  `(:where (:in "album_id"
-                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
+                   (:p ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-thumbnail-image-select ((db postgres)
                                                  (album-id-list list))
@@ -297,7 +297,7 @@
             (select-from db
                          "*" "album_thumbnail_image"
              `(:where (:in "album_id"
-                           (:e ,(mapcar #'mita.id:to-string
+                           (:p ,(mapcar #'mita.id:to-string
                                         album-id-list))))))))
 
 (defmethod mita.db:album-thumbnail-image-insert ((db postgres)
@@ -331,7 +331,7 @@
   (when album-id-list
     (delete-from db "album_image"
      `(:where (:in "album_id"
-                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
+                   (:p ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-image-select ((db postgres)
                                        (album-id mita.id:id))
@@ -343,4 +343,4 @@
                           ON
                             i.image_id = album_image.image_id"
            `(:where (:in "album_image.album_id"
-                         (:e ,(mita.id:to-string album-id)))))))
+                         (:p ,(mita.id:to-string album-id)))))))

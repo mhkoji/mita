@@ -9,7 +9,7 @@
 (defmethod load-contents ((loader gateway)
                           (type (eql :album))
                           (content-id-list list))
-  (mita.album::load-albums-in loader content-list))
+  (mita.album::load-albums-in loader content-id-list))
 
 (defmethod content-id ((page mita.page:page))
   (mita.page:page-id page))

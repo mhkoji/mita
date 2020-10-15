@@ -143,8 +143,7 @@
 (defmethod mita.db:page-insert ((db postgres)
                                 (page-id mita.id:id))
   (let ((now (local-time:now)))
-    (insert-into db
-                 "pages" '("page_id" "created_on")
+    (insert-into db "pages" '("page_id" "created_on")
                  (list (list (mita.id:to-string page-id)
                              (local-time:to-rfc3339-timestring now))))))
 
@@ -169,14 +168,13 @@
 (defmethod mita.db:page-text-insert ((db postgres)
                                      (page-id mita.id:id)
                                      (text string))
-  (insert-into db
-               "page_text" '("page_id" "string")
+  (insert-into db "page_text" '("page_id" "string")
                (list (list (mita.id:to-string page-id) text))))
 
 (defmethod mita.db:page-text-select ((db postgres)
                                      (page-id mita.id:id))
   (single #'first
-          (select-from db "string" "page"
+          (select-from db "string" "page_text"
            `(:where (:= "page_id" (:p ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-text-update ((db postgres)
@@ -202,8 +200,7 @@
 
 (defmethod mita.db:image-insert ((db postgres)
                                  (images list))
-  (insert-into db
-               "images" '("image_id" "path")
+  (insert-into db "images" '("image_id" "path")
                (mapcar
                 (lambda (image)
                   (list (mita.id:to-string (mita.image:image-id image))
@@ -214,8 +211,7 @@
 (defmethod mita.db:page-image-insert ((db postgres)
                                       (page-id mita.id:id)
                                       (images list))
-  (insert-into db
-               "page_image" '("page_id" "image_id")
+  (insert-into db "page_image" '("page_id" "image_id")
                (mapcar
                 (lambda (image)
                   (list (mita.id:to-string page-id)
@@ -231,7 +227,7 @@
                                       (page-id mita.id:id))
   (mapcar #'parse-image
           (select-from db
-                       "i.image.id, i.path"
+                       "i.image_id, i.path"
                        "images AS i
                           INNER JOIN page_image
                           ON
@@ -249,9 +245,7 @@
 
 (defmethod mita.db:album-insert ((db postgres)
                                  (albums list))
-  (insert-into db
-               "albums"
-               '("album_id" "name" "created_on")
+  (insert-into db "albums" '("album_id" "name" "created_on")
                (mapcar
                 (lambda (album)
                   (list (mita.id:to-string (mita.db:album-id album))
@@ -302,9 +296,7 @@
 
 (defmethod mita.db:album-thumbnail-image-insert ((db postgres)
                                                  (rows list))
-  (insert-into db
-               "album_thumbnail_image"
-               '("album_id" "image_id")
+  (insert-into db "album_thumbnail_image" '("album_id" "image_id")
                (mapcar
                 (lambda (row)
                   (list (mita.id:to-string
@@ -317,9 +309,7 @@
 (defmethod mita.db:album-image-insert ((db postgres)
                                       (album-id mita.id:id)
                                        (images list))
-  (insert-into db
-               "album_image"
-               '("album_id" "image_id")
+  (insert-into db "album_image" '("album_id" "image_id")
                (mapcar
                 (lambda (image)
                   (list (mita.id:to-string album-id)
@@ -344,3 +334,74 @@
                             i.image_id = album_image.image_id"
            `(:where (:in "album_image.album_id"
                          (:p ,(mita.id:to-string album-id)))))))
+
+
+(defmethod mita.db:tag-delete ((db postgres)
+                               (tag-id-list list))
+  (when tag-id-list
+    (delete-from db "tags"
+     `(:where (:in "tag_id"
+                   (:p ,(mapcar #'mita.id:to-string tag-id-list)))))))
+
+(defun parse-tag (row)
+  (mita.tag:make-tag
+   :id (mita.id:parse (first row))
+   :name (second row)))
+
+(defmethod mita.db:tag-select ((db postgres))
+  (mapcar #'parse-tag (query db "SELECT * FROM tags" nil)))
+
+(defmethod mita.db:tag-insert ((db postgres)
+                               (tag mita.tag:tag))
+  (insert-into db "tags" '("tag_id" "name")
+               (list
+                (list (mita.id:to-string (mita.tag:tag-id tag))
+                      (mita.tag:tag-name tag)))))
+
+(defmethod mita.db:tag-content-delete ((db postgres)
+                                       (tag-id mita.id:id))
+  (delete-from db "tag_content"
+   `(:where (:= "tag_id" (:p ,(mita.id:to-string tag-id))))))
+
+(defmethod mita.db:tag-content-select ((db postgres)
+                                       (tag-id mita.id:id))
+  (mapcar (lambda (row)
+            (mita.db:make-content
+             :id (mita.id:parse (first row))
+             :type (alexandria:make-keyword (second row))))
+          (select-from db "content_id, content_type" "tag_content"
+           `(:where (:= "tag_id" (:p ,(mita.id:to-string tag-id)))))))
+
+(defmethod mita.db:tag-content-select-tags ((db postgres)
+                                            (content-id mita.id:id))
+  (mapcar #'parse-tag
+          (select-from db
+                       "t.tag_id, t.name"
+                       "tags AS t
+                          INNER JOIN tag_content
+                          ON
+                            t.tag_id = tag_content.tag_id"
+           `(:where (:= "content_id"
+                        (:p ,(mita.id:to-string content-id)))))))
+
+(defmethod mita.db:tag-content-insert ((db postgres)
+                                       (tag-id mita.id:id)
+                                       (contents list))
+  (insert-into db "tag_content" '("tag_id" "content_type" "content_id")
+               (mapcar
+                (lambda (content)
+                  (list (mita.id:to-string tag-id)
+                        (string (mita.db:content-type content))
+                        (mita.id:to-string (mita.db:content-id content))))
+                contents)))
+
+(defmethod mita.db:tag-content-insert-by-tags ((db postgres)
+                                               (tag-id-list list)
+                                               (content mita.db:content))
+  (insert-into db "tag_content" '("tag_id" "content_type" "content_id")
+               (mapcar
+                (lambda (tag-id)
+                  (list (mita.id:to-string tag-id)
+                        (string (mita.db:content-type content))
+                        (mita.id:to-string (mita.db:content-id content))))
+                tag-id-list)))

@@ -47,3 +47,17 @@ CREATE TABLE album_image (
   FOREIGN KEY (album_id) REFERENCES albums(album_id),
   FOREIGN KEY (image_id) REFERENCES images(image_id)
 );
+
+DROP TABLE IF EXISTS tags;
+CREATE TABLE tags (
+  tag_id char(36) NOT NULL PRIMARY KEY,
+  name varchar(256) NOT NULL
+);
+
+DROP TABLE IF EXISTS tag_content;
+CREATE TABLE tag_content (
+  tag_id char(36) NOT NULL,
+  content_type varchar(64) NOT NULL,
+  content_id char(36) NOT NULL,
+  FOREIGN KEY (tag_id) REFERENCES tags(tag_id)
+);

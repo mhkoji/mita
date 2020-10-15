@@ -1,13 +1,15 @@
 (defpackage :mita.tag
   (:use :cl :mita)
-  (:export :tag-id
+  (:export :tag
+           :tag-id
            :tag-name
+           :make-tag
            :create-tag
            :load-tags
            :load-contents
            :tag-contents
            :update-tag-contents
-           :contents-tag
+           :content-tags
            :update-content-tags))
 (in-package :mita.tag)
 
@@ -18,6 +20,11 @@
 (defgeneric content-type (content))
 
 (defgeneric load-contents (gateway type content-id-list))
+
+(defun content->row (content)
+  (mita.db:make-content
+   :id (content-id content)
+   :type (content-type content)))
 
 (defun create-tag (gateway name)
   (let ((db (gateway-db gateway))
@@ -30,7 +37,7 @@
 
 (defun tag-contents (gw tag)
   (let ((content-rows
-         (mita.db:tag-content-select (gateway-db gw) tag))
+         (mita.db:tag-content-select (gateway-db gw) (tag-id tag)))
         (type->content-id-list
          (make-hash-table :test #'equal)))
     (loop for row in content-rows
@@ -53,7 +60,8 @@
 
 (defun update-tag-contents (gw tag contents)
   (mita.db:tag-content-delete (gateway-db gw) (tag-id tag))
-  (mita.db:tag-content-insert (gateway-db gw) (tag-id tag) contents)
+  (mita.db:tag-content-insert (gateway-db gw) (tag-id tag)
+                              (mapcar #'content->row contents))
   (values))
 
 
@@ -62,5 +70,6 @@
                                    (content-id content)))
 
 (defun update-content-tags (gw content tag-ids)
-  (mita.db:tag-content-insert gw content tag-ids)
+  (mita.db:tag-content-insert-by-tags (gateway-db gw)
+                                      tag-ids (content->row content))
   (values))

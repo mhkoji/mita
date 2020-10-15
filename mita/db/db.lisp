@@ -41,7 +41,8 @@
            :tag-content-delete
            :tag-content-select
            :tag-content-select-tags
-           :tag-content-insert))
+           :tag-content-insert
+           :tag-content-insert-by-tags))
 (in-package :mita.db)
 
 (defclass db () ())
@@ -118,4 +119,6 @@
 
 (defgeneric tag-content-select-tags (db content-id))
 
-(defgeneric tag-content-insert (db content tag-ids))
+(defgeneric tag-content-insert (db tag-id contents))
+
+(defgeneric tag-content-insert-by-tags (db tag-id-list content))

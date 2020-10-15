@@ -80,7 +80,8 @@
                             (format nil "(~A ~A ~A)" column-name op cond)
                             acc-values)))))
                      (:p
-                      (let ((values (second clause)))
+                      (let ((values (alexandria:ensure-list
+                                     (second clause))))
                         (funcall k
                          (format nil "(~{~A~^,~})"
                           (loop repeat (length values)

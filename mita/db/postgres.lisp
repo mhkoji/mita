@@ -37,8 +37,84 @@
     (cl-postgres:prepare-query conn "" query-string)
     (cl-postgres:exec-prepared conn "" args #'cl-postgres:list-row-reader)))
 
-(defun single (row-parser db query-string args)
-  (car (mapcar row-parser (query db query-string args))))
+(defun insert-into (db table-name column-name-list values-list)
+  (query db
+         (with-output-to-string (s)
+           (format s "INSERT INTO ~A" table-name)
+           (format s " (~{~A~^,~})" column-name-list)
+           (format s " VALUES ~{~A~^,~}"
+            (let ((i 0)
+                  (column-count (length column-name-list)))
+              (loop repeat (length values-list)
+                    for vals = (loop repeat column-count
+                                     collect (format nil "$~A" (incf i)))
+                        collect (format nil "(~{~A~^,~})" vals)))))
+         (reduce #'append values-list)))
+
+
+(defun parse-clause (clause)
+  (let ((i 0))
+    (labels ((rec (clause k)
+               (if (not (keywordp (car clause)))
+                   (funcall k
+                    (if (null clause)
+                        ""
+                        (format nil "~A" clause))
+                    nil)
+                   (ecase (car clause)
+                     (:and
+                      (destructuring-bind (left right) (cdr clause)
+                        (rec left
+                         (lambda (l-cond l-acc-values)
+                           (rec right
+                            (lambda (r-cond r-acc-values)
+                              (funcall k
+                               (format nil "~A AND ~A" l-cond r-cond)
+                               (append l-acc-values r-acc-values))))))))
+                     ((:in :=)
+                      (let ((op (car clause))
+                            (column-name (second clause)))
+                        (rec (third clause)
+                         (lambda (cond acc-values)
+                           (funcall k
+                            (format nil "(~A ~A ~A)" column-name op cond)
+                            acc-values)))))
+                     (:e
+                      (let ((values (second clause)))
+                        (funcall k
+                         (format nil "(~{~A~^,~})"
+                          (loop repeat (length values)
+                                collect (format nil "$~A" (incf i))))
+                         values)))
+                     (:where
+                      (rec (second clause)
+                       (lambda (cond acc-values)
+                         (funcall k
+                          (format nil "WHERE ~A" cond)
+                          acc-values))))))))
+      (rec clause #'list))))
+
+(defun delete-from (db table-name cond)
+  (destructuring-bind (cond-string values) (parse-clause cond)
+    (query db
+           (format nil "DELETE FROM ~A ~A"
+                   table-name
+                   cond-string)
+           values)))
+
+(defun select-from (db column-names table-name cond)
+  (destructuring-bind (cond-string values) (parse-clause cond)
+    (query db
+           (format nil "SELECT ~A FROM ~A ~A"
+                   column-names
+                   table-name
+                   cond-string)
+           values)))
+
+(defun single (row-parser select-result)
+  (car (mapcar row-parser select-result)))
+
+
 
 (defclass page (mita.page:page)
   ((id
@@ -55,32 +131,28 @@
    :id (mita.id:parse (first row))
    :created-on (local-time:universal-to-timestamp (second row))))
 
+
 (defmethod mita.db:page-delete ((db postgres)
                                 (page-id-list list))
   (when page-id-list
-    (query db
-           (with-output-to-string (s)
-             (format s "DELETE FROM pages WHERE page_id in (")
-             (format s "~{~A~^,~}"
-                       (loop for i from 1 to (length page-id-list)
-                             collect (format nil "$~A" i)))
-             (format s ")"))
-           (mapcar #'mita.id:to-string page-id-list))))
+    (delete-from db "pages"
+     `(:where (:in "page_id"
+                   (:e ,(mapcar #'mita.id:to-string page-id-list)))))))
 
 (defmethod mita.db:page-insert ((db postgres)
                                 (page-id mita.id:id))
-  (query db
-         "INSERT INTO pages (page_id, created_on) VALUES ($1, $2)"
-         (list
-          (mita.id:to-string page-id)
-          (local-time:to-rfc3339-timestring (local-time:now)))))
+  (let ((now (local-time:now)))
+    (insert-into db
+                 "pages" '("page_id" "created_on")
+                 (list (list (mita.id:to-string page-id)
+                             (local-time:to-rfc3339-timestring now))))))
 
 (defmethod mita.db:page-select-by-id ((db postgres)
                                       (page-id mita.id:id))
-  (single #'parse-page db
-          "SELECT * FROM pages WHERE page_id = $1"
-          (list
-           (mita.id:to-string page-id))))
+  (single #'parse-page
+          (select-from db "*" "pages"
+           `(:where (:= "page_id"
+                        (:e ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-select ((db postgres))
   (mapcar #'parse-page (query db "SELECT * FROM pages" nil)))
@@ -89,39 +161,29 @@
 (defmethod mita.db:page-text-delete ((db postgres)
                                      (page-id-list list))
   (when page-id-list
-    (query db
-           (with-output-to-string (s)
-             (format s "DELETE FROM page_text WHERE page_id in (")
-             (format s "~{~A~^,~}"
-                       (loop for i from 1 to (length page-id-list)
-                             collect (format nil "$~A" i)))
-             (format s ")"))
-           (mapcar #'mita.id:to-string page-id-list))))
+    (delete-from db "page_text"
+      `(:where (:in "page_id"
+                    (:e ,(mapcar #'mita.id:to-string page-id-list)))))))
 
 (defmethod mita.db:page-text-insert ((db postgres)
                                      (page-id mita.id:id)
                                      (text string))
-  (query db
-         "INSERT INTO page_text (page_id, string) VALUES ($1, $2)"
-         (list
-          (mita.id:to-string page-id)
-          text)))
+  (insert-into db
+               "page_text" '("page_id" "string")
+               (list (list (mita.id:to-string page-id) text))))
 
 (defmethod mita.db:page-text-select ((db postgres)
                                      (page-id mita.id:id))
-  (single #'first db
-          "SELECT string FROM page_text WHERE page_id = $1"
-          (list
-           (mita.id:to-string page-id))))
+  (single #'first
+          (select-from db "string" "page"
+           `(:where (:= "page_id" (:e ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-text-update ((db postgres)
                                      (page-id mita.id:id)
                                      (text string))
   (query db
          "UPDATE page_text set string = $1 where page_id = $2"
-         (list
-          text
-          (mita.id:to-string page-id))))
+         (list text (mita.id:to-string page-id))))
 
 
 (defun parse-image (row)
@@ -132,106 +194,70 @@
 (defmethod mita.db:image-select-by-ids ((db postgres)
                                         (image-id-list list))
   (mapcar #'parse-image
-          (query db
-                 (with-output-to-string (s)
-                   (format s "SELECT * FROM images WHERE image_id in (")
-                   (format s "~{~A~^,~}"
-                           (loop for i from 1 to (length image-id-list)
-                                 collect (format nil "$~A" i)))
-                   (format s ")"))
-                 (mapcar #'mita.id:to-string image-id-list))))
+          (select-from db "*" "images"
+           `(:where (:in "image_id"
+                         (:e ,(mapcar #'mita.id:to-string
+                                      image-id-list)))))))
 
 (defmethod mita.db:image-insert ((db postgres)
                                  (images list))
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO images (image_id, path) VALUES ")
-           (format s "~{~A~^,~}"
-                   (let ((i 0))
-                     (loop repeat (length images)
-                           for for-image-id = (incf i)
-                           for for-path = (incf i)
-                           collect (list (format nil "$~A, $~A"
-                                                 for-image-id
-                                                 for-path))))))
-         (alexandria:mappend
-          (lambda (image)
-            (list (mita.id:to-string (mita.image:image-id image))
-                  (mita.image:image-path image)))
-          images)))
+  (insert-into db
+               "images" '("image_id" "path")
+               (mapcar
+                (lambda (image)
+                  (list (mita.id:to-string (mita.image:image-id image))
+                        (mita.image:image-path image)))
+                images)))
 
 
 (defmethod mita.db:page-image-insert ((db postgres)
                                       (page-id mita.id:id)
                                       (images list))
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO page_image (page_id, image_id) VALUES")
-           (format s "~{~A~^,~}"
-                   (let ((i 0))
-                     (loop repeat (length images)
-                           for for-page-id = (incf i)
-                           for for-image-id = (incf i)
-                           collect (list (format nil "$~A, $~A"
-                                                 for-page-id
-                                                 for-image-id))))))
-         (alexandria:mappend
-          (lambda (image)
-            (list (mita.id:to-string page-id)
-                  (mita.id:to-string (mita.image:image-id image))))
-          images)))
+  (insert-into db
+               "page_image" '("page_id" "image_id")
+               (mapcar
+                (lambda (image)
+                  (list (mita.id:to-string page-id)
+                        (mita.id:to-string (mita.image:image-id image))))
+                images)))
 
 (defmethod mita.db:page-image-delete ((db postgres)
                                       (page-id mita.id:id))
-  (query db
-         "DELETE FROM page_image WHERE page_id = $1"
-         (list (mita.id:to-string page-id))))
+  (delete-from db "page_image"
+   `(:where (:= "page_id" (:e ,(mita.id:to-string page-id))))))
 
 (defmethod mita.db:page-image-select ((db postgres)
                                       (page-id mita.id:id))
   (mapcar #'parse-image
-          (query db
-                 "SELECT i.image_id, i.path FROM images AS i
-                    INNER JOIN page_image ON
-                       i.image_id = page_image.image_id
-                    WHERE
-                       page_image.page_id = $1"
-                 (list (mita.id:to-string page-id)))))
+          (select-from db
+                       "i.image.id, i.path"
+                       "images AS i
+                          INNER JOIN page_image
+                          ON
+                            i.image_id = page_image.image_id"
+           `(:where (:= "page_image.page_id"
+                        (:e ,(mita.id:to-string page-id)))))))
 
 
 (defmethod mita.db:album-delete ((db postgres)
                                  (album-id-list list))
   (when album-id-list
-    (query db
-           (with-output-to-string (s)
-             (format s "DELETE FROM albums WHERE album_id in (")
-             (format s "~{~A~^,~}"
-                     (loop for i from 1 to (length album-id-list)
-                           collect (format nil "$~A" i)))
-             (format s ")"))
-           (mapcar #'mita.id:to-string album-id-list))))
+    (delete-from db "albums"
+     `(:where (:in "album_id"
+                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-insert ((db postgres)
                                  (albums list))
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO albums (album_id, name, created_on) VALUES")
-           (format s "~{~A~^,~}"
-                   (let ((i 0))
-                     (loop repeat (length albums)
-                           for i1 = (incf i)
-                           for i2 = (incf i)
-                           for i3 = (incf i)
-                           collect (list (format nil "$~A, $~A, $~A"
-                                                 i1 i2 i3))))))
-
-         (alexandria:mappend
-          (lambda (album)
-            (list (mita.id:to-string (mita.db:album-id album))
-                  (mita.db:album-name album)
-                  (local-time:to-rfc3339-timestring
-                   (mita.db:album-created-on album))))
-          albums)))
+  (insert-into db
+               "albums"
+               '("album_id" "name" "created_on")
+               (mapcar
+                (lambda (album)
+                  (list (mita.id:to-string (mita.db:album-id album))
+                        (mita.db:album-name album)
+                        (local-time:to-rfc3339-timestring
+                         (mita.db:album-created-on album))))
+                albums)))
 
 (defmethod mita.db:album-select ((db postgres)
                                  (album-id-list list))
@@ -241,14 +267,10 @@
                :id (mita.id:parse (first row))
                :name (second row)
                :created-on (local-time:universal-to-timestamp (third row))))
-            (query db
-                   (with-output-to-string (s)
-                     (format s "SELECT * FROM albums WHERE album_id in (")
-                     (format s "~{~A~^,~}"
-                             (loop for i from 1 to (length album-id-list)
-                                   collect (format nil "$~A" i)))
-                     (format s ")"))
-                   (mapcar #'mita.id:to-string album-id-list)))))
+            (select-from db "*" "albums"
+             `(:where (:in "album_id"
+                           (:e ,(mapcar #'mita.id:to-string
+                                        album-id-list))))))))
 
 (defmethod mita.db:album-select-album-ids ((db postgres) offset limit)
   (mapcar (lambda (row)
@@ -261,15 +283,9 @@
 (defmethod mita.db:album-thumbnail-image-delete ((db postgres)
                                                  (album-id-list list))
   (when album-id-list
-    (query db
-           (with-output-to-string (s)
-             (format s "DELETE FROM album_thumbnail_image")
-             (format s " WHERE album_id in (")
-             (format s "~{~A~^,~}"
-                     (loop for i from 1 to (length album-id-list)
-                           collect (format nil "$~A" i)))
-             (format s ")"))
-           (mapcar #'mita.id:to-string album-id-list))))
+    (delete-from db "album_thumbnail_image"
+                 `(:where (:in "album_id"
+                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-thumbnail-image-select ((db postgres)
                                                  (album-id-list list))
@@ -278,75 +294,53 @@
               (mita.db:make-album-thumbnail-image
                :album-id (mita.id:parse (first row))
                :image-id (mita.id:parse (second row))))
-            (query db
-                   (with-output-to-string (s)
-                     (format s "SELECT * FROM album_thumbnail_image")
-                     (format s " WHERE album_id in (")
-                     (format s "~{~A~^,~}"
-                             (loop for i from 1 to (length album-id-list)
-                                   collect (format nil "$~A" i)))
-                     (format s ")"))
-                 (mapcar #'mita.id:to-string album-id-list)))))
+            (select-from db
+                         "*" "album_thumbnail_image"
+             `(:where (:in "album_id"
+                           (:e ,(mapcar #'mita.id:to-string
+                                        album-id-list))))))))
 
 (defmethod mita.db:album-thumbnail-image-insert ((db postgres)
                                                  (rows list))
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO album_thumbnail_image")
-           (format s " (album_id, image_id) VALUES")
-           (format s "~{~A~^,~}"
-                   (let ((i 0))
-                     (loop repeat (length rows)
-                           for i1 = (incf i)
-                           for i2 = (incf i)
-                           collect (list (format nil "$~A, $~A" i1 i2))))))
-         (alexandria:mappend
-          (lambda (row)
-            (list (mita.id:to-string
-                   (mita.db:album-thumbnail-image-album-id row))
-                  (mita.id:to-string
-                   (mita.db:album-thumbnail-image-image-id row))))
-          rows)))
+  (insert-into db
+               "album_thumbnail_image"
+               '("album_id" "image_id")
+               (mapcar
+                (lambda (row)
+                  (list (mita.id:to-string
+                         (mita.db:album-thumbnail-image-album-id row))
+                        (mita.id:to-string
+                         (mita.db:album-thumbnail-image-image-id row))))
+                rows)))
 
 
 (defmethod mita.db:album-image-insert ((db postgres)
                                       (album-id mita.id:id)
-                                      (images list))
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO album_image (album_id, image_id) VALUES")
-           (format s "~{~A~^,~}"
-                   (let ((i 0))
-                     (loop repeat (length images)
-                           for for-album-id = (incf i)
-                           for for-image-id = (incf i)
-                           collect (list (format nil "$~A, $~A"
-                                                 for-album-id
-                                                 for-image-id))))))
-         (alexandria:mappend
-          (lambda (image)
-            (list (mita.id:to-string album-id)
-                  (mita.id:to-string (mita.image:image-id image))))
-          images)))
+                                       (images list))
+  (insert-into db
+               "album_image"
+               '("album_id" "image_id")
+               (mapcar
+                (lambda (image)
+                  (list (mita.id:to-string album-id)
+                        (mita.id:to-string (mita.image:image-id image))))
+                images)))
 
 (defmethod mita.db:album-image-delete ((db postgres)
                                        (album-id-list list))
-  (query db
-         (with-output-to-string (s)
-           (format s "DELETE FROM album_image WHERE album_id in (")
-           (format s "~{~A~^,~}"
-                   (loop for i from 1 to (length album-id-list)
-                         collect (format nil "$~A" i)))
-           (format s ")"))
-         (mapcar #'mita.id:to-string album-id-list)))
+  (when album-id-list
+    (delete-from db "album_image"
+     `(:where (:in "album_id"
+                   (:e ,(mapcar #'mita.id:to-string album-id-list)))))))
 
 (defmethod mita.db:album-image-select ((db postgres)
                                        (album-id mita.id:id))
   (mapcar #'parse-image
-          (query db
-                 "SELECT i.image_id, i.path FROM images AS i
-                    INNER JOIN album_image ON
-                       i.image_id = album_image.image_id
-                    WHERE
-                       album_image.album_id = $1"
-                 (list (mita.id:to-string album-id)))))
+          (select-from db
+                       "i.image_id, i.path"
+                       "images AS i
+                          INNER JOIN album_image
+                          ON
+                            i.image_id = album_image.image_id"
+           `(:where (:in "album_image.album_id"
+                         (:e ,(mita.id:to-string album-id)))))))

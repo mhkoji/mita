@@ -295,8 +295,7 @@
               (mita.db:make-album-thumbnail-image
                :album-id (mita.id:parse (first row))
                :image-id (mita.id:parse (second row))))
-            (select-from db
-                         "*" "album_thumbnail_image"
+            (select-from db "*" "album_thumbnail_image"
              `(:where (:in "album_id"
                            (:p ,(mapcar #'mita.id:to-string
                                         album-id-list))))))))

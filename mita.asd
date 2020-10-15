@@ -10,6 +10,9 @@
    (:file "page")
    (:file "album")
 
+   (:file "tag")
+   (:file "tag-content")
+
    (:file "dir")
    (:file "add-albums")
 

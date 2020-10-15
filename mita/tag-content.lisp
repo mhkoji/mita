@@ -17,5 +17,10 @@
 (defmethod content-type ((page mita.page:page))
   :page)
 
-
-
+(defmethod load-contents ((loader gateway)
+                          (type (eql :page))
+                          (content-id-list list))
+  ;; TODO: too many db accesses
+  (mapcar (lambda (id)
+            (mita.page:load-page-by-id loader id))
+          content-id-list))

@@ -30,7 +30,18 @@
            :album-thumbnail-image-select
            :album-image-delete
            :album-image-insert
-           :album-image-select))
+           :album-image-select
+           :tag-delete
+           :tag-select
+           :tag-insert
+           :make-content
+           :content
+           :content-id
+           :content-type
+           :tag-content-delete
+           :tag-content-select
+           :tag-content-select-tags
+           :tag-content-insert))
 (in-package :mita.db)
 
 (defclass db () ())
@@ -90,3 +101,21 @@
 (defgeneric album-image-select (db album-id))
 
 (defgeneric album-image-insert (db album-id images))
+
+
+(defgeneric tag-delete (db tag-id-list))
+
+(defgeneric tag-select (db))
+
+(defgeneric tag-insert (db tag))
+
+
+(defstruct content id type)
+
+(defgeneric tag-content-delete (db tag-id))
+
+(defgeneric tag-content-select (db tag-id))
+
+(defgeneric tag-content-select-tags (db content-id))
+
+(defgeneric tag-content-insert (db content tag-ids))

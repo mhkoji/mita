@@ -51,12 +51,7 @@
      ; Main Javascript must be loaded after the body was rendered.
      (:script
       :type "text/javascript"
-      :src "/static/gen/pages.bundle.js")
-     (:script
-      :type "text/javascript"
-      :src "https://code.jquery.com/jquery-2.2.2.min.js"
-      :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
-      :crossorigin "anonymous"))))
+      :src "/static/gen/pages.bundle.js"))))
 
 (defun page (gw page)
   (cl-who:with-html-output-to-string (s nil :prologue t)
@@ -127,14 +122,10 @@
                                         album)))))))))
                      albums))))))))
      (:div :id "app")
+     (:div :id "app-modal")
      (:script
       :type "text/javascript"
-      :src "/static/gen/albums.bundle.js")
-     (:script
-      :type "text/javascript"
-      :src "https://code.jquery.com/jquery-2.2.2.min.js"
-      :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
-      :crossorigin "anonymous"))))
+      :src "/static/gen/albums.bundle.js"))));
 
 (defun album (gw album)
   (cl-who:with-html-output-to-string (s nil :prologue t)
@@ -168,14 +159,10 @@
                                       (mita.image:image-id image))))))
                         (mita.album:album-images gw album)))))))))))
      (:div :id "app")
+     (:div :id "app-modal")
      (:script
       :type "text/javascript"
-      :src "/static/gen/album.bundle.js")
-     (:script
-      :type "text/javascript"
-      :src "https://code.jquery.com/jquery-2.2.2.min.js"
-      :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
-      :crossorigin "anonymous"))))
+      :src "/static/gen/album.bundle.js"))))
 
 (defun view (images)
   (cl-who:with-html-output-to-string (s nil :prologue t)

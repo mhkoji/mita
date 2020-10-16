@@ -39,6 +39,7 @@
            :content-id
            :content-type
            :tag-content-delete
+           :tag-content-delete-by-content
            :tag-content-select
            :tag-content-select-tags
            :tag-content-insert
@@ -114,6 +115,8 @@
 (defstruct content id type)
 
 (defgeneric tag-content-delete (db tag-id))
+
+(defgeneric tag-content-delete-by-content (db content))
 
 (defgeneric tag-content-select (db tag-id))
 

@@ -363,6 +363,11 @@
   (delete-from db "tag_content"
    `(:where (:= "tag_id" (:p ,(mita.id:to-string tag-id))))))
 
+(defmethod mita.db:tag-content-delete-by-content ((db postgres)
+                                                  (content-id mita.id:id))
+  (delete-from db "tag_content"
+   `(:where (:= "content_id" (:p ,(mita.id:to-string content-id))))))
+
 (defmethod mita.db:tag-content-select ((db postgres)
                                        (tag-id mita.id:id))
   (mapcar (lambda (row)

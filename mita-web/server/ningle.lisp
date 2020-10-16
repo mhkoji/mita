@@ -2,7 +2,8 @@
   (:use :cl)
   (:import-from :alexandria
                 :when-let*)
-  (:export :route-page
+  (:export :route-tag
+           :route-page
            :route-view
            :route-image
            :route-album))
@@ -24,7 +25,7 @@
          (jsown:to-json
           (jsown:new-js
             ("success" t)
-            ("value" (or (progn ,@body) (assert nil)))))
+            ("value" (progn ,@body))))
        (error ()
          (setf (lack.response:response-status ningle:*response*)
                500)
@@ -147,3 +148,63 @@
                     (mita.web.server.html:view
                      (mita.album:album-images gw album)))
                   +response-404+))))))
+
+
+(defun route-tag (app connector)
+  (setf (ningle:route app "/api/tags/_create" :method :post)
+        (lambda (params)
+          (with-json-api (gw connector)
+            (let ((name (q params "name")))
+              (mita.tag:create-tag gw name)
+              (values)))))
+  (labels ((tag->jsown (tag)
+             (jsown:new-js
+               ("id" (mita.id:to-string (mita.tag:tag-id tag)))
+               ("name" (mita.tag:tag-name tag)))))
+
+    (setf (ningle:route app "/api/tags")
+          (lambda (params)
+            (declare (ignore params))
+            (with-json-api (gw connector)
+              (let ((tags (mita.tag:load-tags gw)))
+                (mapcar #'tag->jsown tags)))))
+
+    (setf (ningle:route app "/api/tags/:tag-id" :method :delete)
+          (lambda (params)
+            (with-json-api (gw connector)
+              (when-let*
+                  ((tag-id
+                    (mita.id:parse-or-nil
+                     (cdr (assoc :tag-id params)))))
+                (mita.tag:delete-tag gw tag-id)))))
+
+    (setf (ningle:route app "/api/albumTags/:album-id")
+          (lambda (params)
+            (with-json-api (gw connector)
+              (when-let*
+                  ((album-id
+                    (mita.id:parse-or-nil
+                     (cdr (assoc :album-id params))))
+                   (album
+                    (mita.album:load-album-by-id gw album-id)))
+                (let ((tags (mita.tag:content-tags gw album)))
+                  (mapcar #'tag->jsown tags))))))
+
+    (setf (ningle:route app "/api/albumTags/:album-id" :method :put)
+          (lambda (params)
+            (with-json-api (gw connector)
+              (when-let*
+                  ((album-id
+                    (mita.id:parse-or-nil
+                     (cdr (assoc :album-id params))))
+                   (album
+                    (mita.album:load-album-by-id gw album-id)))
+                (let ((nullable-tag-id-list
+                       (mapcar
+                        #'mita.id:parse-or-nil
+                        (cdr (assoc "tag-id-list"
+                                    (lack.request:request-body-parameters
+                                     ningle:*request*)
+                                    :test #'string=)))))
+                  (mita.tag:update-content-tags
+                   gw album (remove nil nullable-tag-id-list)))))))))

@@ -37,5 +37,6 @@
                       (mita.web.server.ningle:route-album app connector)
                       (mita.web.server.ningle:route-view app connector)
                       (mita.web.server.ningle:route-page app connector)
+                      (mita.web.server.ningle:route-tag app connector)
                       app))
                    :port port)))

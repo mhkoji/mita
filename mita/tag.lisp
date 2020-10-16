@@ -5,6 +5,7 @@
            :tag-name
            :make-tag
            :create-tag
+           :delete-tag
            :load-tags
            :load-contents
            :tag-contents
@@ -32,8 +33,14 @@
     (mita.db:tag-insert db tag)
     tag))
 
+(defun delete-tag (gw tag-id)
+  (mita.db:tag-content-delete (gateway-db gw) tag-id)
+  (mita.db:tag-delete (gateway-db gw) (list tag-id))
+  (values))
+
 (defun load-tags (gateway)
   (mita.db:tag-select (gateway-db gateway)))
+
 
 (defun tag-contents (gw tag)
   (let ((content-rows
@@ -70,6 +77,8 @@
                                    (content-id content)))
 
 (defun update-content-tags (gw content tag-ids)
-  (mita.db:tag-content-insert-by-tags (gateway-db gw)
-                                      tag-ids (content->row content))
+  (let ((db (gateway-db gw)))
+    (mita.db:tag-content-delete-by-content db (content-id content))
+    (when tag-ids
+      (mita.db:tag-content-insert-by-tags db tag-ids (content->row content))))
   (values))

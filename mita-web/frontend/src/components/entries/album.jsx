@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -47,11 +47,29 @@ function ImageList(props) {
   return <div className="container">{rowList}</div>;
 }
 
+import EditAlbumTagsModal from '../edit-tags/edit-tags';
+import EditButton from '../edit-tags/edit-button';
+
 function App () {
+  const [isEditingTags, setIsEditingTags] = useState(false);
   const album = window['$mita']['album'];
   return (
       <main>
-        <ImageList album={album} />
+        <div className="jumbotron">
+          <h1 className="display">{album.name}</h1>
+          <EditButton onClick={() => setIsEditingTags(true)} />
+        </div>
+
+        <div className="">
+          <ImageList album={album} />
+        </div>
+
+        {
+          isEditingTags && (
+              <EditAlbumTagsModal
+                  albumId={album.id}
+                  onClose={() => setIsEditingTags(false)} />)
+        }
       </main>
   );
 }

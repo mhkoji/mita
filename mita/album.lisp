@@ -14,7 +14,8 @@
            :album-source-id
            :album-source-name
            :album-source-thumbnail
-           :album-source-created-on))
+           :album-source-created-on)
+  (:import-from :alexandria :when-let))
 (in-package :mita.album)
 
 (defgeneric album-id (album))
@@ -39,30 +40,30 @@
 
 (defun load-albums-in (gateway album-id-list)
   (let ((db (gateway-db gateway)))
-    (let ((id->args (make-hash-table :test #'equal)))
-      (dolist (album-row
-                (mita.db:album-select db album-id-list))
-        (let ((album-id (mita.db:album-id album-row)))
-          (setf (gethash (mita.id:to-string album-id) id->args)
-                (list :album-row album-row))))
-      (let* ((album-thumbnail-image-row-list
-              (mita.db:album-thumbnail-image-select db album-id-list))
-             (image-list
-              (mita.image:load-images-by-ids
-               gateway
-               (mapcar #'mita.db:album-thumbnail-image-image-id
-                       album-thumbnail-image-row-list))))
-        (loop for image in image-list
-              for row in album-thumbnail-image-row-list
-              do (let ((album-id
-                        (mita.db:album-thumbnail-image-album-id row)))
-                   (alexandria:appendf
-                    (gethash (mita.id:to-string album-id) id->args)
-                    (list :thumbnail image)))))
-      (mapcar (lambda (id)
-                (let ((args (gethash (mita.id:to-string id) id->args)))
-                  (apply #'make-instance 'album args)))
-              album-id-list))))
+    (when-let ((album-rows (mita.db:album-select db album-id-list)))
+      (let ((id->args (make-hash-table :test #'equal)))
+        (dolist (album-row album-rows)
+          (let ((album-id (mita.db:album-id album-row)))
+            (setf (gethash (mita.id:to-string album-id) id->args)
+                  (list :album-row album-row))))
+        (let* ((album-thumbnail-image-row-list
+                (mita.db:album-thumbnail-image-select db album-id-list))
+               (image-list
+                (mita.image:load-images-by-ids
+                 gateway
+                 (mapcar #'mita.db:album-thumbnail-image-image-id
+                         album-thumbnail-image-row-list))))
+          (loop for image in image-list
+                for row in album-thumbnail-image-row-list
+                do (let ((album-id
+                          (mita.db:album-thumbnail-image-album-id row)))
+                     (alexandria:appendf
+                      (gethash (mita.id:to-string album-id) id->args)
+                      (list :thumbnail image)))))
+        (mapcar (lambda (id)
+                  (let ((args (gethash (mita.id:to-string id) id->args)))
+                    (apply #'make-instance 'album args)))
+                album-id-list)))))
 
 (defun load-albums (gateway offset limit)
   (let ((ids (mita.db:album-select-album-ids (gateway-db gateway)

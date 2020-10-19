@@ -45,7 +45,11 @@ function AlbumRow(props) {
 export default function AlbumList(props) {
   const albums = props.albums;
   if (albums.length === 0) {
-    return <div>EMPTY!</div>;
+    return (
+        <div className="mb-4 text-center">
+          EMPTY!
+        </div>
+    );
   }
 
   const rowList = [];

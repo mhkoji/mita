@@ -1,7 +1,6 @@
 import React from 'react';
-import '@fortawesome/fontawesome-free/js/fontawesome.min';
-import '@fortawesome/fontawesome-free/js/solid.min';
-import '@fortawesome/fontawesome-free/js/regular';
+
+import { Tags } from '../fa';
 
 export default function EditButton(props) {
   return (
@@ -9,7 +8,7 @@ export default function EditButton(props) {
           type="button"
           className="btn btn-outline-secondary"
           onClick={props.onClick}>
-        <i className="fas fa-tags" />
+        <Tags />
       </button>
   );
 }

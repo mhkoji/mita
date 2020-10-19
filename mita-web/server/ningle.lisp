@@ -6,7 +6,9 @@
            :route-page
            :route-view
            :route-image
-           :route-album))
+           :route-album)
+  (:import-from :alexandria
+                :if-let))
 (in-package :mita.web.server.ningle)
 
 (defvar +response-500+
@@ -116,10 +118,14 @@
         (lambda (params)
           (with-safe-html-response
             (mita:with-gateway (gw connector)
-              (let ((offset (or (q params "offset") 0))
-                    (limit  (or (q params "limit") 50)))
-                (mita.web.server.html:albums
-                 (mita.album:load-albums gw offset limit)))))))
+              (mita.web.server.html:albums
+               gw
+               (if-let ((offset (q params "offset")))
+                 (parse-integer offset)
+                 0)
+               (if-let ((limit (q params "limit")))
+                 (parse-integer limit)
+                 50))))))
 
   (setf (ningle:route app "/albums/:album-id")
         (lambda (params)

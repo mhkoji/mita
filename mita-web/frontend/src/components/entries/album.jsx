@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
+
+import Header from '../header';
 
 function ImageRow(props) {
   if (props.images.length === 0) {
@@ -44,25 +45,31 @@ function ImageList(props) {
                             images={subImages} />));
   }
 
-  return <div className="container">{rowList}</div>;
+  return <div>{rowList}</div>;
 }
 
 import EditAlbumTagsModal from '../edit-tags/edit-tags';
 import EditButton from '../edit-tags/edit-button';
 
 function App () {
-  const [isEditingTags, setIsEditingTags] = useState(false);
   const album = window['$mita']['album'];
+  const [isEditingTags, setIsEditingTags] = useState(false);
   return (
-      <main>
-        <div className="jumbotron">
-          <h1 className="display">{album.name}</h1>
-          <EditButton onClick={() => setIsEditingTags(true)} />
-        </div>
+      <div>
+        <Header />
 
-        <div className="">
-          <ImageList album={album} />
-        </div>
+        <main>
+          <div>
+            <div className="jumbotron">
+              <h1 className="display">{album.name}</h1>
+              <EditButton onClick={() => setIsEditingTags(true)} />
+            </div>
+          </div>
+
+          <div className="container">
+            <ImageList album={album} />
+          </div>
+        </main>
 
         {
           isEditingTags && (
@@ -70,7 +77,7 @@ function App () {
                   albumId={album.id}
                   onClose={() => setIsEditingTags(false)} />)
         }
-      </main>
+      </div>
   );
 }
 

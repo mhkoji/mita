@@ -79,7 +79,7 @@ export function Editing(props) {
                              className="form-check-input"
                              checked={isAttached}
                              onChange={handleChange}/>
-                      <label for={id} className="form-check-label">{tag.name}</label>
+                      <label htmlFor={id} className="form-check-label">{tag.name}</label>
                     </div>
                     <div className="float-right">
                       <button type="button"

@@ -58,7 +58,7 @@ export default function AlbumList(props) {
   }
 
   return (
-      <div className="container">
+      <div>
         {rowList}
       </div>
   );

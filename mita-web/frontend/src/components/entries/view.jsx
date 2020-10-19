@@ -21,8 +21,11 @@ function surroundingImages(images, index, width) {
 class WindowWideSingleViewer extends React.Component {
   constructor(props) {
     super(props);
+
     this.handleResizeWindow = this.handleResizeWindow.bind(this);
-    this.handleOnDiff=this.handleOnDiff.bind(this);
+    this.handleOnDiff = this.handleOnDiff.bind(this);
+    this.handleHashChange = this.handleHashChange.bind(this);
+
     this.state = {
       index: 0,
       size: null
@@ -39,6 +42,24 @@ class WindowWideSingleViewer extends React.Component {
 
   handleResizeWindow() {
     this.updateSize(window.innerWidth, window.innerHeight);
+  }
+
+  setIndexByHash() {
+    if (!location.hash.startsWith('#')) {
+      return;
+    }
+
+    const from = new URLSearchParams(location.hash.substring(1)).get('from');
+    if (!from) {
+      return;
+    }
+
+    const index = this.props.images.findIndex((image) => image.id === from);
+    if (index === -1) {
+      return;
+    }
+
+    this.setState({ index });
   }
 
   incrementIndex(diff) {
@@ -61,13 +82,21 @@ class WindowWideSingleViewer extends React.Component {
     this.incrementIndex(diff);
   }
 
+  handleHashChange() {
+    this.setIndexByHash();
+  }
+
   componentDidMount() {
     window.addEventListener('resize', this.handleResizeWindow);
     this.handleResizeWindow();
+
+    window.addEventListener('hashchange', this.handleHashChange);
+    this.setIndexByHash();
   }
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.handleResizeWindow);
+    window.removeEventListener('hashchange', this.handleHashChange);
   }
 
   render() {
@@ -76,7 +105,7 @@ class WindowWideSingleViewer extends React.Component {
         .map((image) => {
           return {
             image: image,
-            link: '',
+            link: '#from=' + image.id,
             isHighlighted: currentImage.id === image.id
           };
         });
@@ -98,7 +127,7 @@ class WindowWideSingleViewer extends React.Component {
 
 
 function App () {
-  const images = window['$mita']['images'];
+  const { images } = window['$mita'];
   return (
       <WindowWideSingleViewer images={images} />
   );

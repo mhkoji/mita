@@ -9,10 +9,11 @@ function ImageRow(props) {
     return null;
   }
   const cardEls = props.images.map((image) => {
+    const viewUrl = '/view/album/' + props.albumId + '#from=' + image.id;
     return (
         <div key={image.id} className="col-md-4">
           <div className="card mb-4 shadow-sm">
-            <a href={"/view/album/" + props.albumId}>
+            <a href={viewUrl}>
               <img alt={image.id}
                    src={image.url}
                    width="100%"

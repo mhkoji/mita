@@ -6,6 +6,12 @@
 (defmethod content-type ((album mita.album:album))
   :album)
 
+(defmethod content-thumbnail ((album mita.album:album))
+  (mita.album:album-thumbnail album))
+
+(defmethod content-name ((album mita.album:album))
+  (mita.album:album-name album))
+
 (defmethod load-contents ((loader gateway)
                           (type (eql :album))
                           (content-id-list list))
@@ -16,6 +22,12 @@
 
 (defmethod content-type ((page mita.page:page))
   :page)
+
+(defmethod content-thumbnail ((page mita.page:page))
+  nil)
+
+(defmethod content-name ((page mita.page:page))
+  nil)
 
 (defmethod load-contents ((loader gateway)
                           (type (eql :page))

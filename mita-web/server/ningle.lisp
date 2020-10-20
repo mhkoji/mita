@@ -11,6 +11,15 @@
                 :if-let))
 (in-package :mita.web.server.ningle)
 
+(defgeneric url-for (content))
+
+(defmethod url-for ((c mita.album:album))
+  (format nil "/albums/~A" (mita.id:to-string (mita.album:album-id c))))
+
+(defmethod url-for ((c mita.page:page))
+  (format nil "/pages/~A" (mita.id:to-string (mita.page:page-id c))))
+
+
 (defvar +response-500+
   `(500 (:content-type "text/html")
         (,(mita.web.server.html:internal-server-error))))
@@ -157,12 +166,20 @@
 
 
 (defun route-tag (app connector)
+  (setf (ningle:route app "/tags")
+        (lambda (params)
+          (declare (ignore params))
+          (with-safe-html-response
+            (mita:with-gateway (gw connector)
+              (mita.web.server.html:tags gw)))))
+
   (setf (ningle:route app "/api/tags/_create" :method :post)
         (lambda (params)
           (with-json-api (gw connector)
             (let ((name (q params "name")))
               (mita.tag:create-tag gw name)
               (values)))))
+
   (labels ((tag->jsown (tag)
              (jsown:new-js
                ("id" (mita.id:to-string (mita.tag:tag-id tag)))
@@ -183,6 +200,49 @@
                     (mita.id:parse-or-nil
                      (cdr (assoc :tag-id params)))))
                 (mita.tag:delete-tag gw tag-id)))))
+
+    (setf (ningle:route app "/api/tags/:tag-id" :method :put)
+        (lambda (params)
+          (with-json-api (gw connector)
+            (when-let*
+                ((name
+                  (q params "name"))
+                 (tag-id
+                  (mita.id:parse-or-nil
+                   (cdr (assoc :tag-id params))))
+                 (tag
+                  (mita.tag:load-tag-by-id gw tag-id)))
+              (mita.tag:update-tag-name gw tag name)))))
+
+    (setf (ningle:route app "/api/tags/:tag-id/contents" :method :get)
+          (lambda (params)
+            (with-json-api (gw connector)
+              (when-let*
+                  ((tag-id
+                    (mita.id:parse-or-nil
+                     (cdr (assoc :tag-id params))))
+                   (tag
+                    (mita.tag:load-tag-by-id gw tag-id)))
+                (mapcar (lambda (c)
+                          (jsown:new-js
+                            ("id"
+                             (mita.id:to-string (mita.tag:content-id c)))
+                            ("url"
+                             (url-for c))
+                            ("type"
+                             (symbol-name (mita.tag:content-type c)))
+                            ("name"
+                             (or (mita.tag:content-name c) :null))
+                            ("thumbnail"
+                             (if-let ((image (mita.tag:content-thumbnail c)))
+                               (jsown:new-js
+                                 ("url"
+                                  (format nil "/images/~A"
+                                   (mita.id:to-string
+                                    (mita.image:image-id image)))))
+                               :null))))
+                        (mita.tag:tag-contents gw tag))))))
+
 
     (setf (ningle:route app "/api/albumTags/:album-id")
           (lambda (params)

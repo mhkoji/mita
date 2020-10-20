@@ -5,7 +5,8 @@
            :gen-from-name
            :parse
            :parse-or-nil
-           :to-string))
+           :to-string
+           :id=))
 (in-package :mita.id)
 
 (defclass id (uuid:uuid) ())
@@ -26,3 +27,6 @@
 
 (defun to-string (id)
   (format nil "~A" id))
+
+(defun id= (id1 id2)
+  (uuid:uuid= id1 id2))

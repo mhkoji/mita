@@ -3,11 +3,17 @@
   (:export :tag
            :tag-id
            :tag-name
+           :content-id
+           :content-type
+           :content-name
+           :content-thumbnail
            :make-tag
            :create-tag
            :delete-tag
            :load-tags
+           :load-tag-by-id
            :load-contents
+           :update-tag-name
            :tag-contents
            :update-tag-contents
            :content-tags
@@ -19,6 +25,11 @@
 (defgeneric content-id (content))
 
 (defgeneric content-type (content))
+
+(defgeneric content-name (content))
+
+(defgeneric content-thumbnail (content))
+
 
 (defgeneric load-contents (gateway type content-id-list))
 
@@ -41,6 +52,11 @@
 (defun load-tags (gateway)
   (mita.db:tag-select (gateway-db gateway)))
 
+(defun load-tag-by-id (gw tag-id)
+  ;; TODO: should not select all the tags
+  (find tag-id (load-tags gw)
+        :key #'tag-id
+        :test #'mita.id:id=))
 
 (defun tag-contents (gw tag)
   (let ((content-rows
@@ -71,6 +87,9 @@
                               (mapcar #'content->row contents))
   (values))
 
+(defun update-tag-name (gw tag name)
+  (mita.db:tag-update (gateway-db gw) (tag-id tag) name)
+  (values))
 
 (defun content-tags (gw content)
   (mita.db:tag-content-select-tags (gateway-db gw)

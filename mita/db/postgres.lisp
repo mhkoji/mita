@@ -336,17 +336,18 @@
                          (:p ,(mita.id:to-string album-id)))))))
 
 
+(defun parse-tag (row)
+  (mita.tag:make-tag
+   :id (mita.id:parse (first row))
+   :name (second row)))
+
+
 (defmethod mita.db:tag-delete ((db postgres)
                                (tag-id-list list))
   (when tag-id-list
     (delete-from db "tags"
      `(:where (:in "tag_id"
                    (:p ,(mapcar #'mita.id:to-string tag-id-list)))))))
-
-(defun parse-tag (row)
-  (mita.tag:make-tag
-   :id (mita.id:parse (first row))
-   :name (second row)))
 
 (defmethod mita.db:tag-select ((db postgres))
   (mapcar #'parse-tag (query db "SELECT * FROM tags" nil)))
@@ -357,6 +358,13 @@
                (list
                 (list (mita.id:to-string (mita.tag:tag-id tag))
                       (mita.tag:tag-name tag)))))
+
+(defmethod mita.db:tag-update ((db postgres)
+                               (tag-id mita.id:id)
+                               (name string))
+  (query db
+         "UPDATE tags SET name = $1 where tag_id = $2"
+         (list name (mita.id:to-string tag-id))))
 
 (defmethod mita.db:tag-content-delete ((db postgres)
                                        (tag-id mita.id:id))

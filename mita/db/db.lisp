@@ -34,6 +34,7 @@
            :tag-delete
            :tag-select
            :tag-insert
+           :tag-update
            :make-content
            :content
            :content-id
@@ -110,6 +111,8 @@
 (defgeneric tag-select (db))
 
 (defgeneric tag-insert (db tag))
+
+(defgeneric tag-update (db tag-id name))
 
 
 (defstruct content id type)

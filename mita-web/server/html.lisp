@@ -5,6 +5,7 @@
            :view
            :albums
            :album
+           :tags
            :not-found
            :internal-server-error))
 (in-package :mita.web.server.html)
@@ -204,3 +205,31 @@
      (:script
       :type "text/javascript"
       :src "/static/gen/view.bundle.js"))))
+
+
+(defun tags (gw)
+  (cl-who:with-html-output-to-string (s nil :prologue t)
+    (:head
+     (:meta :charset "utf-8")
+     (:title "mita")
+     (:link :rel "stylesheet"
+            :href "/static/gen/tags.bundle.css"))
+    (:body
+     (cl-who:htm
+      (:script :type "text/javascript"
+       (cl-who:str
+        (format nil "window['$mita'] = ~A;"
+         (jsown:to-json
+          (jsown:new-js
+            ("tags"
+             (mapcar (lambda (tag)
+                       (jsown:new-js
+                         ("id"
+                          (mita.id:to-string (mita.tag:tag-id tag)))
+                         ("name"
+                          (mita.tag:tag-name tag))))
+                     (mita.tag:load-tags gw)))))))))
+     (:div :id "app")
+     (:script
+      :type "text/javascript"
+      :src "/static/gen/tags.bundle.js"))))

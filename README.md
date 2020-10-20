@@ -5,8 +5,7 @@ An application written in Common Lisp
 
 ```shell
 ## Postmodern of the lastest version is required.
-ros install sabracrolleton/uax-15
-ros install marijnh/Postmodern
+git submodule update --init
 
 docker pull postgres
 docker run --rm -p 5432:5432 -e POSTGRES_DB=mita -e POSTGRES_HOST_AUTH_METHOD=trust postgres 

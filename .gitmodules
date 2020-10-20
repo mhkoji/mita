@@ -1,0 +1,6 @@
+[submodule "uax-15"]
+	path = uax-15
+	url = https://github.com/sabracrolleton/uax-15
+[submodule "Postmodern"]
+	path = Postmodern
+	url = https://github.com/marijnh/Postmodern

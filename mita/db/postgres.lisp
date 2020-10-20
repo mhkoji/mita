@@ -271,7 +271,7 @@
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
           (query db
-                 "SELECT album_id FROM albums OFFSET $1 LIMIT $2"
+                 "SELECT album_id FROM albums ORDER BY created_on DESC OFFSET $1 LIMIT $2"
                  (list offset limit))))
 
 

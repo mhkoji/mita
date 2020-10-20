@@ -2,66 +2,9 @@ import React from 'react';
 import Modal from 'react-modal';
 
 import { Loading } from './loading';
-import { Editing } from "./editing";
-import { Saving } from "./saving";
-
-class Api {
-  constructor(albumId) {
-    this.albumId = albumId;
-  }
-
-  tags() {
-    return fetch('/api/tags', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((resp) => resp.json()).then((body) => {
-      return body.value;
-    });
-  }
-
-  putTag(name) {
-    return fetch('/api/tags/_create?name=' + name, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  deleteTag(tag) {
-    return fetch('/api/tags/' + tag.id, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  contentTags() {
-    return fetch('/api/albumTags/' + this.albumId, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((resp) => resp.json()).then((body) => {
-      return body.value;
-    });
-  }
-
-  updateContentTags(tags) {
-    return fetch('/api/albumTags/' + this.albumId, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        'tag-id-list': tags.map((t) => t.id)
-      })
-    });
-  }
-}
+import { Editing } from './editing';
+import { Saving } from './saving';
+import * as apis from '../../apis';
 
 function ModalFooter(props) {
   return (
@@ -92,7 +35,13 @@ export default class EditAlbumTagsModal extends React.Component {
     this.handleLoaded = this.handleLoaded.bind(this);
     this.handleSave = this.handleSave.bind(this);
 
-    this.api = new Api(props.albumId);
+    this.api = {
+      tags: apis.tags,
+      putTag: apis.putTag,
+      deleteTag: apis.deleteTag,
+      contentTags: () => apis.albumTags(props.albumId),
+      putContentTags: (tags) => apis.putAlbumTags(props.albumId, tags)
+    };
 
     this.state = {
       type: 'loading',

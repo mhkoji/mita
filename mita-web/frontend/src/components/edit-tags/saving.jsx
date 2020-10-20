@@ -5,7 +5,7 @@ export function Saving(props) {
   useEffect(() => {
     props.onChangeState({ state: 'saving' });
 
-    props.api.updateContentTags(props.state.contentTags).then(() => {
+    props.api.putContentTags(props.state.contentTags).then(() => {
       setTimeout(() => {
         props.onChangeState({ state: 'saved' })
 

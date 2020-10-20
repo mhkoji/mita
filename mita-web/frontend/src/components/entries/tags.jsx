@@ -1,48 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
+import * as apis from '../../apis'
 import Header from '../header';
 import Tag from '../tag/tag';
 
 const Api = {
-  tags() {
-    return fetch('/api/tags', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((resp) => resp.json()).then((body) => {
-      return body.value;
-    });
-  },
-
-  putTagName(tagId, name) {
-    return fetch('/api/tags/' + tagId + '?name=' + name, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  },
-
-  tagContents(tagId) {
-    return fetch('/api/tags/' + tagId + '/contents', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((resp) => resp.json()).then((body) => {
-      return body.value;
-    });
-  }
+  tags: apis.tags,
+  putTagName: apis.putTagName,
+  tagContents: apis.tagContents
 };
 
 function TagList(props) {
   const itemEls = props.tags.map((tag) => {
     return (
-        <button key={tag.id + '-' + tag.name}
-                className="list-group-item list-group-item-action"
-                onClick={() => props.onClickTag(tag)} >
+        <button
+            key={tag.id + '-' + tag.name}
+            className="list-group-item list-group-item-action"
+            onClick={() => props.onClickTag(tag)} >
           {tag.name}
         </button>
     );
@@ -50,7 +25,7 @@ function TagList(props) {
   return (<div className="list-group">{itemEls}</div>);
 }
 
-function App(props) {
+function App() {
   const [tags, setTags] = useState([]);
   const [tag, setTag] = useState(null);
   const [editingTagName, setEditingTagName] = useState(null);

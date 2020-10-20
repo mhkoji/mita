@@ -1,7 +1,7 @@
 (asdf:defsystem :mita
   :serial t
+  :pathname "./"
 
-  :pathname "mita/"
   :components
   ((:file "id")
    (:file "db/db")
@@ -19,7 +19,8 @@
    (:file "db/postgres")
    (:file "mita-postgres"))
 
-  :depends-on (:alexandria
-               :local-time
-               :uuid
-               :postmodern))
+  :depends-on
+  (:alexandria
+   :local-time
+   :uuid
+   :postmodern))

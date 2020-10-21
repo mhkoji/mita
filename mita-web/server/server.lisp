@@ -44,12 +44,15 @@
                    (lack:builder
                     (:static :path "/static/"
                              :root (merge-pathnames "static/" root))
+
                     (:session :store *session-store*)
+
                     (mita.web.auth:make-middleware
                      :login-url "/auth/login"
                      :permit-list (list "/auth/login"
                                         "/favicon.ico"
                                         "/api/authenticate"))
+
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.web.server.ningle:route-auth app connector)
                       (mita.web.server.ningle:route-image app connector)

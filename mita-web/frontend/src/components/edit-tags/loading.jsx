@@ -2,26 +2,46 @@ import React, { useEffect } from 'react';
 import { Spinner } from '../spinner';
 
 export function Loading(props) {
-  useEffect(() => {
-    props.onChangeState({
-      tags: null,
-      contentTags: null
-    });
-    props.api.tags().then((tags) => {
-      props.onChangeState(
-          (state) => Object.assign({}, state, { tags: tags }));
-    });
-    props.api.contentTags().then((tags) => {
-      props.onChangeState(
-          (state) => Object.assign({}, state, { contentTags: tags }));
-    });
-  }, []);
+  function loadTags() {
+    Promise.all([
+      props.api.tags(), props.api.contentTags()
+    ]).then((result) => {
+      const [tags, contentTags] = result;
+      props.onLoaded(tags, contentTags);
+    }, () => {
+      props.onChangeState({
+        type: 'failed'
+      });
+    })
+  }
 
-  useEffect(() => {
-    if (props.state && props.state.tags && props.state.contentTags) {
-      props.onLoaded(props.state.tags, props.state.contentTags);
-    }
-  }, [props.state]);
+  function handleRetryClick() {
+    props.onChangeState(null);
+    loadTags();
+  }
 
-  return (<Spinner />);
+  useEffect(() => loadTags(), []);
+
+  if (props.state === null) {
+    return (<Spinner />);
+  }
+
+  if (props.state.type === 'failed') {
+    return (
+        <div>
+          <div
+              className="alert alert-danger"
+              role="alert">
+            Loading failed
+          </div>
+          <button
+              className="btn btn-primary"
+              onClick={handleRetryClick}>
+            Retry
+          </button>
+        </div>
+    );
+  }
+
+  return null;
 }

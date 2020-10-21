@@ -1,18 +1,14 @@
 (defpackage :mita
   (:use :cl)
-  (:export :with-gateway
-           :gateway
+  (:export :gateway
            :gateway-db
+           :with-gateway
            :create-thumbnail))
 (in-package :mita)
 
-(defun make-thumbnail-path (thumbnail-dir source-path)
-  (format nil "~Athumbnail$~A"
-          thumbnail-dir
-          (cl-ppcre:regex-replace-all "/" source-path "$")))
-
-
 (defgeneric gateway-db (gw))
+
+(defgeneric gateway-account (gw))
 
 (defclass gateway ()
   ((db
@@ -22,6 +18,11 @@
     :initarg :configure
     :reader gateway-configure)))
 
+
+(defun make-thumbnail-path (thumbnail-dir source-path)
+  (format nil "~Athumbnail$~A"
+          thumbnail-dir
+          (cl-ppcre:regex-replace-all "/" source-path "$")))
 
 ;; thumbnail
 (defun resize-image (target source x y)

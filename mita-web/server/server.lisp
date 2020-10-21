@@ -6,6 +6,9 @@
 
 (defvar *handler* nil)
 
+(defvar *session-store* (lack.session.store.memory:make-memory-store))
+
+
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
@@ -28,7 +31,12 @@
                        "GRANT ALL ON SCHEMA public TO public;"))
         (postmodern:execute q))
       (postmodern:execute-file
-       (system-relative-pathname "./db/postgres-ddl.sql"))))
+       (system-relative-pathname "./db/postgres-ddl.sql"))
+      (postmodern:execute-file
+       (system-relative-pathname "../mita-account/db-postgres-ddl.sql")))
+
+    (mita:with-gateway (gw connector)
+      (mita.account:create-account gw "mita" "mita")))
 
   (when *handler*
     (clack:stop *handler*))
@@ -36,7 +44,14 @@
                    (lack:builder
                     (:static :path "/static/"
                              :root (merge-pathnames "static/" root))
+                    (:session :store *session-store*)
+                    (mita.web.auth:make-middleware
+                     :login-url "/auth/login"
+                     :permit-list (list "/auth/login"
+                                        "/favicon.ico"
+                                        "/api/authenticate"))
                     (let ((app (make-instance 'ningle:<app>)))
+                      (mita.web.server.ningle:route-auth app connector)
                       (mita.web.server.ningle:route-image app connector)
                       (mita.web.server.ningle:route-album app connector)
                       (mita.web.server.ningle:route-view app connector)

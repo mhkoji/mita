@@ -6,7 +6,8 @@
            :route-page
            :route-view
            :route-image
-           :route-album)
+           :route-album
+           :route-auth)
   (:import-from :alexandria
                 :if-let))
 (in-package :mita.web.server.ningle)
@@ -274,3 +275,40 @@
                                     :test #'string=)))))
                   (mita.tag:update-content-tags
                    gw album (remove nil nullable-tag-id-list)))))))))
+
+
+(defun route-auth (app connector)
+  (setf (ningle:route app "/auth/login")
+        (lambda (params)
+          (declare (ignore params))
+          (if (mita.web.auth:is-authenticated-p
+               (getf (lack.request:request-env ningle:*request*)
+                     :lack.session))
+              `(300 (:location "/albums") nil)
+              (with-safe-html-response
+                (mita.web.server.html:login)))))
+
+  (setf (ningle:route app "/api/authenticate" :method :post)
+        (lambda (params)
+          (declare (ignore params))
+          (with-json-api (gw connector)
+            (if (mita.web.auth:authenticate
+
+                 (getf (lack.request:request-env ningle:*request*)
+                       :lack.session)
+
+                 (make-instance
+                  'mita.web.auth.account:account-authenticator
+                  :gateway gw)
+
+                 (cdr
+                  (assoc "username" (lack.request:request-body-parameters
+                                     ningle:*request*)
+                         :test #'string=))
+
+                 (cdr
+                  (assoc "password" (lack.request:request-body-parameters
+                                     ningle:*request*)
+                         :test #'string=)))
+                t
+                :false)))))

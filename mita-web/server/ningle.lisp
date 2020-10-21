@@ -1,7 +1,5 @@
 (defpackage :mita.web.server.ningle
   (:use :cl)
-  (:import-from :alexandria
-                :when-let*)
   (:export :route-tag
            :route-page
            :route-view
@@ -9,6 +7,8 @@
            :route-album
            :route-auth)
   (:import-from :alexandria
+                :when-let
+                :when-let*
                 :if-let))
 (in-package :mita.web.server.ningle)
 
@@ -293,22 +293,15 @@
           (declare (ignore params))
           (with-json-api (gw connector)
             (if (mita.web.auth:authenticate
-
                  (getf (lack.request:request-env ningle:*request*)
                        :lack.session)
-
-                 (make-instance
-                  'mita.web.auth.account:account-authenticator
-                  :gateway gw)
-
-                 (cdr
-                  (assoc "username" (lack.request:request-body-parameters
-                                     ningle:*request*)
-                         :test #'string=))
-
-                 (cdr
-                  (assoc "password" (lack.request:request-body-parameters
-                                     ningle:*request*)
-                         :test #'string=)))
-                t
+                 (lambda ()
+                   (let ((params (lack.request:request-body-parameters
+                                  ningle:*request*)))
+                     (when-let ((username (cdr (assoc "username" params
+                                                      :test #'string=)))
+                                (password (cdr (assoc "password" params
+                                                      :test #'string=))))
+                       (mita.account:find-account gw username password)))))
+                 t
                 :false)))))

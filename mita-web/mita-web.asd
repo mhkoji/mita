@@ -4,7 +4,6 @@
 
   :components
   ((:file "auth")
-   (:file "auth-account")
 
    (:file "html")
    (:file "ningle")

@@ -12,6 +12,7 @@
 (defun start (&key (port 5000)
                    (root (system-relative-pathname "./mita-web/"))
                    (init-db nil)
+                   (use-thread t)
                    (connector
                     (mita.db.postgres:make-connector
                      :database "mita"
@@ -42,4 +43,5 @@
                       (mita.web.server.ningle:route-page app connector)
                       (mita.web.server.ningle:route-tag app connector)
                       app))
+                   :use-thread use-thread
                    :port port)))

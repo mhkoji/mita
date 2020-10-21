@@ -13,11 +13,11 @@
    (:file "tag")
    (:file "tag-content")
 
-   (:file "dir")
-   (:file "add-albums")
-
    (:file "db/postgres")
-   (:file "mita-postgres"))
+   (:file "mita-postgres")
+
+   (:file "dir")
+   (:file "add-albums"))
 
   :depends-on
   (:alexandria

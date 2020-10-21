@@ -46,20 +46,28 @@
           (let ((album-id (mita.db:album-id album-row)))
             (setf (gethash (mita.id:to-string album-id) id->args)
                   (list :album-row album-row))))
-        (let* ((album-thumbnail-image-row-list
-                (mita.db:album-thumbnail-image-select db album-id-list))
-               (image-list
-                (mita.image:load-images-by-ids
-                 gateway
-                 (mapcar #'mita.db:album-thumbnail-image-image-id
-                         album-thumbnail-image-row-list))))
-          (loop for image in image-list
-                for row in album-thumbnail-image-row-list
-                do (let ((album-id
-                          (mita.db:album-thumbnail-image-album-id row)))
-                     (alexandria:appendf
-                      (gethash (mita.id:to-string album-id) id->args)
-                      (list :thumbnail image)))))
+        (let ((id->image
+               (make-hash-table :test #'equal))
+              (album-thumbnail-image-row-list
+               (mita.db:album-thumbnail-image-select db album-id-list)))
+          (dolist (image (mita.image:load-images-by-ids
+                          gateway
+                          (mapcar #'mita.db:album-thumbnail-image-image-id
+                                  album-thumbnail-image-row-list)))
+            (setf (gethash (mita.id:to-string
+                            (mita.image:image-id image))
+                           id->image)
+                  image))
+          (dolist (row album-thumbnail-image-row-list)
+            (let* ((album-id
+                    (mita.db:album-thumbnail-image-album-id row))
+                   (image-id
+                    (mita.db:album-thumbnail-image-image-id row))
+                   (image
+                    (gethash (mita.id:to-string image-id) id->image)))
+              (alexandria:appendf (gethash (mita.id:to-string album-id)
+                                           id->args)
+                                  (list :thumbnail image)))))
         (mapcar (lambda (id)
                   (let ((args (gethash (mita.id:to-string id) id->args)))
                     (apply #'make-instance 'album args)))

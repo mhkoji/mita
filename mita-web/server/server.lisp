@@ -10,7 +10,7 @@
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
 (defun start (&key (port 5000)
-                   (root (system-relative-pathname "./mita-web/"))
+                   (root (system-relative-pathname "../mita-web/"))
                    (init-db nil)
                    (use-thread t)
                    (connector
@@ -28,7 +28,7 @@
                        "GRANT ALL ON SCHEMA public TO public;"))
         (postmodern:execute q))
       (postmodern:execute-file
-       (system-relative-pathname "./mita/db/postgres-ddl.sql"))))
+       (system-relative-pathname "./db/postgres-ddl.sql"))))
 
   (when *handler*
     (clack:stop *handler*))

@@ -3,30 +3,29 @@ import { Spinner } from '../spinner';
 
 export function Loading(props) {
   function loadTags() {
+    props.onChangeState('loading');
+
     Promise.all([
       props.api.tags(), props.api.contentTags()
     ]).then((result) => {
       const [tags, contentTags] = result;
       props.onLoaded(tags, contentTags);
     }, () => {
-      props.onChangeState({
-        type: 'failed'
-      });
+      props.onChangeState('failed');
     })
   }
 
   function handleRetryClick() {
-    props.onChangeState(null);
     loadTags();
   }
 
   useEffect(() => loadTags(), []);
 
-  if (props.state === null) {
+  if (props.state === null || props.state === 'loading') {
     return (<Spinner />);
   }
 
-  if (props.state.type === 'failed') {
+  if (props.state === 'failed') {
     return (
         <div>
           <div

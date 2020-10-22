@@ -2,6 +2,7 @@
   (:use :cl)
   (:export :is-allowed
            :is-authenticated-p
+           :authenticate
            :make-middleware))
 (in-package :mita.web.auth)
 

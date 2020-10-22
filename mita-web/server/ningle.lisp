@@ -292,16 +292,18 @@
         (lambda (params)
           (declare (ignore params))
           (with-json-api (gw connector)
-            (if (mita.web.auth:authenticate
-                 (getf (lack.request:request-env ningle:*request*)
-                       :lack.session)
-                 (lambda ()
-                   (let ((params (lack.request:request-body-parameters
-                                  ningle:*request*)))
-                     (when-let ((username (cdr (assoc "username" params
+            (let ((session
+                   (getf (lack.request:request-env ningle:*request*)
+                         :lack.session))
+                  (body
+                   (lack.request:request-body-parameters ningle:*request*)))
+              (if (mita.web.auth:authenticate
+                   session
+                   (lambda ()
+                     (when-let ((username (cdr (assoc "username" body
                                                       :test #'string=)))
-                                (password (cdr (assoc "password" params
+                                (password (cdr (assoc "password" body
                                                       :test #'string=))))
-                       (mita.account:find-account gw username password)))))
-                 t
-                :false)))))
+                       (mita.account:find-account gw username password))))
+                  t
+                  :false))))))

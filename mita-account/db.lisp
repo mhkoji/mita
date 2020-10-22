@@ -3,57 +3,58 @@
   (:export :make-account
            :account-id
            :account-name
+           :account-hashed-password
            :account-select
            :account-insert
            :hash-password
-           :password-hashed-string)
+           :hashed-password-matches-p)
   (:import-from :mita.db.postgres
                 :postgres))
 (in-package :mita.account.db)
 
-(defstruct password-hashed string)
+(defstruct hashed-password string)
 
 (defun hash-password (raw)
-  (make-password-hashed
+  (make-hashed-password
    :string
-   ;; Should be replaced with another like bcrypt
-   (ironclad:byte-array-to-hex-string
-    (ironclad:digest-sequence
-     :sha256
-     (ironclad:ascii-string-to-byte-array raw)))))
+   (ironclad:pbkdf2-hash-password-to-combined-string
+    (ironclad:ascii-string-to-byte-array raw)
+    :iterations 20000)))
+
+(defun hashed-password-matches-p (hashed password)
+  (ironclad:pbkdf2-check-password
+   (ironclad:ascii-string-to-byte-array password)
+   (hashed-password-string hashed)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(defstruct account id username)
+(defstruct account id username hashed-password)
 
-(defgeneric account-insert (db account password-hashed))
+(defgeneric account-insert (db account))
 
-(defgeneric account-select (db username password-hashed))
+(defgeneric account-select (db username))
 
 
 ;;;; postgres
 
-(defmethod account-insert ((db postgres)
-                           (account account)
-                           (password password-hashed))
+(defmethod account-insert ((db postgres) (account account))
   (mita.db.postgres::insert-into
    db "accounts" '("account_id" "username" "password_hashed")
    (list (list (mita.id:to-string (account-id account))
                (account-username account)
-               (password-hashed-string password)))))
+               (hashed-password-string
+                (account-hashed-password account))))))
 
-(defmethod account-select ((db postgres)
-                           (username string)
-                           (password password-hashed))
+(defmethod account-select ((db postgres) (username string))
   (labels ((parse-account (row)
-             (make-account :id (mita.id:parse (first row))
-                           :username (second row))))
+             (make-account
+              :id (mita.id:parse (first row))
+              :username (second row)
+              :hashed-password (make-hashed-password
+                                :string (third row)))))
     (mita.db.postgres::single
      #'parse-account
      (mita.db.postgres::select-from
-      db "account_id, username" "accounts"
-      `(:where (:and (:= "username"
-                         (:p ,username))
-                     (:= "password_hashed"
-                         (:p ,(password-hashed-string password)))))))))
+      db "account_id, username, password_hashed" "accounts"
+      `(:where (:= "username" (:p ,username)))))))

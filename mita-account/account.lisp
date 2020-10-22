@@ -15,14 +15,19 @@
   (mita.account.db:account-id (slot-value a 'row)))
 
 (defun find-account (gw username password)
-  (let ((db (mita:gateway-db gw))
-        (hashed (mita.account.db:hash-password password)))
-    (when-let ((row (mita.account.db:account-select db username hashed)))
+  (when-let ((row (mita.account.db:account-select
+                   (mita:gateway-db gw)
+                   username)))
+    (when (mita.account.db:hashed-password-matches-p
+           (mita.account.db:account-hashed-password row)
+           password)
       (make-instance 'account :row row))))
 
 (defun create-account (gw username password)
-  (mita.account.db:account-insert
-   (mita:gateway-db gw)
-   (mita.account.db:make-account :id (mita.id:gen)
-                                 :username username)
-   (mita.account.db:hash-password password)))
+  (let ((db (mita:gateway-db gw))
+        (account (mita.account.db:make-account
+                  :id (mita.id:gen)
+                  :username username
+                  :hashed-password
+                  (mita.account.db:hash-password password))))
+    (mita.account.db:account-insert db account)))

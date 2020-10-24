@@ -6,7 +6,6 @@
            :albums
            :album
            :tags
-           :login
            :not-found
            :internal-server-error))
 (in-package :mita.web.server.html)
@@ -234,16 +233,3 @@
      (:script
       :type "text/javascript"
       :src "/static/gen/tags.bundle.js"))))
-
-(defun login ()
-  (cl-who:with-html-output-to-string (s nil :prologue t)
-    (:head
-     (:meta :charset "utf-8")
-     (:title "mita")
-     (:link :rel "stylesheet"
-            :href "/static/gen/login.bundle.css"))
-    (:body
-     (:div :id "app")
-     (:script
-      :type "text/javascript"
-      :src "/static/gen/login.bundle.js"))))

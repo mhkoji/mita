@@ -275,35 +275,3 @@
                                     :test #'string=)))))
                   (mita.tag:update-content-tags
                    gw album (remove nil nullable-tag-id-list)))))))))
-
-
-(defun route-auth (app connector)
-  (setf (ningle:route app "/auth/login")
-        (lambda (params)
-          (declare (ignore params))
-          (if (mita.web.auth:is-authenticated-p
-               (make-instance
-                'mita.web.auth:lack-session-holder
-                :env (lack.request:request-env ningle:*request*)))
-              `(300 (:location "/albums") nil)
-              (with-safe-html-response
-                (mita.web.server.html:login)))))
-
-  (setf (ningle:route app "/api/authenticate" :method :post)
-        (lambda (params)
-          (declare (ignore params))
-          (with-json-api (gw connector)
-            (if (mita.web.auth:authenticate
-                 (make-instance
-                  'mita.web.auth:lack-session-holder
-                  :env (lack.request:request-env ningle:*request*))
-                 (lambda ()
-                   (let ((body (lack.request:request-body-parameters
-                                ningle:*request*)))
-                     (when-let ((username (cdr (assoc "username" body
-                                                      :test #'string=)))
-                                (password (cdr (assoc "password" body
-                                                      :test #'string=))))
-                       (mita.account:find-account gw username password)))))
-                t
-                :false)))))

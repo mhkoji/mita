@@ -1,0 +1,6 @@
+*~
+.idea
+
+## for webapps
+*/static/gen
+node_modules

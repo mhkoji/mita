@@ -1,18 +1,18 @@
 (defpackage :mita.web.server
   (:use :cl)
   (:export :start
-           :init-db))
+           :init-db
+           :*session-store*))
 (in-package :mita.web.server)
 
 (defvar *handler* nil)
 
 (defvar *session-store* (lack.session.store.memory:make-memory-store))
 
-
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
-(defun start (&key (port 5000)
+(defun start (&key (port 5001)
                    (root (system-relative-pathname "../mita-web/"))
                    (init-db nil)
                    (use-thread t)
@@ -48,13 +48,10 @@
                     (:session :store *session-store*)
 
                     (mita.web.auth:make-middleware
-                     :login-url "/auth/login"
-                     :permit-list (list "/auth/login"
-                                        "/favicon.ico"
-                                        "/api/authenticate"))
+                     :login-url mita.web.server.externs:*login-url*
+                     :permit-list (list mita.web.server.externs:*login-url*))
 
                     (let ((app (make-instance 'ningle:<app>)))
-                      (mita.web.server.ningle:route-auth app connector)
                       (mita.web.server.ningle:route-image app connector)
                       (mita.web.server.ningle:route-album app connector)
                       (mita.web.server.ningle:route-view app connector)

@@ -3,8 +3,8 @@
   :pathname "server/"
 
   :components
-  ((:file "auth")
-
+  ((:file "externs")
+   (:file "auth")
    (:file "html")
    (:file "ningle")
    (:file "server"))

@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  db-postgres:
+    image: postgres
+    environment:
+      - POSTGRES_DB=mita
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - 5432:5432
+
+  lb-nginx:
+    image: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 5000:5000
+    network_mode: host

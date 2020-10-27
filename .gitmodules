@@ -7,3 +7,6 @@
 [submodule "cl-bcrypt"]
 	path = cl-bcrypt
 	url = https://github.com/dnaeon/cl-bcrypt.git
+[submodule "ironclad"]
+	path = ironclad
+	url = https://github.com/sharplispers/ironclad

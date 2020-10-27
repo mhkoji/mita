@@ -4,3 +4,6 @@
 [submodule "Postmodern"]
 	path = Postmodern
 	url = https://github.com/marijnh/Postmodern
+[submodule "cl-bcrypt"]
+	path = cl-bcrypt
+	url = https://github.com/dnaeon/cl-bcrypt.git

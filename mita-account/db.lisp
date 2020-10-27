@@ -17,14 +17,11 @@
 (defun hash-password (raw)
   (make-hashed-password
    :string
-   (ironclad:pbkdf2-hash-password-to-combined-string
-    (ironclad:ascii-string-to-byte-array raw)
-    :iterations 20000)))
+   (cl-bcrypt:encode
+    (cl-bcrypt:make-password raw))))
 
 (defun hashed-password-matches-p (hashed password)
-  (ironclad:pbkdf2-check-password
-   (ironclad:ascii-string-to-byte-array password)
-   (hashed-password-string hashed)))
+  (cl-bcrypt:password= password (hashed-password-string hashed)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;

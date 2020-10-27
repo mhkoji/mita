@@ -8,4 +8,4 @@
 
   :depends-on
   (:mita
-   :ironclad))
+   :cl-bcrypt))

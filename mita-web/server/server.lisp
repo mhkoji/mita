@@ -9,35 +9,38 @@
 
 (defvar *session-store* (lack.session.store.memory:make-memory-store))
 
+(defvar *connector* (mita.db.postgres:make-connector
+                     :database "mita"
+                     :user "postgres"
+                     :password ""
+                     :host "localhost"
+                     :port 5432))
+
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
+
+(defun init-db (&key (connector *connector*)
+                     drop-p)
+  (mita.db.postgres:with-transaction (db connector)
+    (when drop-p
+      (mapc (lambda (q)
+              (postmodern:execute q))
+            (list "DROP SCHEMA public CASCADE;"
+                  "CREATE SCHEMA public;"
+                  "GRANT ALL ON SCHEMA public TO postgres;"
+                  "GRANT ALL ON SCHEMA public TO public;")))
+    (mapc (lambda (p)
+            (postmodern:execute-file (system-relative-pathname p)))
+          (list "./db/postgres-ddl.sql"
+                "../mita-account/db-postgres-ddl.sql")))
+  (mita:with-gateway (gw connector)
+    (mita.account:create-account gw "mita" "mita")))
 
 (defun start (&key (port 5001)
                    (root (system-relative-pathname "../mita-web/"))
                    (init-db nil)
                    (use-thread t)
-                   (connector
-                    (mita.db.postgres:make-connector
-                     :database "mita"
-                     :user "postgres"
-                     :password ""
-                     :host "localhost"
-                     :port 5432)))
-  (when init-db
-    (mita.db.postgres:with-transaction (db connector)
-      (dolist (q (list "DROP SCHEMA public CASCADE;"
-                       "CREATE SCHEMA public;"
-                       "GRANT ALL ON SCHEMA public TO postgres;"
-                       "GRANT ALL ON SCHEMA public TO public;"))
-        (postmodern:execute q))
-      (postmodern:execute-file
-       (system-relative-pathname "./db/postgres-ddl.sql"))
-      (postmodern:execute-file
-       (system-relative-pathname "../mita-account/db-postgres-ddl.sql")))
-
-    (mita:with-gateway (gw connector)
-      (mita.account:create-account gw "mita" "mita")))
-
+                   (connector *connector*))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler* (clack:clackup

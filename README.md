@@ -4,17 +4,16 @@ An application written in Common Lisp
 ## Setup
 
 ```shell
-## Postmodern of the lastest version is required.
 git submodule update --init
 
-docker pull postgres
-docker run --rm -p 5432:5432 -e POSTGRES_DB=mita -e POSTGRES_HOST_AUTH_METHOD=trust postgres 
+docker-compose up
 ```
 
 ## Start the Server
 
 ```
-CL-USER> *default-pathname-defaults*
-#P"/path to /mita/mita-web/"
-CL-USER> (mita.web.server:start :init-db t)
+CL-USER> (ql:quickload :mita-auth)
+CL-USER> (mita.web.server:init-db)
+CL-USER> (mita.web.server:start)
+CL-USER> (mita.auth.server:start)
 ```

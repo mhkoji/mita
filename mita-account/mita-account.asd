@@ -1,10 +1,11 @@
 (asdf:defsystem :mita-account
   :serial t
-  :pathname "./"
 
   :components
   ((:file "db")
-   (:file "account"))
+   (:file "account")
+
+   (:file "postgres/postgres"))
 
   :depends-on
   (:mita

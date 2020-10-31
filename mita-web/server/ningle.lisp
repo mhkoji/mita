@@ -50,9 +50,18 @@
      (error ()
        +response-500+)))
 
-(defmacro with-json-api ((gw connector) &body body)
+(defmacro with-gateway ((gw connector &key (request 'ningle:*request*))
+                        &body body)
+  (let ((g (gensym)))
+    `(let ((,g (getf (lack.request:request-env ,request)
+                     :mita.account)))
+       (mita.postgres:with-gateway (,gw ,g ,connector)
+         ,@body))))
+
+(defmacro with-json-api ((gw connector &key (request 'ningle:*request*))
+                         &body body)
   `(with-safe-json-response
-     (mita:with-gateway (,gw ,connector)
+     (with-gateway (,gw ,connector :request ,request)
        ,@body)))
 
 (defun q (params name)
@@ -63,14 +72,14 @@
         (lambda (params)
           (declare (ignore params))
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (let ((pages (mita.page:load-pages gw)))
                 (mita.web.server.html:pages pages))))))
 
   (setf (ningle:route app "/pages/:page-id")
         (lambda (params)
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (or (when-let*
                       ((page-id
                         (mita.id:parse-or-nil
@@ -112,7 +121,7 @@
   (setf (ningle:route app "/images/:image-id")
         (lambda (params)
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (or (when-let*
                       ((image-id
                         (mita.id:parse-or-nil
@@ -127,7 +136,7 @@
   (setf (ningle:route app "/albums")
         (lambda (params)
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (mita.web.server.html:albums
                gw
                (if-let ((offset (q params "offset")))
@@ -140,7 +149,7 @@
   (setf (ningle:route app "/albums/:album-id")
         (lambda (params)
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (or (when-let*
                       ((album-id
                         (mita.id:parse-or-nil
@@ -154,7 +163,7 @@
   (setf (ningle:route app "/view/album/:album-id")
         (lambda (params)
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (or (when-let*
                       ((album-id
                         (mita.id:parse-or-nil
@@ -171,7 +180,7 @@
         (lambda (params)
           (declare (ignore params))
           (with-safe-html-response
-            (mita:with-gateway (gw connector)
+            (with-gateway (gw connector)
               (mita.web.server.html:tags gw)))))
 
   (setf (ningle:route app "/api/tags/_create" :method :post)

@@ -30,7 +30,8 @@
     (when-let ((username (cdr (assoc "username" body :test #'string=)))
                (password (cdr (assoc "password" body :test #'string=))))
       (mita:with-gateway (gw connector)
-        (mita.account:find-account gw username password)))))
+        (mita.account:find-account-with-password-checked
+         gw username password)))))
 
 
 (defun start (&key (port 5002)

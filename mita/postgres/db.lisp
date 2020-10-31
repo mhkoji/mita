@@ -1,36 +1,26 @@
-(defpackage :mita.db.postgres
+(defpackage :mita.postgres.db
   (:use :cl)
   (:import-from :alexandria
                 :when-let)
   (:export :postgres
-           :make-connector
            :with-transaction))
-(in-package :mita.db.postgres)
+(in-package :mita.postgres.db)
 
 (defclass postgres (mita.db:db)
   ((conn
     :initarg :conn
     :reader postgres-conn)))
 
-(defstruct connector
-  database user password host port)
-
-(defun connect (connector)
-  (with-slots (database user password host port) connector
-    (let ((conn (postmodern:connect database user password host
-                                    :port port)))
-      (make-instance 'postgres :conn conn))))
-
-(defun disconnect (db)
-  (postmodern:disconnect (postgres-conn db)))
-
-(defmacro with-transaction ((db connector) &body body)
-  `(let ((,db (connect ,connector)))
-     (unwind-protect
-          (let ((postmodern:*database* (postgres-conn ,db)))
-            (postmodern:with-transaction (nil :serializable)
-              ,@body))
-       (disconnect ,db))))
+(defmacro with-transaction ((db &key database user host port) &body body)
+  (let ((g-conn (gensym)))
+    `(let ((,g-conn (postmodern:connect ,database ,user "" ,host
+                                        :port ,port)))
+       (unwind-protect
+            (let ((,db (make-instance 'postgres :conn ,g-conn))
+                  (postmodern:*database* ,g-conn))
+              (postmodern:with-transaction (nil :serializable)
+                ,@body))
+         (postmodern:disconnect ,g-conn)))))
 
 (defun query (db query-string args)
   (let ((conn (postgres-conn db)))
@@ -114,7 +104,6 @@
 
 (defun single (row-parser select-result)
   (car (mapcar row-parser select-result)))
-
 
 
 (defclass page (mita.page:page)

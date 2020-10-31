@@ -1,22 +1,24 @@
 (defpackage :mita
   (:use :cl)
-  (:export :gateway
+  (:export :account
+           :account-id
+           :gateway
            :gateway-db
            :with-gateway
            :create-thumbnail))
 (in-package :mita)
 
-(defgeneric gateway-db (gw))
+(defclass account () ())
 
-(defgeneric gateway-account (gw))
+(defgeneric account-id (account))
+
+
+(defgeneric gateway-db (gw))
 
 (defclass gateway ()
   ((db
     :initarg :db
-    :reader gateway-db)
-   (configure
-    :initarg :configure
-    :reader gateway-configure)))
+    :reader gateway-db)))
 
 
 (defun make-thumbnail-path (thumbnail-dir source-path)

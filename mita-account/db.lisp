@@ -7,9 +7,7 @@
            :account-select
            :account-insert
            :hash-password
-           :hashed-password-matches-p)
-  (:import-from :mita.db.postgres
-                :postgres))
+           :hashed-password-matches-p))
 (in-package :mita.account.db)
 
 (defstruct hashed-password string)
@@ -51,23 +49,25 @@
 
 ;;;; postgres
 
-(defmethod account-insert ((db postgres) (account account))
-  (mita.db.postgres::insert-into
+(defmethod account-insert ((db mita.postgres.db:postgres)
+                           (account account))
+  (mita.postgres.db::insert-into
    db "accounts" '("account_id" "username" "password_hashed")
    (list (list (mita.id:to-string (account-id account))
                (account-username account)
                (hashed-password-string
                 (account-hashed-password account))))))
 
-(defmethod account-select ((db postgres) (username string))
+(defmethod account-select ((db mita.postgres.db:postgres)
+                           (username string))
   (labels ((parse-account (row)
              (make-account
               :id (mita.id:parse (first row))
               :username (second row)
               :hashed-password (make-hashed-password
                                 :string (third row)))))
-    (mita.db.postgres::single
+    (mita.postgres.db::single
      #'parse-account
-     (mita.db.postgres::select-from
+     (mita.postgres.db::select-from
       db "account_id, username, password_hashed" "accounts"
       `(:where (:= "username" (:p ,username)))))))

@@ -49,6 +49,8 @@
 
 (defclass db () ())
 
+(defgeneric create-tables (db))
+
 (defgeneric page-delete (db page-id-list))
 
 (defgeneric page-select-by-id (db page-id))

@@ -4,7 +4,7 @@
 
   :components
   ((:file "id")
-   (:file "db/db")
+   (:file "db")
    (:file "mita")
    (:file "image")
    (:file "page")
@@ -13,14 +13,18 @@
    (:file "tag")
    (:file "tag-content")
 
-   (:file "db/postgres")
-   (:file "mita-postgres")
+   (:file "postgres/db")
 
    (:file "dir")
-   (:file "add-albums"))
+   (:file "add-albums")
+
+   (:file "postgres/postgres"))
 
   :depends-on
   (:alexandria
    :local-time
    :uuid
-   :postmodern))
+   :postmodern
+
+   ;; for account
+   :cl-bcrypt))

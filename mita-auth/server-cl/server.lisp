@@ -38,7 +38,7 @@
                    (root (system-relative-pathname "../mita-auth/"))
                    (use-thread t)
                    (connector
-                    (mita.db.postgres:make-connector
+                    (mita.postgres:make-connector
                      :database "mita"
                      :user "postgres"
                      :password ""

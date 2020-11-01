@@ -12,8 +12,8 @@
                  (return t)))))
     (lambda (app)
       (lambda (env)
-        (if-let ((account
-                  (funcall is-authenticated-fn
+        (if-let ((account (funcall
+                           is-authenticated-fn
                            (make-instance
                             'mita.auth:lack-session-holder :env env))))
           (funcall app (list* :mita.account account env))

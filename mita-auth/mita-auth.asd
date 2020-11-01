@@ -10,4 +10,9 @@
   :depends-on
   (:mita
    :mita-account
-   :mita-web))
+   :ningle
+   :cl-who
+   :jsown
+   :clack
+   :lack
+   :lack-middleware-session))

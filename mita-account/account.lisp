@@ -4,6 +4,7 @@
            :account-id
            :find-account-with-password-checked
            :find-account
+           :find-account-by-id
            :create-account)
   (:import-from :mita
                 :account-id)
@@ -32,6 +33,12 @@
                    username)))
     (make-instance 'account :row row)))
 
+(defun find-account-by-id (gw account-id)
+  (when-let ((row (mita.account.db:account-select-by-id
+                   (mita:gateway-db gw)
+                   account-id)))
+    (make-instance 'account :row row)))
+
 (defun create-account (gw username password)
   (let ((db (mita:gateway-db gw))
         (account (mita.account.db:make-account
@@ -39,4 +46,5 @@
                   :username username
                   :hashed-password
                   (mita.account.db:hash-password password))))
-    (mita.account.db:account-insert db account)))
+    (mita.account.db:account-insert db account))
+  (find-account gw username))

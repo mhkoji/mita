@@ -5,6 +5,7 @@
            :account-name
            :account-hashed-password
            :account-select
+           :account-select-by-id
            :account-insert
            :hash-password
            :hashed-password-matches-p))
@@ -58,16 +59,25 @@
                (hashed-password-string
                 (account-hashed-password account))))))
 
+(defun parse-account (row)
+  (make-account
+   :id (mita.id:parse (first row))
+   :username (second row)
+   :hashed-password (make-hashed-password
+                     :string (third row))))
+
 (defmethod account-select ((db mita.postgres.db:postgres)
                            (username string))
-  (labels ((parse-account (row)
-             (make-account
-              :id (mita.id:parse (first row))
-              :username (second row)
-              :hashed-password (make-hashed-password
-                                :string (third row)))))
-    (mita.postgres.db::single
-     #'parse-account
-     (mita.postgres.db::select-from
-      db "account_id, username, password_hashed" "accounts"
-      `(:where (:= "username" (:p ,username)))))))
+  (mita.postgres.db::single
+   #'parse-account
+   (mita.postgres.db::select-from
+    db "account_id, username, password_hashed" "accounts"
+    `(:where (:= "username" (:p ,username))))))
+
+(defmethod account-select-by-id ((db mita.postgres.db:postgres)
+                                 (id mita.id:id))
+  (mita.postgres.db::single
+   #'parse-account
+   (mita.postgres.db::select-from
+    db "account_id, username, password_hashed" "accounts"
+    `(:where (:= "account_id" (:p ,(mita.id:to-string id)))))))

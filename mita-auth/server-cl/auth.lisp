@@ -4,12 +4,16 @@
            :lack-session-holder
            :get-session
            :renew-session-id
-           :is-allowed
            :is-authenticated-p
-           :authenticate))
+           :authenticate
+           :*session-account-id-key*)
+  (:import-from :alexandria
+                :when-let
+                :when-let*))
 (in-package :mita.auth)
 
-(defvar *session-auth-key* "mita:is-authenticated-p")
+(defvar *session-account-id-key* "mita.auth:account-id")
+
 
 (defclass session-holder () ())
 
@@ -17,16 +21,24 @@
 
 (defgeneric renew-session-id (holder))
 
-(defun is-authenticated-p (session-holder)
+(defun is-authenticated-p (session-holder connector)
   (let ((session (get-session session-holder)))
-    (gethash *session-auth-key* session)))
+    (when-let* ((id-str (gethash *session-account-id-key* session))
+                (account-id (mita.id:parse-or-nil id-str)))
+      (mita.postgres:with-admin-gateway (gw connector)
+        (mita.account:find-account-by-id gw account-id)))))
 
-(defun authenticate (session-holder is-allowed-fn)
-  (when (funcall is-allowed-fn)
-    (let ((session (get-session session-holder)))
-      (setf (gethash *session-auth-key* session) t))
-    (renew-session-id session-holder)
-    t))
+(defun authenticate (session-holder connector username password)
+  (mita.postgres:with-admin-gateway (gw connector)
+    (when-let ((account
+                (when (and username password)
+                  (mita.account:find-account-with-password-checked
+                   gw username password))))
+      (let ((session (get-session session-holder)))
+        (setf (gethash *session-account-id-key* session)
+              (mita.account:account-id account)))
+      (renew-session-id session-holder)
+      t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

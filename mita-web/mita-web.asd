@@ -5,6 +5,7 @@
   :components
   ((:file "externs")
    (:file "auth")
+   (:file "jsown")
    (:file "html")
    (:file "ningle")
    (:file "server"))

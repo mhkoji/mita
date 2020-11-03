@@ -41,11 +41,9 @@
             ("pages"
              (mapcar (lambda (p)
                        (jsown:new-js
-                         ("url"
-                          (format nil "/pages/~A"
-                                  (mita.id:to-string (mita.page:page-id p))))
-                         ("name"
-                          (mita.id:to-string (mita.page:page-id p)))))
+                         ("url"  (mita.web.server.jsown:url-for p))
+                         ("name" (mita.id:to-string
+                                  (mita.page:page-id p)))))
                      pages))))))))
 
      (:div :id "app")
@@ -68,16 +66,9 @@
           (jsown:new-js
             ("page"
              (jsown:new-js
-               ("page-id"
-                (mita.id:to-string (mita.page:page-id page)))
-               ("text"
-                (mita.page:page-text gw page))
-               ("image-urls"
-                (mapcar (lambda (image)
-                          (format nil "/images/~A"
-                                  (mita.id:to-string
-                                   (mita.image:image-id image))))
-                        (mita.page:page-images gw page)))))))))))
+               ("page-id" (mita.page:page-id page))
+               ("text"    (mita.page:page-text gw page))
+               ("images"  (mita.page:page-images gw page))))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"
@@ -105,22 +96,11 @@
             ("albums"
              (mapcar (lambda (album)
                        (jsown:new-js
-                         ("id"
-                          (mita.id:to-string (mita.album:album-id album)))
-                         ("url"
-                          (format nil "/albums/~A"
-                                  (mita.id:to-string
-                                   (mita.album:album-id album))))
-                         ("name"
-                          (mita.album:album-name album))
-                         ("thumbnail"
-                          (jsown:new-js
-                            ("url"
-                             (format nil "/images/~A"
-                                     (mita.id:to-string
-                                      (mita.image:image-id
-                                       (mita.album:album-thumbnail
-                                        album)))))))))
+                         ("id"  (mita.album:album-id album))
+                         ("url" (mita.web.server.jsown:url-for album))
+                         ("name" (mita.album:album-name album))
+                         ("thumbnail" (or (mita.album:album-thumbnail album)
+                                          :null))))
                      (mita.album:load-albums gw offset limit)))
             ("pager"
              (let ((format-str "/albums?offset=~A&limit=~A"))
@@ -155,21 +135,9 @@
           (jsown:new-js
             ("album"
              (jsown:new-js
-               ("id"
-                (mita.id:to-string (mita.album:album-id album)))
-               ("name"
-                (mita.album:album-name album))
-               ("images"
-                (mapcar (lambda (image)
-                          (jsown:new-js
-                            ("id"
-                             (mita.id:to-string
-                              (mita.image:image-id image)))
-                            ("url"
-                             (format nil "/images/~A"
-                                     (mita.id:to-string
-                                      (mita.image:image-id image))))))
-                        (mita.album:album-images gw album)))))))))))
+               ("id"     (mita.album:album-id album))
+               ("name"   (mita.album:album-name album))
+               ("images" (mita.album:album-images gw album))))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script
@@ -190,17 +158,7 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("images"
-             (mapcar (lambda (image)
-                       (jsown:new-js
-                         ("id"
-                          (mita.id:to-string
-                           (mita.image:image-id image)))
-                         ("url"
-                          (format nil "/images/~A"
-                                  (mita.id:to-string
-                                   (mita.image:image-id image))))))
-                     images))))))))
+            ("images" images)))))))
      (:div :id "app")
      (:script
       :type "text/javascript"
@@ -221,14 +179,7 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("tags"
-             (mapcar (lambda (tag)
-                       (jsown:new-js
-                         ("id"
-                          (mita.id:to-string (mita.tag:tag-id tag)))
-                         ("name"
-                          (mita.tag:tag-name tag))))
-                     (mita.tag:load-tags gw)))))))))
+            ("tags" (mita.tag:load-tags gw))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"

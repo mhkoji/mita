@@ -12,15 +12,6 @@
                 :if-let))
 (in-package :mita.web.server.ningle)
 
-(defgeneric url-for (content))
-
-(defmethod url-for ((c mita.album:album))
-  (format nil "/albums/~A" (mita.id:to-string (mita.album:album-id c))))
-
-(defmethod url-for ((c mita.page:page))
-  (format nil "/pages/~A" (mita.id:to-string (mita.page:page-id c))))
-
-
 (defvar +response-500+
   `(500 (:content-type "text/html")
         (,(mita.web.server.html:internal-server-error))))
@@ -44,6 +35,7 @@
          (jsown:to-json
           (jsown:new-js
             ("success" :f)))))))
+
 
 (defmacro with-safe-html-response (&body body)
   `(handler-case (or (progn ,@body) (assert nil))
@@ -82,7 +74,7 @@
             (with-gateway (gw connector)
               (or (when-let*
                       ((page-id
-                        (mita.id:parse-or-nil
+                        (mita.id:parse-short-or-nil
                          (cdr (assoc :page-id params))))
                        (page
                         (mita.page:load-page-by-id gw page-id)))
@@ -94,7 +86,7 @@
           (with-json-api (gw connector)
             (or (when-let*
                     ((page-id
-                      (mita.id:parse-or-nil
+                      (mita.id:parse-short-or-nil
                        (cdr (assoc :page-id params))))
                      (page
                       (mita.page:load-page-by-id gw page-id))
@@ -124,7 +116,7 @@
             (with-gateway (gw connector)
               (or (when-let*
                       ((image-id
-                        (mita.id:parse-or-nil
+                        (mita.id:parse-short-or-nil
                            (cdr (assoc :image-id params))))
                        (image
                         (mita.image:load-image gw image-id)))
@@ -152,7 +144,7 @@
             (with-gateway (gw connector)
               (or (when-let*
                       ((album-id
-                        (mita.id:parse-or-nil
+                        (mita.id:parse-short-or-nil
                          (cdr (assoc :album-id params))))
                        (album
                         (mita.album:load-album-by-id gw album-id)))
@@ -166,7 +158,7 @@
             (with-gateway (gw connector)
               (or (when-let*
                       ((album-id
-                        (mita.id:parse-or-nil
+                        (mita.id:parse-short-or-nil
                          (cdr (assoc :album-id params))))
                        (album
                         (mita.album:load-album-by-id gw album-id)))
@@ -190,24 +182,19 @@
               (mita.tag:create-tag gw name)
               (values)))))
 
-  (labels ((tag->jsown (tag)
-             (jsown:new-js
-               ("id" (mita.id:to-string (mita.tag:tag-id tag)))
-               ("name" (mita.tag:tag-name tag)))))
 
     (setf (ningle:route app "/api/tags")
           (lambda (params)
             (declare (ignore params))
             (with-json-api (gw connector)
-              (let ((tags (mita.tag:load-tags gw)))
-                (mapcar #'tag->jsown tags)))))
+              (mita.tag:load-tags gw))))
 
     (setf (ningle:route app "/api/tags/:tag-id" :method :delete)
           (lambda (params)
             (with-json-api (gw connector)
               (when-let*
                   ((tag-id
-                    (mita.id:parse-or-nil
+                    (mita.id:parse-short-or-nil
                      (cdr (assoc :tag-id params)))))
                 (mita.tag:delete-tag gw tag-id)))))
 
@@ -218,7 +205,7 @@
                 ((name
                   (q params "name"))
                  (tag-id
-                  (mita.id:parse-or-nil
+                  (mita.id:parse-short-or-nil
                    (cdr (assoc :tag-id params))))
                  (tag
                   (mita.tag:load-tag-by-id gw tag-id)))
@@ -229,28 +216,11 @@
             (with-json-api (gw connector)
               (when-let*
                   ((tag-id
-                    (mita.id:parse-or-nil
+                    (mita.id:parse-short-or-nil
                      (cdr (assoc :tag-id params))))
                    (tag
                     (mita.tag:load-tag-by-id gw tag-id)))
-                (mapcar (lambda (c)
-                          (jsown:new-js
-                            ("id"
-                             (mita.id:to-string (mita.tag:content-id c)))
-                            ("url"
-                             (url-for c))
-                            ("type"
-                             (symbol-name (mita.tag:content-type c)))
-                            ("name"
-                             (or (mita.tag:content-name c) :null))
-                            ("thumbnail"
-                             (if-let ((image (mita.tag:content-thumbnail c)))
-                               (jsown:new-js
-                                 ("url"
-                                  (format nil "/images/~A"
-                                   (mita.id:to-string
-                                    (mita.image:image-id image)))))
-                               :null))))
+                (mapcar #'mita.web.server.jsown:as-content
                         (mita.tag:tag-contents gw tag))))))
 
 
@@ -259,28 +229,28 @@
             (with-json-api (gw connector)
               (when-let*
                   ((album-id
-                    (mita.id:parse-or-nil
+                    (mita.id:parse-short-or-nil
                      (cdr (assoc :album-id params))))
                    (album
                     (mita.album:load-album-by-id gw album-id)))
-                (let ((tags (mita.tag:content-tags gw album)))
-                  (mapcar #'tag->jsown tags))))))
+                (mita.tag:content-tags gw album)))))
+
 
     (setf (ningle:route app "/api/albumTags/:album-id" :method :put)
           (lambda (params)
             (with-json-api (gw connector)
               (when-let*
                   ((album-id
-                    (mita.id:parse-or-nil
+                    (mita.id:parse-short-or-nil
                      (cdr (assoc :album-id params))))
                    (album
                     (mita.album:load-album-by-id gw album-id)))
                 (let ((nullable-tag-id-list
                        (mapcar
-                        #'mita.id:parse-or-nil
+                        #'mita.id:parse-short-or-nil
                         (cdr (assoc "tag-id-list"
                                     (lack.request:request-body-parameters
                                      ningle:*request*)
                                     :test #'string=)))))
                   (mita.tag:update-content-tags
-                   gw album (remove nil nullable-tag-id-list)))))))))
+                   gw album (remove nil nullable-tag-id-list))))))))

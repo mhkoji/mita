@@ -20,7 +20,7 @@ services:
   redis:
     image: redis:6.0.3
     ports:
-      - "6379:6379"
+      - 6379:6379
     network_mode: host
 
   web:
@@ -29,6 +29,8 @@ services:
       dockerfile: ./docker/web.dockerfile
     ports:
       - 5001:5001
+    depends_on:
+      - redis
     network_mode: host
 
   auth:
@@ -37,4 +39,6 @@ services:
       dockerfile: ./docker/auth.dockerfile
     ports:
       - 5002:5002
+    depends_on:
+      - redis
     network_mode: host

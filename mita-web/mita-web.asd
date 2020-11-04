@@ -12,7 +12,6 @@
 
   :depends-on
   (:mita
-   :mita-account
    :mita-auth
 
    :ningle
@@ -21,4 +20,5 @@
    :cl-who
    :lack
    :lack-middleware-static
-   :lack-middleware-session))
+   :lack-middleware-session
+   :lack-session-store-redis))

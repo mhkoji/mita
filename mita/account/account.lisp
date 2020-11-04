@@ -6,13 +6,11 @@
            :find-account
            :find-account-by-id
            :create-account)
-  (:import-from :mita
-                :account-id)
   (:import-from :alexandria
                 :when-let))
 (in-package :mita.account)
 
-(defclass account (mita:account)
+(defclass account ()
   ((row :initarg :row)))
 
 (defmethod account-id ((a account))

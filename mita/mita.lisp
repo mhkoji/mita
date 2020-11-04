@@ -1,17 +1,10 @@
 (defpackage :mita
   (:use :cl)
-  (:export :account
-           :account-id
-           :gateway
+  (:export :gateway
            :gateway-db
            :with-gateway
            :create-thumbnail))
 (in-package :mita)
-
-(defclass account () ())
-
-(defgeneric account-id (account))
-
 
 (defgeneric gateway-db (gw))
 

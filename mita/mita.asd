@@ -13,11 +13,13 @@
    (:file "tag")
    (:file "tag-content")
 
-   (:file "postgres/db")
-
    (:file "dir")
    (:file "add-albums")
 
+   (:file "account/db")
+   (:file "account/account")
+
+   (:file "postgres/db")
    (:file "postgres/postgres"))
 
   :depends-on
@@ -25,6 +27,7 @@
    :local-time
    :uuid
    :postmodern
+   :cl-fad
 
    ;; for account
    :cl-bcrypt))

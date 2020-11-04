@@ -14,7 +14,9 @@
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
 (defun start (&key (port 5002)
-                   (root (system-relative-pathname "../mita-auth/"))
+                   (static-root
+                    (system-relative-pathname "../mita-auth/static/"))
+                   (session-store *session-store*)
                    (use-thread t)
                    (connector
                     (mita.postgres:make-connector
@@ -25,10 +27,9 @@
     (clack:stop *handler*))
   (setq *handler* (clack:clackup
                    (lack:builder
-                    (:static :path "/auth/static/"
-                             :root (merge-pathnames "static/" root))
+                    (:static :path "/auth/static/" :root static-root)
 
-                    (:session :store *session-store*)
+                    (:session :store session-store)
 
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.auth.ningle:route-auth

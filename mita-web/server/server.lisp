@@ -14,14 +14,16 @@
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
-(defun create-account (connector username password)
+(defun create-account (postgres-dir connector username password)
   (let ((account
          (mita.postgres:with-admin-gateway (gw connector)
            (mita.account:create-account gw username password))))
-    (mita.postgres:create-account-database account connector)
+    (mita.postgres:create-account-database postgres-dir account connector)
     account))
 
-(defun init-db (&key (connector *connector*)
+(defun init-db (&key (postgres-dir
+                      (system-relative-pathname "../postgres/"))
+                     (connector *connector*)
                      drop-p)
   (mita.postgres:with-admin-gateway (gw connector)
     (declare (ignore gw))
@@ -34,22 +36,23 @@
                   "GRANT ALL ON SCHEMA public TO public;"))))
   (mita.postgres:with-admin-gateway (gw connector)
     (declare (ignore gw))
-    (mita.account.postgres:create-tables))
-  (create-account connector "mita" "mita"))
+    (mita.postgres:create-account-tables postgres-dir))
+  (create-account postgres-dir connector "mita" "mita"))
 
 (defun start (&key (port 5001)
-                   (root (system-relative-pathname "../mita-web/"))
+                   (static-root
+                    (system-relative-pathname "../mita-web/static/"))
                    (use-thread t)
+                   (session-store mita.auth.server:*session-store*)
                    (connector *connector*))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler*
         (clack:clackup
          (lack:builder
-          (:static :path "/static/"
-                   :root (merge-pathnames "static/" root))
+          (:static :path "/static/" :root static-root)
 
-          (:session :store mita.auth.server:*session-store*)
+          (:session :store session-store)
 
           (mita.web.auth:make-middleware
            :login-url

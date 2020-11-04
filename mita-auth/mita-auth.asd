@@ -9,10 +9,11 @@
 
   :depends-on
   (:mita
-   :mita-account
+
    :ningle
    :cl-who
    :jsown
    :clack
    :lack
-   :lack-middleware-session))
+   :lack-middleware-session
+   :lack-session-store-redis))

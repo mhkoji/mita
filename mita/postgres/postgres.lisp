@@ -3,14 +3,15 @@
   (:export :make-connector
            :with-gateway
            :with-admin-gateway
-           :create-account-database))
+           :create-account-database
+           :create-account-tables))
 (in-package :mita.postgres)
 
 (defstruct connector user host port)
 
 (defun account-db-name (account)
   (let ((id-string (mita.id:to-string
-                    (mita:account-id account))))
+                    (mita.account:account-id account))))
     (format nil "account_~A"
             (string-downcase
              (cl-ppcre:regex-replace-all "-" id-string "_")))))
@@ -36,7 +37,11 @@
        (let ((,gw (make-instance 'mita:gateway :db ,g)))
          ,@body))))
 
-(defun create-account-database (account connector)
+(defun create-account-tables (postgres-dir)
+  (postmodern:execute-file
+   (merge-pathnames postgres-dir "./account-ddl.sql")))
+
+(defun create-account-database (postgres-dir account connector)
   (postmodern:with-connection (list "admin"
                                     (connector-user connector)
                                     ""
@@ -50,5 +55,4 @@
                                     (connector-host connector)
                                     :port (connector-port connector))
     (postmodern:execute-file
-     (asdf:system-relative-pathname (asdf:find-system :mita)
-                                    "./postgres/ddl.sql"))))
+     (merge-pathnames postgres-dir "./postgres/mita-ddl.sql"))))

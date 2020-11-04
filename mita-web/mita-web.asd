@@ -21,4 +21,4 @@
    :lack
    :lack-middleware-static
    :lack-middleware-session
-   :lack-session-store-redis))
+   :lack-session-store-dbi))

@@ -9,7 +9,15 @@
   (mita.auth.server:start
    :port 5002
    :static-root "/app-output/static/"
-   :session-store (lack.session.store.redis:make-redis-store)
+   :session-store (lack.session.store.dbi:make-dbi-store
+                   :connector (lambda ()
+                                (cl-dbi:connect-cached
+                                 :postgres
+                                 :database-name "admin"
+                                 :host "localhost"
+                                 :port 5432
+                                 :username "postgres"
+                                 :password "")))
    :connector (mita.postgres:make-connector
                :user "postgres"
                :host "localhost"

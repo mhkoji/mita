@@ -36,7 +36,9 @@
                   "GRANT ALL ON SCHEMA public TO public;"))))
   (mita.postgres:with-admin-gateway (gw connector)
     (declare (ignore gw))
-    (mita.postgres:create-account-tables postgres-dir))
+    (mita.postgres:create-account-tables postgres-dir)
+    (postmodern:execute-file
+     (merge-pathnames postgres-dir "./sessions-ddl.sql")))
   (create-account postgres-dir connector "mita" "mita"))
 
 (defun start (&key (port 5001)

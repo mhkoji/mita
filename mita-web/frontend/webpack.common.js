@@ -18,7 +18,6 @@ module.exports = {
     tags: './src/components/entries/tags.jsx',
     page: './src/components/entries/page.jsx',
     pages: './src/components/entries/pages.jsx',
-    login: './src/components/entries/login.jsx',
     album: './src/components/entries/album.jsx',
     albums: './src/components/entries/albums.jsx'
   },

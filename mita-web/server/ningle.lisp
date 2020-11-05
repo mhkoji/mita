@@ -109,10 +109,14 @@
                  (mita.web.server.jsown:url-for page))))))))
 
 (defun route-dir (app connector thumbnail-root content-root)
+  (setq content-root (namestring (cl-fad:pathname-as-file content-root)))
+  (setq thumbnail-root (namestring (cl-fad:pathname-as-file thumbnail-root)))
   (setf (ningle:route app "/dir/*")
         (lambda (params)
           (or (when-let ((path (cadr (assoc :splat params))))
-                (let ((full-path (merge-pathnames path content-root)))
+                (let ((full-path (parse-namestring
+                                  (concatenate 'string
+                                   content-root "/" path))))
                   (when (cl-fad:file-exists-p full-path)
                     (if (cl-fad:directory-pathname-p full-path)
                         (mita.web.server.html:dir
@@ -125,7 +129,9 @@
           (with-safe-json-response
             (with-gateway (gw connector)
               (when-let ((path (q params "path")))
-                (let ((full-path (merge-pathnames path content-root)))
+                (let ((full-path (parse-namestring
+                                  (concatenate 'string
+                                    content-root "/" path))))
                   (when (cl-fad:file-exists-p full-path)
                     (let ((dirs (mita.dir:list-dirs content-root full-path)))
                       (mita.add-albums:run gw dirs thumbnail-root))

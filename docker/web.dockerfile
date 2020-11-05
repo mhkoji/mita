@@ -15,6 +15,7 @@ FROM ubuntu:18.04 AS bin_builder
 RUN apt update && apt install -y \
     wget \
     sbcl \
+    imagemagick \
     ## for locale-gen
     locales
 

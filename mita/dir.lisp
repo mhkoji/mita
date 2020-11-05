@@ -7,13 +7,10 @@
            :file-dir-p
            :file-dir-list
            :as-file
-           :list-dirs
-           :*sort-fn*))
+           :list-dirs))
 (in-package :mita.dir)
 
 (defstruct file root full-path dir-p)
-
-(defvar *sort-fn* #'identity)
 
 (defun as-file (root path)
   (let ((dir-p (and (cl-fad:directory-pathname-p path) t)))
@@ -35,7 +32,7 @@
            (mapcar (lambda (p)
                      (as-file (file-root file) p))
                    (cl-fad:list-directory (file-full-path file)))))
-      (funcall *sort-fn* child-files))))
+      child-files)))
 
 (defun file-name (file)
   (let ((p (cl-fad:pathname-as-file (file-full-path file))))
@@ -46,12 +43,17 @@
                 (pathname-type p)))))
 
 (defun file-path (file)
-  (subtract-pathname (file-root file) (file-full-path file)))
+  (subtract-pathname (cl-fad:pathname-as-file
+                      (file-root file))
+                     (file-full-path file)))
 
 
 (defun list-dirs (root path)
-  (let ((sub-dirs
-         (remove-if-not #'cl-fad:directory-pathname-p
-                        (cl-fad:list-directory path))))
-    (mapcar (lambda (p) (as-file root p))
-            (cons path (alexandria:mappend #'list-dirs sub-dirs)))))
+  (when (cl-fad:directory-pathname-p path)
+    (let ((sub-dirs
+           (remove-if-not #'cl-fad:directory-pathname-p
+                          (cl-fad:list-directory path))))
+      (cons (as-file root path)
+            (alexandria:mappend (lambda (p)
+                                  (list-dirs root p))
+                                sub-dirs)))))

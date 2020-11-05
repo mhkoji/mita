@@ -1,20 +1,26 @@
 (defpackage :mita.add-albums
   (:use :cl :mita.dir)
-  (:export :run))
+  (:export :run
+           :*sort-fn*)
+  (:import-from :alexandria
+                :when-let))
 (in-package :mita.add-albums)
+
+(defvar *sort-fn* #'identity)
 
 (defun make-image (file)
   (mita.image:make-image
    :id (mita.id:gen-from-name (mita.dir:file-path file))
    :path (namestring (mita.dir:file-full-path file))))
 
-(defun make-thumbnail-path (thumbnail-dir source-path)
-  (format nil "~Athumbnail$~A"
-          thumbnail-dir
-          (cl-ppcre:regex-replace-all "/" source-path "$")))
+(defun make-thumbnail-path (thumbnail-dir file)
+  (format nil "~Athumbnail~A"
+          (cl-fad:pathname-as-directory thumbnail-dir)
+          (cl-ppcre:regex-replace-all
+           "/" (mita.dir:file-path file) "$")))
 
 (defun file-dir-list-contents-only (file)
-  (remove-if #'file-dir-p (file-dir-list file)))
+  (funcall *sort-fn* (remove-if #'file-dir-p (file-dir-list file))))
 
 (defun create-source (thumbnail-dir file)
   (mita.album:make-album-source
@@ -27,17 +33,18 @@
     (file-write-date (mita.dir:file-full-path file)))
    :thumbnail
    (alexandria:when-let ((file (car (file-dir-list-contents-only file))))
-     (let ((thumbnail-path (make-thumbnail-path
-                            thumbnail-dir
-                            (mita.dir:file-path file))))
+     (let ((thumbnail-path (make-thumbnail-path thumbnail-dir file)))
        (mita:create-thumbnail thumbnail-path
                               (mita.dir:file-full-path file))
        (make-image (mita.dir:as-file thumbnail-dir thumbnail-path))))))
 
 (defun run (gw dirs thumbnail-dir)
-  (let ((sources (mapcar (lambda (d)
-                           (create-source thumbnail-dir d))
-                         dirs)))
+  (setq dirs (remove-if (lambda (dir)
+                          (null (file-dir-list-contents-only dir)))
+                        dirs))
+  (when-let ((sources (mapcar (lambda (d)
+                                (create-source thumbnail-dir d))
+                              dirs)))
     (mita.album:delete-albums gw
      (mapcar #'mita.album:album-source-id sources))
     (mita.image:delete-images gw

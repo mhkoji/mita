@@ -15,7 +15,7 @@
           (mita.id:to-string-short (mita.page:page-id c))))
 
 (defmethod url-for ((c mita.dir:file))
-  (format nil "/dir/~A" (mita.dir:file-path c)))
+  (format nil "/dir~A" (mita.dir:file-path c)))
 
 
 (defmethod jsown:to-json ((obj mita.id:id))

@@ -5,6 +5,7 @@
            :route-view
            :route-image
            :route-album
+           :route-album-ext
            :route-auth)
   (:import-from :alexandria
                 :when-let
@@ -150,6 +151,16 @@
                         (mita.album:load-album-by-id gw album-id)))
                     (mita.web.server.html:album gw album))
                   +response-404+))))))
+
+(defun route-album-ext (app connector add-albums-opt)
+  (setf (ningle:route app "/album-ext/add-albums" :method :put)
+        (lambda (params)
+          (declare (ignore params))
+          (with-safe-json-response
+            (with-gateway (gw connector)
+              (apply #'mita.add-albums:run gw add-albums-opt)
+              :t)))))
+
 
 (defun route-view (app connector)
   (setf (ningle:route app "/view/album/:album-id")

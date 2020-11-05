@@ -45,6 +45,7 @@
                    (static-root
                     (system-relative-pathname "../mita-web/static/"))
                    (use-thread t)
+                   (add-albums-opt nil)
                    (session-store mita.auth.server:*session-store*)
                    (connector *connector*))
   (when *handler*
@@ -73,6 +74,9 @@
             (mita.web.server.ningle:route-view app connector)
             (mita.web.server.ningle:route-page app connector)
             (mita.web.server.ningle:route-tag app connector)
+            (when add-albums-opt
+              (mita.web.server.ningle:route-album-ext app connector
+                                                      add-albums-opt))
             app))
          :use-thread use-thread
          :port port)))

@@ -9,6 +9,7 @@
   (mita.web.server:start
    :port 5001
    :static-root "/app-output/static/"
+   :add-albums-opt '("/data/thumbnails/" "/data/albums/")
    :session-store (lack.session.store.dbi:make-dbi-store
                    :connector (lambda ()
                                 ;; https://github.com/fukamachi/lack/pull/30#issuecomment-418573441

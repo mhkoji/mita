@@ -23,4 +23,4 @@
                      (format nil "~A?redirect=~A"
                              login-url
                              (quri:url-encode (getf env :request-uri)))))
-                `(300 (:location ,location) nil))))))))
+                `(302 (:location ,location) nil))))))))

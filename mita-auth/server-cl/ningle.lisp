@@ -41,7 +41,7 @@
                 'mita.auth:lack-session-holder
                 :env (lack.request:request-env ningle:*request*))
                connector)
-              `(300 (:location ,top-url) nil)
+              `(302 (:location ,top-url) nil)
               (login-page))))
 
   (setf (ningle:route app "/auth/api/authenticate" :method :post)

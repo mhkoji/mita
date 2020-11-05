@@ -6,7 +6,8 @@
            :make-image
            :save-images
            :load-image
-           :load-images-by-ids))
+           :load-images-by-ids
+           :delete-images))
 (in-package :mita.image)
 
 (defstruct image id path)
@@ -20,4 +21,7 @@
 
 (defun load-image (gw image-id)
   (car (load-images-by-ids gw (list image-id))))
+
+(defun delete-images (gw image-ids)
+  (mita.db:image-delete (gateway-db gw) image-ids))
 

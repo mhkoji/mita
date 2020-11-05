@@ -196,6 +196,12 @@
                         (mita.image:image-path image)))
                 images)))
 
+(defmethod mita.db:image-delete ((db postgres)
+                                 (image-id-list list))
+  (when image-id-list
+    (delete-from db "images"
+     `(:where (:in "image_id" (:p ,image-id-list))))))
+
 
 (defmethod mita.db:page-image-insert ((db postgres)
                                       (page-id mita.id:id)

@@ -14,6 +14,7 @@
            :page-image-delete
            :image-insert
            :image-select-by-ids
+           :image-delete
            :make-album
            :album-id
            :album-name

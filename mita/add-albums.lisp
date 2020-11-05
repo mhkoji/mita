@@ -37,6 +37,8 @@
         (loop for dir in dirs
               for album in albums
               do (let ((images (mapcar #'make-image (dir-file-paths dir))))
+                   (mita.image:delete-images gw (mapcar #'mita.image:image-id
+                                                        images))
                    (mita.image:save-images gw images)
                    (mita.album:update-album-images gw album images))))))
   (values))

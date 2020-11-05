@@ -24,6 +24,8 @@ services:
     ports:
       - 5001:5001
     network_mode: host
+    volumes:
+      - ./data:/data/
 
   auth:
     build:

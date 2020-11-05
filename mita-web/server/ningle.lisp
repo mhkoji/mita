@@ -5,7 +5,7 @@
            :route-view
            :route-image
            :route-album
-           :route-album-ext
+           :route-dir
            :route-auth)
   (:import-from :alexandria
                 :when-let
@@ -106,9 +106,30 @@
             (let ((page (mita.page:create-page gw)))
               (jsown:new-js
                 ("redirect"
-                 (format nil "/pages/~A"
-                         (mita.id:to-string (mita.page:page-id page))))))))))
+                 (mita.web.server.jsown:url-for page))))))))
 
+(defun route-dir (app connector thumbnail-root content-root)
+  (setf (ningle:route app "/dir/*")
+        (lambda (params)
+          (or (when-let ((path (cadr (assoc :splat params))))
+                (let ((full-path (merge-pathnames path content-root)))
+                  (when (cl-fad:file-exists-p full-path)
+                    (if (cl-fad:directory-pathname-p full-path)
+                        (mita.web.server.html:dir
+                         (mita.dir:as-file content-root full-path))
+                        full-path))))
+              +response-404+)))
+
+  (setf (ningle:route app "/api/dir/add-albums" :method :post)
+        (lambda (params)
+          (with-safe-json-response
+            (with-gateway (gw connector)
+              (when-let ((path (q params "path")))
+                (let ((full-path (merge-pathnames path content-root)))
+                  (when (cl-fad:file-exists-p full-path)
+                    (let ((dirs (mita.dir:list-dirs content-root full-path)))
+                      (mita.add-albums:run gw dirs thumbnail-root))
+                    :t))))))))
 
 (defun route-image (app connector)
   (setf (ningle:route app "/images/:image-id")
@@ -151,16 +172,6 @@
                         (mita.album:load-album-by-id gw album-id)))
                     (mita.web.server.html:album gw album))
                   +response-404+))))))
-
-(defun route-album-ext (app connector add-albums-opt)
-  (setf (ningle:route app "/album-ext/add-albums" :method :put)
-        (lambda (params)
-          (declare (ignore params))
-          (with-safe-json-response
-            (with-gateway (gw connector)
-              (apply #'mita.add-albums:run gw add-albums-opt)
-              :t)))))
-
 
 (defun route-view (app connector)
   (setf (ningle:route app "/view/album/:album-id")

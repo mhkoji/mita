@@ -7,6 +7,10 @@ export function Tags() {
   return <i className="fas fa-tags" />;
 }
 
+export function Images() {
+  return <i className="fas fa-images" />;
+}
+
 export function Edit() {
   return <i className="fas fa-edit" />;
 }

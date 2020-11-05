@@ -1,31 +1,57 @@
 (defpackage :mita.dir
   (:use :cl)
-  (:export :dir-path
-           :dir-file-paths
-           :dir-write-date
-           :retrieve))
+  (:export :file
+           :file-name
+           :file-path
+           :file-full-path
+           :file-dir-p
+           :file-dir-list
+           :as-file
+           :list-dirs
+           :*sort-fn*))
 (in-package :mita.dir)
 
-(defstruct dir path file-paths write-date)
+(defstruct file root full-path dir-p)
 
-(defun files-and-subdirectories (dir)
-  (let ((files nil)
-        (subdirectories nil))
-    (dolist (child-path (cl-fad:list-directory dir))
-      (if (cl-fad:directory-pathname-p child-path)
-          (push child-path subdirectories)
-          (push (namestring child-path) files)))
-    (list (nreverse files) subdirectories)))
+(defvar *sort-fn* #'identity)
 
-(defun retrieve (root sort-paths-fn)
-  (destructuring-bind (files subdirs) (files-and-subdirectories root)
-    (let ((rest (alexandria:mappend (lambda (p)
-                                      (retrieve p sort-paths-fn))
-                                    subdirs)))
-      (if files
-          (cons (make-dir :path (namestring root)
-                          :file-paths (funcall sort-paths-fn
-                                               (mapcar #'namestring files))
-                          :write-date (file-write-date root))
-                rest)
-          rest))))
+(defun as-file (root path)
+  (let ((dir-p (and (cl-fad:directory-pathname-p path) t)))
+    (make-file :root root
+               :full-path path
+               :dir-p dir-p)))
+
+(defun subtract-pathname (root path)
+  (setq root (namestring root))
+  (setq path (namestring path))
+  (if (and (< (length root) (length path))
+           (string= root path :end2 (length root)))
+      (subseq path (length root))
+      path))
+
+(defun file-dir-list (file)
+  (when (file-dir-p file)
+    (let ((child-files
+           (mapcar (lambda (p)
+                     (as-file (file-root file) p))
+                   (cl-fad:list-directory (file-full-path file)))))
+      (funcall *sort-fn* child-files))))
+
+(defun file-name (file)
+  (let ((p (cl-fad:pathname-as-file (file-full-path file))))
+    (if (file-dir-p file)
+        (pathname-name p)
+        (format nil "~A.~A"
+                (pathname-name p)
+                (pathname-type p)))))
+
+(defun file-path (file)
+  (subtract-pathname (file-root file) (file-full-path file)))
+
+
+(defun list-dirs (root path)
+  (let ((sub-dirs
+         (remove-if-not #'cl-fad:directory-pathname-p
+                        (cl-fad:list-directory path))))
+    (mapcar (lambda (p) (as-file root p))
+            (cons path (alexandria:mappend #'list-dirs sub-dirs)))))

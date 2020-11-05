@@ -14,11 +14,6 @@
     :reader gateway-db)))
 
 
-(defun make-thumbnail-path (thumbnail-dir source-path)
-  (format nil "~Athumbnail$~A"
-          thumbnail-dir
-          (cl-ppcre:regex-replace-all "/" source-path "$")))
-
 ;; thumbnail
 (defun resize-image (target source x y)
   (let ((resize (format nil "~Ax~A" x y)))
@@ -33,13 +28,9 @@
                      :output t :error t)))
 
 
-(defun ensure-thumbnail-exists (thumbnail-path source-path)
+(defun create-thumbnail (thumbnail-path source-path)
   (setq source-path (namestring source-path))
   (setq thumbnail-path (namestring thumbnail-path))
   (unless (cl-fad:file-exists-p thumbnail-path)
     (resize-image thumbnail-path source-path 300 300))
   thumbnail-path)
-
-(defun create-thumbnail (thumbnail-dir source-path)
-  (ensure-thumbnail-exists (make-thumbnail-path thumbnail-dir source-path)
-                           source-path))

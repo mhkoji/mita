@@ -14,6 +14,10 @@
   (format nil "/pages/~A"
           (mita.id:to-string-short (mita.page:page-id c))))
 
+(defmethod url-for ((c mita.dir:file))
+  (format nil "/dir/~A" (mita.dir:file-path c)))
+
+
 (defmethod jsown:to-json ((obj mita.id:id))
   (jsown:to-json (mita.id:to-string-short obj)))
 
@@ -31,6 +35,12 @@
      ("id" (mita.tag:tag-id obj))
      ("name" (mita.tag:tag-name obj)))))
 
+(defmethod jsown:to-json ((obj mita.dir:file))
+  (jsown:to-json
+   (jsown:new-js
+     ("url" (url-for obj))
+     ("name" (mita.dir:file-name obj))
+     ("isDirectory" (mita.dir:file-dir-p obj)))))
 
 (defun as-content (c)
   (jsown:new-js

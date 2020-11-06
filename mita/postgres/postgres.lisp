@@ -4,7 +4,7 @@
            :with-gateway
            :with-admin-gateway
            :create-account-database
-           :create-account-tables))
+           :init))
 (in-package :mita.postgres)
 
 (defstruct connector user host port)
@@ -37,10 +37,6 @@
        (let ((,gw (make-instance 'mita:gateway :db ,g)))
          ,@body))))
 
-(defun create-account-tables (postgres-dir)
-  (postmodern:execute-file
-   (merge-pathnames postgres-dir "./account-ddl.sql")))
-
 (defun create-account-database (postgres-dir account connector)
   (postmodern:with-connection (list "admin"
                                     (connector-user connector)
@@ -56,3 +52,29 @@
                                     :port (connector-port connector))
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./postgres/mita-ddl.sql"))))
+
+
+(defun create-account (postgres-dir connector username password)
+  (let ((account
+         (with-admin-gateway (gw connector)
+           (mita.account:create-account gw username password))))
+    (create-account-database postgres-dir account connector)
+    account))
+
+(defun init (postgres-dir connector drop-p)
+  (with-admin-gateway (gw connector)
+    (declare (ignore gw))
+    (when drop-p
+      (mapc (lambda (q)
+              (postmodern:execute q))
+            (list "DROP SCHEMA public CASCADE;"
+                  "CREATE SCHEMA public;"
+                  "GRANT ALL ON SCHEMA public TO postgres;"
+                  "GRANT ALL ON SCHEMA public TO public;"))))
+  (with-admin-gateway (gw connector)
+    (declare (ignore gw))
+    (postmodern:execute-file
+     (merge-pathnames postgres-dir "./account-ddl.sql"))
+    (postmodern:execute-file
+     (merge-pathnames postgres-dir "./sessions-ddl.sql")))
+  (create-account postgres-dir connector "mita" "mita"))

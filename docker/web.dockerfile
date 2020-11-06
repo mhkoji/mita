@@ -51,8 +51,18 @@ RUN cd /root/quicklisp/local-projects && \
          --load "/root/quicklisp/setup.lisp" \
          --load "/app/docker/web.lisp" \
          --eval "(sb-ext:save-lisp-and-die \
-                  \"/app-output/web.bin\" \
+                  \"/app-output/web\" \
                   :executable t \
-                  :toplevel #'mita.docker.web:main)"
+                  :toplevel #'mita.docker.web:start)"  && \
+    sbcl --noinform \
+         --no-userinit \
+         --no-sysinit \
+         --non-interactive \
+         --load "/root/quicklisp/setup.lisp" \
+         --load "/app/docker/web.lisp" \
+         --eval "(sb-ext:save-lisp-and-die \
+                  \"/app-output/web-init\" \
+                  :executable t \
+                  :toplevel #'mita.docker.web:init)"
 
-ENTRYPOINT ["/app-output/web.bin"]
+ENTRYPOINT ["/app-output/web"]

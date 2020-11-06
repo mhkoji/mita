@@ -1,10 +1,10 @@
 (defpackage :mita.docker.web
   (:use :cl)
-  (:export :main))
+  (:export :start :init))
 (in-package :mita.docker.web)
 (ql:quickload :mita-web :silent t)
 
-(defun main (&rest argv)
+(defun start (&rest argv)
   (declare (ignore argv))
   (mita.web.server:start
    :port 5001
@@ -27,8 +27,11 @@
                :port 5432)
    :use-thread nil))
 
-#+sbcl
-(progn
-  (export 'sbcl)
-  (defun sbcl ()
-    (main (cdr sb-ext:*posix-argv*))))
+(defun init (&rest argv)
+  (declare (ignore argv))
+  (mita.web.server:init-db
+   :connector (mita.postgres:make-connector
+               :user "postgres"
+               :host "localhost"
+               :port 5432)
+   :postgres-dir "/app/postgres/"))

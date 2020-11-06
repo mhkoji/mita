@@ -11,13 +11,14 @@
    :static-root "/app-output/static/"
    :session-store (lack.session.store.dbi:make-dbi-store
                    :connector (lambda ()
-                                (cl-dbi:connect-cached
+                                (cl-dbi:connect
                                  :postgres
                                  :database-name "admin"
                                  :host "localhost"
                                  :port 5432
                                  :username "postgres"
-                                 :password "")))
+                                 :password ""))
+                   :disconnector #'cl-dbi:disconnect)
    :connector (mita.postgres:make-connector
                :user "postgres"
                :host "localhost"

@@ -74,7 +74,5 @@
   (with-admin-gateway (gw connector)
     (declare (ignore gw))
     (postmodern:execute-file
-     (merge-pathnames postgres-dir "./account-ddl.sql"))
-    (postmodern:execute-file
-     (merge-pathnames postgres-dir "./sessions-ddl.sql")))
+     (merge-pathnames postgres-dir "./account-ddl.sql")))
   (create-account postgres-dir connector "mita" "mita"))

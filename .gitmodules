@@ -10,9 +10,3 @@
 [submodule "ironclad"]
 	path = ironclad
 	url = https://github.com/sharplispers/ironclad
-[submodule "lack"]
-	path = lack
-	url = https://github.com/fukamachi/lack
-[submodule "cl-dbi"]
-	path = cl-dbi
-	url = https://github.com/fukamachi/cl-dbi

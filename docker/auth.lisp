@@ -9,24 +9,9 @@
   (mita.auth.server:start
    :port 5002
    :static-root "/app-output/static/"
-   :session-store (lack.session.store.dbi:make-dbi-store
-                   :connector (lambda ()
-                                (cl-dbi:connect
-                                 :postgres
-                                 :database-name "admin"
-                                 :host "localhost"
-                                 :port 5432
-                                 :username "postgres"
-                                 :password ""))
-                   :disconnector #'cl-dbi:disconnect)
+   :session-store (mita.auth.session:make-redis-store)
    :connector (mita.postgres:make-connector
                :user "postgres"
                :host "localhost"
                :port 5432)
    :use-thread nil))
-
-#+sbcl
-(progn
-  (export 'sbcl)
-  (defun sbcl ()
-    (main (cdr sb-ext:*posix-argv*))))

@@ -17,6 +17,11 @@ services:
       - 5000:5000
     network_mode: host
 
+  redis:
+    image: redis:6.0.3
+    ports:
+      - 6379:6379
+
   web:
     build:
       context: ./

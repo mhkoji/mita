@@ -4,6 +4,7 @@
 
   :components
   ((:file "auth")
+   (:file "session")
    (:file "ningle")
    (:file "server"))
 
@@ -12,8 +13,9 @@
 
    :ningle
    :cl-who
+   :cl-redis
+   :marshal
    :jsown
    :clack
    :lack
-   :lack-middleware-session
-   :lack-session-store-dbi))
+   :lack-middleware-session))

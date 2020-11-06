@@ -25,7 +25,8 @@
           (jsown:new-js
             ("success" t)
             ("value" (progn ,@body))))
-       (error ()
+       (error (e)
+         (warn "Error: ~A" e)
          (setf (lack.response:response-status ningle:*response*)
                500)
          (jsown:to-json

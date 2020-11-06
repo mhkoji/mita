@@ -1,19 +1,17 @@
 # mita
 An application written in Common Lisp
 
-## Setup
+## Start the Server
 
 ```shell
 git submodule update --init
 
-docker-compose up
-```
+docker-compose build
 
 ## Start the Server
+docker-compose up
 
-```
-CL-USER> (ql:quickload :mita-auth)
-CL-USER> (mita.web.server:init-db)
-CL-USER> (mita.web.server:start)
-CL-USER> (mita.auth.server:start)
+## init
+docker run --net=host --entrypoint "" -it mita_web /bin/bash
+root@xxxx:/# ./app-output/web-init
 ```

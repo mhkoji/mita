@@ -8,10 +8,11 @@
 
 (defvar *sort-fn* #'identity)
 
-(defun make-image (file)
+(defun make-image (source file)
   (mita.image:make-image
+   :source source
    :id (mita.id:gen-from-name (mita.dir:file-path file))
-   :path (namestring (mita.dir:file-full-path file))))
+   :path (namestring (mita.dir:file-path file))))
 
 (defun make-thumbnail-path (thumbnail-dir file)
   (format nil "~Athumbnail~A"
@@ -36,7 +37,8 @@
      (let ((thumbnail-path (make-thumbnail-path thumbnail-dir file)))
        (mita:create-thumbnail thumbnail-path
                               (mita.dir:file-full-path file))
-       (make-image (mita.dir:as-file thumbnail-dir thumbnail-path))))))
+       (make-image mita.image:+source-thumbnail+
+                   (mita.dir:as-file thumbnail-dir thumbnail-path))))))
 
 (defun run (gw dirs thumbnail-dir)
   (setq dirs (remove-if (lambda (dir)
@@ -57,8 +59,10 @@
       ;; Update images
       (loop for dir in dirs
             for album in albums
-            do (let ((images (mapcar #'make-image
-                                     (file-dir-list-contents-only dir))))
+            do (let ((images
+                      (mapcar (lambda (p)
+                                (make-image mita.image:+source-content+ p))
+                              (file-dir-list-contents-only dir))))
                  (mita.image:delete-images gw (mapcar #'mita.image:image-id
                                                       images))
                  (mita.image:save-images gw images)

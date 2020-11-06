@@ -137,7 +137,7 @@
                       (mita.add-albums:run gw dirs thumbnail-root))
                     :t))))))))
 
-(defun route-image (app connector)
+(defun route-image (app connector thumbnail-root content-root)
   (setf (ningle:route app "/images/:image-id")
         (lambda (params)
           (with-safe-html-response
@@ -147,9 +147,18 @@
                         (mita.id:parse-short-or-nil
                            (cdr (assoc :image-id params))))
                        (image
-                        (mita.image:load-image gw image-id)))
-                    (cl-fad:pathname-as-file
-                     (mita.image:image-path image)))
+                        (mita.image:load-image gw image-id))
+                       (root
+                        (cadr (assoc
+                               (mita.image:image-source image)
+                               (list (list mita.image:+source-content+
+                                           content-root)
+                                     (list mita.image:+source-thumbnail+
+                                           thumbnail-root))))))
+                    (parse-namestring
+                     (format nil "~A/~A"
+                             root
+                             (mita.image:image-path image))))
                   +response-404+))))))
 
 (defun route-album (app connector)

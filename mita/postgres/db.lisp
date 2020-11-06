@@ -177,7 +177,8 @@
 (defun parse-image (row)
   (mita.image:make-image
    :id (mita.id:parse (first row))
-   :path (second row)))
+   :source (alexandria:make-keyword (second row))
+   :path (third row)))
 
 (defmethod mita.db:image-select-by-ids ((db postgres)
                                         (image-id-list list))
@@ -189,10 +190,11 @@
 
 (defmethod mita.db:image-insert ((db postgres)
                                  (images list))
-  (insert-into db "images" '("image_id" "path")
+  (insert-into db "images" '("image_id" "source" "path")
                (mapcar
                 (lambda (image)
                   (list (mita.id:to-string (mita.image:image-id image))
+                        (symbol-name (mita.image:image-source image))
                         (mita.image:image-path image)))
                 images)))
 

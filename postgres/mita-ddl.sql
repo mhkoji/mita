@@ -11,6 +11,7 @@ CREATE TABLE page_text (
 
 CREATE TABLE images (
   image_id char(36) NOT NULL PRIMARY KEY,
+  source varchar(64) NOT NULL,
   path varchar(256) NOT NULL
 );
 

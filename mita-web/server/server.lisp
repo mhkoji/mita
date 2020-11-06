@@ -53,14 +53,14 @@
              (mita.auth:is-authenticated-p session-holder connector)))
 
           (let ((app (make-instance 'ningle:<app>)))
-            (mita.web.server.ningle:route-image app connector)
             (mita.web.server.ningle:route-album app connector)
             (mita.web.server.ningle:route-view app connector)
             (mita.web.server.ningle:route-page app connector)
             (mita.web.server.ningle:route-tag app connector)
-            (when (and thumbnail-root content-root)
-              (mita.web.server.ningle:route-dir
-               app connector thumbnail-root content-root))
+            (mita.web.server.ningle:route-image
+             app connector thumbnail-root content-root)
+            (mita.web.server.ningle:route-dir
+             app connector thumbnail-root content-root)
             app))
          :use-thread use-thread
          :port port)))

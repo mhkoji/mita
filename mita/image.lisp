@@ -2,15 +2,22 @@
   (:use :cl :mita)
   (:export :image
            :image-id
+           :image-source
            :image-path
            :make-image
            :save-images
            :load-image
            :load-images-by-ids
-           :delete-images))
+           :delete-images
+           :+source-content+
+           :+source-thumbnail+))
 (in-package :mita.image)
 
-(defstruct image id path)
+(defvar +source-content+ :content)
+
+(defvar +source-thumbnail+ :thumbnail)
+
+(defstruct image id source path)
 
 (defun save-images (gw images)
   (mita.db:image-insert (gateway-db gw) images)

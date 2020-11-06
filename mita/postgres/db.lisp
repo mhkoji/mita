@@ -351,10 +351,12 @@
 
 (defmethod mita.db:tag-insert ((db postgres)
                                (tag mita.tag:tag))
-  (insert-into db "tags" '("tag_id" "name")
+  (insert-into db "tags" '("tag_id" "name" "added_on")
                (list
                 (list (mita.id:to-string (mita.tag:tag-id tag))
-                      (mita.tag:tag-name tag)))))
+                      (mita.tag:tag-name tag)
+                      (local-time:to-rfc3339-timestring
+                       (local-time:now))))))
 
 (defmethod mita.db:tag-update ((db postgres)
                                (tag-id mita.id:id)
@@ -397,24 +399,30 @@
 (defmethod mita.db:tag-content-insert ((db postgres)
                                        (tag-id mita.id:id)
                                        (contents list))
-  (insert-into db "tag_content" '("tag_id" "content_type" "content_id")
-               (mapcar
-                (lambda (content)
-                  (list (mita.id:to-string tag-id)
-                        (string (mita.db:content-type content))
-                        (mita.id:to-string (mita.db:content-id content))))
-                contents)))
+  (let ((added-on (local-time:to-rfc3339-timestring (local-time:now))))
+    (insert-into db "tag_content"
+                 '("tag_id" "content_type" "content_id" "added_on")
+                 (mapcar
+                  (lambda (content)
+                    (list (mita.id:to-string tag-id)
+                          (string (mita.db:content-type content))
+                          (mita.id:to-string (mita.db:content-id content))
+                          added-on))
+                  contents))))
 
 (defmethod mita.db:tag-content-insert-by-tags ((db postgres)
                                                (tag-id-list list)
                                                (content mita.db:content))
-  (insert-into db "tag_content" '("tag_id" "content_type" "content_id")
-               (mapcar
-                (lambda (tag-id)
-                  (list (mita.id:to-string tag-id)
-                        (string (mita.db:content-type content))
-                        (mita.id:to-string (mita.db:content-id content))))
-                tag-id-list)))
+  (let ((added-on (local-time:to-rfc3339-timestring (local-time:now))))
+    (insert-into db "tag_content"
+                 '("tag_id" "content_type" "content_id" "added_on")
+                 (mapcar
+                  (lambda (tag-id)
+                    (list (mita.id:to-string tag-id)
+                          (string (mita.db:content-type content))
+                          (mita.id:to-string (mita.db:content-id content))
+                          added-on))
+                  tag-id-list))))
 
 
 ;;; account

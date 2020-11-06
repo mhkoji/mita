@@ -51,7 +51,7 @@
                                     (connector-host connector)
                                     :port (connector-port connector))
     (postmodern:execute-file
-     (merge-pathnames postgres-dir "./postgres/mita-ddl.sql"))))
+     (merge-pathnames postgres-dir "./mita-ddl.sql"))))
 
 
 (defun create-account (postgres-dir connector username password)

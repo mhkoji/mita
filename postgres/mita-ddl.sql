@@ -44,12 +44,14 @@ CREATE TABLE album_image (
 
 CREATE TABLE tags (
   tag_id char(36) NOT NULL PRIMARY KEY,
-  name varchar(256) NOT NULL
+  name varchar(256) NOT NULL,
+  added_on timestamp with time zone NOT NULL
 );
 
 CREATE TABLE tag_content (
   tag_id char(36) NOT NULL,
   content_type varchar(64) NOT NULL,
   content_id char(36) NOT NULL,
+  added_on timestamp with time zone NOT NULL,
   FOREIGN KEY (tag_id) REFERENCES tags(tag_id)
 );

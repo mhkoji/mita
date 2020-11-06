@@ -14,10 +14,11 @@
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
-(defun init-db (&key (connector *connector*)
+(defun init-db (&key (drop-p nil)
+                     (connector *connector*)
                      (postgres-dir
                       (system-relative-pathname "../postgres/")))
-  (mita.postgres:init postgres-dir connector nil))
+  (mita.postgres:init postgres-dir connector drop-p))
 
 (defun start (&key (port 5001)
                    (static-root

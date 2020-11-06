@@ -12,6 +12,14 @@
 
 (defstruct file root full-path dir-p)
 
+;; /home/xxx/
+;;          + a/
+;;             + b/
+;;
+;; (as-file "/home/xxx/" "/home/xxx/a/b/")
+;; -> full-path:  /home/xxx/a/b/
+;; -> path:                /a/b/
+
 (defun as-file (root path)
   (let ((dir-p (and (cl-fad:directory-pathname-p path) t)))
     (make-file :root root

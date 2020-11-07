@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 
 import * as apis from '../../apis'
@@ -13,80 +13,128 @@ const Api = {
 
 function TagList(props) {
   const itemEls = props.tags.map((tag) => {
+    let className = 'list-group-item list-group-item-action';
+    if (tag === props.selectedTag) {
+      className += ' active';
+    }
     return (
-        <button
-            key={tag.id + '-' + tag.name}
-            className="list-group-item list-group-item-action"
-            onClick={() => props.onClickTag(tag)} >
+        <a key={tag.id + '-' + tag.name}
+           className={className}
+           href={'tags#' + tag.id}>
           {tag.name}
-        </button>
+        </a>
     );
   });
   return (<div className="list-group">{itemEls}</div>);
 }
 
-function App() {
-  const [tags, setTags] = useState([]);
-  const [tag, setTag] = useState(null);
-  const [editingTagName, setEditingTagName] = useState(null);
+class App extends React.Component {
+  constructor(props) {
+    super(props);
 
-  useEffect(() => {
-    Api.tags().then((tagList) => setTags(tagList));
-  }, []);
+    this.handleChangeTagName = this.handleChangeTagName.bind(this);
+    this.handleSaveTagName = this.handleSaveTagName.bind(this);
+    this.selectTagByHash = this.selectTagByHash.bind(this);
 
-  function handleSelectTag(tag) {
-    setTag(tag);
-    setEditingTagName(null);
+    this.state = {
+      tags: [],
+      tag: null,
+      editingTagName: null
+    };
   }
 
-  function handleChangeTagName(newName) {
-    setEditingTagName(newName);
-  }
-
-  function handleSaveTagName() {
-    Api.putTagName(tag.id, editingTagName).then(() => {
-      Api.tags().then((tagList) => {
-        setTags(tagList);
-        if (tag) {
-          setTag(tagList.find((t) => t.id === tag.id) || null);
-        }
-        setEditingTagName(null);
+  selectTag(tag) {
+    this.setState((state) => {
+      return Object.assign({}, state, {
+        tag: tag,
+        editingTagName: null
       });
     });
   }
 
-  return (
-      <div>
-        <Header />
-        <main>
-          <div className="p-md-5">
-            <div className="container">
-              <div className="row">
-                <div className="col-4">
-                  <TagList
-                      tags={tags}
-                      onClickTag={handleSelectTag} />
-                </div>
-                <div className="col-8">
-                  {
-                    tag && (
-                        <Tag
-                            tag={tag}
-                            api={Api}
-                            editing={{
-                              name: editingTagName,
-                              onChange: handleChangeTagName,
-                              onSave: handleSaveTagName
-                            }} />
-                    )
-                  }
+  selectTagByHash() {
+    if (!location.hash.startsWith('#')) {
+      return;
+    }
+    const tagId = location.hash.substring(1);
+    const tag = this.state.tags.find((t) => t.id === tagId);
+    if (tag) {
+      this.selectTag(tag);
+    }
+  }
+
+  handleChangeTagName(newName) {
+    this.setState((state) => {
+      return Object.assign({}, state, {
+        editingTagName: newName
+      });
+    });
+  }
+
+  handleSaveTagName() {
+    Api.putTagName(this.state.tag.id, this.state.editingTagName).then(() => {
+      Api.tags().then((tagList) => {
+        this.setState((state) => {
+          return {
+            tags: tagList,
+            tag: tagList.find((t) => t.id === state.tag.id) || null,
+            editingTagName: null,
+          };
+        });
+      });
+    });
+  }
+
+  componentDidMount() {
+    Api.tags().then((tagList) => {
+      this.setState((state) => {
+        return Object.assign({}, state, {
+          tags: tagList,
+        });
+      });
+    }).then(this.selectTagByHash);
+    window.addEventListener('hashchange', this.selectTagByHash);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('hashchange', this.selectTagByHash);
+  }
+
+  render() {
+    const { tags, tag, editingTagName } = this.state;
+    return (
+        <div>
+          <Header/>
+          <main>
+            <div className="p-md-5">
+              <div className="container">
+                <div className="row">
+                  <div className="col-4">
+                    <TagList
+                        tags={tags}
+                        selectedTag={tag} />
+                  </div>
+                  <div className="col-8">
+                    {
+                      tag && (
+                          <Tag
+                              tag={tag}
+                              api={Api}
+                              editing={{
+                                name: editingTagName,
+                                onChange: this.handleChangeTagName,
+                                onSave: this.handleSaveTagName
+                              }}/>
+                      )
+                    }
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
-  );
+          </main>
+        </div>
+    );
+  }
 }
 
 ReactDOM.render(

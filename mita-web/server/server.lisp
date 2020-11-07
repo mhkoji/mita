@@ -24,6 +24,7 @@
                    (static-root
                     (system-relative-pathname "../mita-web/static/"))
                    (use-thread t)
+                   (serve-image t)
                    (thumbnail-root
                     ;; Call directory-exists-p to resolve symlink beforehand
                     (cl-fad:directory-exists-p
@@ -58,8 +59,9 @@
             (mita.web.server.ningle:route-view app connector)
             (mita.web.server.ningle:route-page app connector)
             (mita.web.server.ningle:route-tag app connector)
-            (mita.web.server.ningle:route-image
-             app connector thumbnail-root content-root)
+            (when serve-image
+              (mita.web.server.ningle:route-image
+               app connector thumbnail-root content-root))
             (mita.web.server.ningle:route-dir
              app connector thumbnail-root content-root)
             app))

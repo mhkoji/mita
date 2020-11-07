@@ -23,7 +23,8 @@
                    thumbnail-root
                    (session-store mita.auth.server:*session-store*)
                    connector)
-  (net.aserve:start :port port :host "0.0.0.0")
+  (net.aserve:start :port port
+                    :host "0.0.0.0")
   (net.aserve:publish-prefix
    :prefix "/images/"
    :function

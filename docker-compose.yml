@@ -32,6 +32,16 @@ services:
     volumes:
       - ./data:/data/
 
+  web-aserve:
+    build:
+      context: ./
+      dockerfile: ./docker/web-aserve.dockerfile
+    ports:
+      - 5003:5003
+    network_mode: host
+    volumes:
+      - ./data:/data/
+
   auth:
     build:
       context: ./

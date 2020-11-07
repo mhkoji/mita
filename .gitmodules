@@ -1,12 +1,12 @@
 [submodule "uax-15"]
-	path = uax-15
+	path = third-party/uax-15
 	url = https://github.com/sabracrolleton/uax-15
 [submodule "Postmodern"]
-	path = Postmodern
+	path = third-party/Postmodern
 	url = https://github.com/marijnh/Postmodern
 [submodule "cl-bcrypt"]
-	path = cl-bcrypt
+	path = third-party/cl-bcrypt
 	url = https://github.com/dnaeon/cl-bcrypt.git
 [submodule "ironclad"]
-	path = ironclad
+	path = third-party/ironclad
 	url = https://github.com/sharplispers/ironclad

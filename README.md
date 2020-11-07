@@ -12,5 +12,5 @@ docker-compose build
 docker-compose up
 
 ## init
-docker run --net=host --entrypoint "" -it mita_web /app-output/web-init
+docker run --net=host --entrypoint "" -it mita_web /app/web-init
 ```

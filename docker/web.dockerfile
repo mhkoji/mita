@@ -21,7 +21,6 @@ RUN apt update && apt install -y \
 
 RUN mkdir \
     /app \
-    /app-output \
     /build
 
 RUN cd /build && \
@@ -39,19 +38,17 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-COPY --from=static_builder /static /app-output/static
+COPY --from=static_builder /static /app/static
 
-COPY . /app
-RUN cd /root/quicklisp/local-projects && \
-    ln -s /app/ && \
-    sbcl --noinform \
+COPY . /root/quicklisp/local-projects/mita
+RUN sbcl --noinform \
          --no-userinit \
          --no-sysinit \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
-         --load "/app/docker/web.lisp" \
+         --load "/root/quicklisp/local-projects/mita/docker/web.lisp" \
          --eval "(sb-ext:save-lisp-and-die \
-                  \"/app-output/web\" \
+                  \"/app/web\" \
                   :executable t \
                   :toplevel #'mita.docker.web:start)"  && \
     sbcl --noinform \
@@ -59,10 +56,10 @@ RUN cd /root/quicklisp/local-projects && \
          --no-sysinit \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
-         --load "/app/docker/web.lisp" \
+         --load "/root/quicklisp/local-projects/mita/docker/web.lisp" \
          --eval "(sb-ext:save-lisp-and-die \
-                  \"/app-output/web-init\" \
+                  \"/app/web-init\" \
                   :executable t \
                   :toplevel #'mita.docker.web:init)"
 
-ENTRYPOINT ["/app-output/web"]
+ENTRYPOINT ["/app/web"]

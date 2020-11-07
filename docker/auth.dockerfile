@@ -10,7 +10,7 @@ RUN npm install && npm run build
 
 ################################################
 
-FROM ubuntu:18.04 AS bin_builder
+FROM ubuntu:18.04
 
 RUN apt update && apt install -y \
     wget \
@@ -20,7 +20,6 @@ RUN apt update && apt install -y \
 
 RUN mkdir \
     /app \
-    /app-output \
     /build
 
 RUN cd /build && \
@@ -38,20 +37,29 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-COPY --from=static_builder /static /app-output/static
+COPY third-party /root/quicklisp/local-projects
 
-COPY . /app
-RUN cd /root/quicklisp/local-projects && \
-    ln -s /app/ && \
-    sbcl --noinform \
+## Cache fasls so that docker builds become faster from next time,
+## even though not recommended.
+RUN sbcl --noinform \
          --no-userinit \
          --no-sysinit \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
-         --load "/app/docker/auth.lisp" \
+         --eval "(ql:quickload '(:uax-15 :postmodern :ironclad :cl-bcrypt))"
+
+COPY --from=static_builder /static /app/static
+
+COPY . /root/quicklisp/local-projects/mita
+RUN sbcl --noinform \
+         --no-userinit \
+         --no-sysinit \
+         --non-interactive \
+         --load "/root/quicklisp/setup.lisp" \
+         --load "/root/quicklisp/local-projects/mita/docker/auth.lisp" \
          --eval "(sb-ext:save-lisp-and-die \
-                  \"/app-output/auth.bin\" \
+                  \"/app/auth.bin\" \
                   :executable t \
                   :toplevel #'mita.docker.auth:main)"
 
-ENTRYPOINT ["/app-output/auth.bin"]
+ENTRYPOINT ["/app/auth.bin"]

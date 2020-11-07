@@ -5,12 +5,13 @@ import { Edit } from '../fa';
 import Contents from './contents';
 
 function StatefulContents(props) {
-  const [state, setState] = useState({
-    type: 'loading',
-    value: null
-  });
+  const [state, setState] = useState({});
 
   useEffect(() => {
+    setState({
+      type: 'loading',
+      value: null
+    });
     props.api.tagContents(props.tagId).then((contents) => {
       setState({
         type: 'loaded',

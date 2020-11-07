@@ -15,7 +15,6 @@ FROM ubuntu:18.04 AS bin_builder
 RUN apt update && apt install -y \
     wget \
     sbcl \
-    imagemagick \
     ## for locale-gen
     locales
 
@@ -41,7 +40,8 @@ ENV LC_ALL en_US.UTF-8
 COPY --from=static_builder /static /app/static
 
 COPY . /root/quicklisp/local-projects/mita
-RUN sbcl --noinform \
+RUN apt install -y imagemagick && \
+    sbcl --noinform \
          --no-userinit \
          --no-sysinit \
          --non-interactive \

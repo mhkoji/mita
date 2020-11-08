@@ -15,6 +15,6 @@ module.exports = merge(common, {
   performance: {
     // Suppress warnings in size limits
     maxEntrypointSize: 2048000,
-    maxAssetSize: 1024000
+    maxAssetSize: 2048000
   }
 });

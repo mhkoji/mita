@@ -93,13 +93,16 @@
                    cond-string)
            values)))
 
-(defun select-from (db column-names table-name cond)
+(defun select-from (db column-names table-name cond &key order-by)
   (destructuring-bind (cond-string values) (parse-clause cond)
     (query db
-           (format nil "SELECT ~A FROM ~A ~A"
-                   column-names
-                   table-name
-                   cond-string)
+           (with-output-to-string (s)
+             (format s "SELECT ~A FROM ~A ~A"
+                     column-names
+                     table-name
+                     cond-string)
+             (when order-by
+               (format s "ORDER BY ~A" order-by)))
            values)))
 
 (defun single (row-parser select-result)
@@ -347,7 +350,8 @@
                    (:p ,(mapcar #'mita.id:to-string tag-id-list)))))))
 
 (defmethod mita.db:tag-select ((db postgres))
-  (mapcar #'parse-tag (query db "SELECT * FROM tags" nil)))
+  (mapcar #'parse-tag
+          (query db "SELECT * FROM tags ORDER BY added_on" nil)))
 
 (defmethod mita.db:tag-insert ((db postgres)
                                (tag mita.tag:tag))
@@ -382,7 +386,8 @@
              :id (mita.id:parse (first row))
              :type (alexandria:make-keyword (second row))))
           (select-from db "content_id, content_type" "tag_content"
-           `(:where (:= "tag_id" (:p ,(mita.id:to-string tag-id)))))))
+           `(:where (:= "tag_id" (:p ,(mita.id:to-string tag-id))))
+           :order-by "added_on")))
 
 (defmethod mita.db:tag-content-select-tags ((db postgres)
                                             (content-id mita.id:id))

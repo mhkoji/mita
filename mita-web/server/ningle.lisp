@@ -132,7 +132,7 @@
               (when-let ((path (q params "path")))
                 (let ((full-path (parse-namestring
                                   (concatenate 'string
-                                    content-root "/" path))))
+                                   content-root "/" path))))
                   (when (cl-fad:file-exists-p full-path)
                     (let ((dirs (mita.dir:list-dirs content-root full-path)))
                       (mita.add-albums:run gw dirs thumbnail-root))

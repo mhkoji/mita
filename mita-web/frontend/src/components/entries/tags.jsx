@@ -61,6 +61,7 @@ class App extends React.Component {
     if (tag) {
       this.selectTag(tag);
     }
+    return tag;
   }
 
   handleChangeTagName(newName) {
@@ -92,7 +93,14 @@ class App extends React.Component {
           tags: tagList,
         });
       });
-    }).then(this.selectTagByHash);
+    }).then(() => {
+      if (this.selectTagByHash()) {
+        return;
+      }
+      if (0 < this.state.tags.length) {
+        this.selectTag(this.state.tags[0]);
+      }
+    });
     window.addEventListener('hashchange', this.selectTagByHash);
   }
 

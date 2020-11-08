@@ -8,7 +8,7 @@
   (declare (ignore argv))
   (mita.auth.server:start
    :port 5002
-   :static-root "/app-output/static/"
+   :static-root "/app/static/"
    :session-store (mita.auth.session:make-redis-store)
    :connector (mita.postgres:make-connector
                :user "postgres"

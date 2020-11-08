@@ -17,7 +17,7 @@
   (declare (ignore argv))
   (mita.web.server:start
    :port 5001
-   :static-root "/app-output/static/"
+   :static-root "/app/static/"
    :content-root "/data/albums/"
    :thumbnail-root "/data/thumbnails/"
    :session-store (mita.auth.session:make-redis-store)

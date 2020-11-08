@@ -37,10 +37,10 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-COPY third-party /root/quicklisp/local-projects
 
 ## Cache fasls so that docker builds become faster from next time,
 ## even though not recommended.
+COPY third-party /root/quicklisp/local-projects
 RUN sbcl --noinform \
          --no-userinit \
          --no-sysinit \

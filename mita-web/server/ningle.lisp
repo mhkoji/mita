@@ -3,6 +3,7 @@
   (:export :route-tag
            :route-page
            :route-view
+           :route-home
            :route-image
            :route-album
            :route-dir
@@ -204,6 +205,12 @@
                      (mita.album:album-images gw album)))
                   +response-404+))))))
 
+(defun route-home (app)
+  (setf (ningle:route app "/")
+        (lambda (params)
+          (declare (ignore params))
+          (with-safe-html-response
+            (mita.web.server.html:home)))))
 
 (defun route-tag (app connector)
   (setf (ningle:route app "/tags")

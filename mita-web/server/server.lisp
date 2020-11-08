@@ -59,6 +59,7 @@
             (mita.web.server.ningle:route-view app connector)
             (mita.web.server.ningle:route-page app connector)
             (mita.web.server.ningle:route-tag app connector)
+            (mita.web.server.ningle:route-home app)
             (when serve-image
               (mita.web.server.ningle:route-image
                app connector thumbnail-root content-root))

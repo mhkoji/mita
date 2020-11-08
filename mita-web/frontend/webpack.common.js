@@ -15,6 +15,7 @@ module.exports = {
 
   entry: {
     view: './src/components/entries/view.jsx',
+    home: './src/components/entries/home.jsx',
     tags: './src/components/entries/tags.jsx',
     dir: './src/components/entries/dir.jsx',
     page: './src/components/entries/page.jsx',

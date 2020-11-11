@@ -44,4 +44,4 @@
                :user "postgres"
                :host "localhost"
                :port 5432)
-   :postgres-dir "/app/postgres/"))
+   :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))

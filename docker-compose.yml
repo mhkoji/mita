@@ -2,13 +2,12 @@ version: '3.7'
 
 services:
   postgres:
-    image: postgres
+    image: postgres:13.0
     environment:
       - POSTGRES_DB=admin
       - POSTGRES_HOST_AUTH_METHOD=trust
     expose:
       - 5432
-#    network_mode: host
 
   nginx:
     image: nginx

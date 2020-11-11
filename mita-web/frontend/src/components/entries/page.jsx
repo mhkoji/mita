@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 
 function ImageList(props) {
-  const imageEls = props.imageUrls.map((url, index) => {
+  const imageEls = props.images.map((image) => {
     return (
-        <img key={index} src={url} />
+        <img key={image.id} alt={image.id} src={image.url} />
     );
   });
   return <div>{imageEls}</div>;
@@ -12,7 +12,7 @@ function ImageList(props) {
 
 function App () {
   const pageId = window['$mita']['page']['page-id'];
-  const imageUrls = window['$mita']['page']['image-urls'];
+  const images = window['$mita']['page']['images'];
   const [text, setText] = useState(window['$mita']['page']['text']);
   function handleChangeText(evt) {
     setText(evt.target.value);
@@ -47,7 +47,7 @@ function App () {
         Save
       </button>
       {savingStatusEl}
-      <ImageList imageUrls={imageUrls} />
+      <ImageList images={images} />
     </div>
   );
 }

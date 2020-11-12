@@ -111,8 +111,6 @@
                  (mita.web.server.jsown:url-for page))))))))
 
 (defun route-dir (app connector thumbnail-root content-root)
-  (setq content-root (namestring (cl-fad:pathname-as-file content-root)))
-  (setq thumbnail-root (namestring (cl-fad:pathname-as-file thumbnail-root)))
   (setf (ningle:route app "/dir/*")
         (lambda (params)
           (or (when-let ((path (cadr (assoc :splat params))))

@@ -66,5 +66,7 @@
             (mita.web.server.ningle:route-dir
              app connector thumbnail-root content-root)
             app))
+         ;; hunchentoot accepts nil as address, which meansthe server accepts connections from all IP addresses.
+         :address nil
          :use-thread use-thread
          :port port)))

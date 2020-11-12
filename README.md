@@ -11,6 +11,6 @@ docker-compose build
 ## Start the Server
 docker-compose up
 
-## init
-docker run --net=host --entrypoint "" -it mita_web /app/web-init
+## Init
+docker run --network=mita_default --entrypoint "" -it mita_web /app/web-init
 ```

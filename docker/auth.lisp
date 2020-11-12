@@ -9,9 +9,9 @@
   (mita.auth.server:start
    :port 5002
    :static-root "/app/static/"
-   :session-store (mita.auth.session:make-redis-store)
+   :session-store (mita.auth.session:make-redis-store :host "redis")
    :connector (mita.postgres:make-connector
                :user "postgres"
-               :host "localhost"
+               :host "postgres"
                :port 5432)
    :use-thread nil))

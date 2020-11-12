@@ -1,34 +1,33 @@
 version: '3.7'
 
 services:
-  db-postgres:
+  postgres:
     image: postgres
     environment:
       - POSTGRES_DB=admin
       - POSTGRES_HOST_AUTH_METHOD=trust
-    ports:
-      - 5432:5432
+    expose:
+      - 5432
+#    network_mode: host
 
-  lb-nginx:
+  nginx:
     image: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     ports:
       - 5000:5000
-    network_mode: host
 
   redis:
     image: redis:6.0.3
-    ports:
-      - 6379:6379
+    expose:
+      - 6379
 
   web:
     build:
       context: ./
       dockerfile: ./docker/web.dockerfile
-    ports:
-      - 5001:5001
-    network_mode: host
+    expose:
+      - 5001
     volumes:
       - ./data:/data/
 
@@ -36,9 +35,8 @@ services:
     build:
       context: ./
       dockerfile: ./docker/web-aserve.dockerfile
-    ports:
-      - 5003:5003
-    network_mode: host
+    expose:
+      - 5003
     volumes:
       - ./data:/data/
 
@@ -46,6 +44,9 @@ services:
     build:
       context: ./
       dockerfile: ./docker/auth.dockerfile
-    ports:
-      - 5002:5002
-    network_mode: host
+    expose:
+      - 5002
+
+networks:
+  default:
+    driver: bridge

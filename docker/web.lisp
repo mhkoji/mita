@@ -10,8 +10,13 @@
 (defvar *connector*
   (mita.postgres:make-connector
    :user "postgres"
-   :host "localhost"
+   :host "postgres"
    :port 5432))
+
+(defvar *sesson-store*
+  (mita.auth.session:make-redis-store
+   :host "redis"))
+
 
 (defun start (&rest argv)
   (declare (ignore argv))
@@ -20,7 +25,7 @@
    :static-root "/app/static/"
    :content-root "/data/albums/"
    :thumbnail-root "/data/thumbnails/"
-   :session-store (mita.auth.session:make-redis-store)
+   :session-store *sesson-store*
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
    ;; Thus we use aserve instead.
    :serve-image nil
@@ -33,15 +38,12 @@
    :port 5003
    :content-root "/data/albums/"
    :thumbnail-root "/data/thumbnails/"
-   :session-store (mita.auth.session:make-redis-store)
+   :session-store *sesson-store*
    :connector *connector*)
   (loop do (sleep 1000)))
 
 (defun init (&rest argv)
   (declare (ignore argv))
   (mita.web.server:init-db
-   :connector (mita.postgres:make-connector
-               :user "postgres"
-               :host "localhost"
-               :port 5432)
+   :connector *connector*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))

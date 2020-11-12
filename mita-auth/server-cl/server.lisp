@@ -35,5 +35,6 @@
                       (mita.auth.ningle:route-auth
                        app connector :top-url "/albums")
                       app))
+                   :address nil
                    :use-thread use-thread
                    :port port)))

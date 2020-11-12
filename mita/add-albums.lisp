@@ -35,7 +35,7 @@
    :thumbnail
    (alexandria:when-let ((file (car (file-dir-list-contents-only file))))
      (let ((thumbnail-path (make-thumbnail-path thumbnail-dir file)))
-       (mita:create-thumbnail thumbnail-path
+       (mita.thumbnail:create thumbnail-path
                               (mita.dir:file-full-path file))
        (make-image mita.image:+source-thumbnail+
                    (mita.dir:as-file thumbnail-dir thumbnail-path))))))

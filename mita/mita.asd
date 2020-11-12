@@ -14,6 +14,7 @@
    (:file "tag-content")
 
    (:file "dir")
+   (:file "thumbnail")
    (:file "add-albums")
 
    (:file "account/db")

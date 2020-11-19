@@ -51,12 +51,12 @@
 	    (alexandria:mappend
 	     (lambda (a)
 	       (mita.album:album-images gw a))
-	     (mapcar (lambda (source)
-		       ;; TODO: too many db accesses
-		       (mita.album:load-album-by-id
-			gw
-			(mita.album:album-source-id source)))
-		     sources))))
+	     ;; TODO: too many db accesses
+	     (remove nil (mapcar (lambda (source)
+				   (mita.album:load-album-by-id
+				    gw
+				    (mita.album:album-source-id source)))
+				 sources)))))
       (mita.album:delete-albums gw
        (mapcar #'mita.album:album-source-id sources))
       (mita.image:delete-images gw

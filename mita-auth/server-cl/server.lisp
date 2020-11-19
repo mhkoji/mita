@@ -37,4 +37,5 @@
                       app))
                    :address nil
                    :use-thread use-thread
+		   :debug nil
                    :port port)))

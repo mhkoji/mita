@@ -68,5 +68,8 @@
             app))
          ;; hunchentoot accepts nil as address, which meansthe server accepts connections from all IP addresses.
          :address nil
+	 ;; Don't have to invoke a debugger. No one can take care of it.
+	 ;; setq after clackup because clackup set the var to T.
+	 :debug nil
          :use-thread use-thread
          :port port)))

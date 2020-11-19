@@ -66,7 +66,7 @@
             (mita.web.server.ningle:route-dir
              app connector thumbnail-root content-root)
             app))
-         ;; hunchentoot accepts nil as address, which meansthe server accepts connections from all IP addresses.
+         ;; hunchentoot accepts nil as address, which means the server accepts connections from all IP addresses.
          :address nil
 	 ;; Don't have to invoke a debugger. No one can take care of it.
 	 ;; setq after clackup because clackup set the var to T.

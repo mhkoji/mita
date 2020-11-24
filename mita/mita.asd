@@ -5,7 +5,6 @@
   :components
   ((:file "id")
    (:file "db")
-   (:file "mita")
    (:file "image")
    (:file "page")
    (:file "album")

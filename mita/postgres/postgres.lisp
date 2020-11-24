@@ -1,8 +1,8 @@
 (defpackage :mita.postgres
   (:use :cl)
   (:export :make-connector
-           :with-gateway
-           :with-admin-gateway
+           :with-db
+           :with-admin-db
            :create-account-database
            :init))
 (in-package :mita.postgres)
@@ -16,26 +16,21 @@
             (string-downcase
              (cl-ppcre:regex-replace-all "-" id-string "_")))))
 
-(defmacro with-gateway ((gw account connector) &body body)
-  (let ((g (gensym)))
-    `(mita.postgres.db:with-transaction
-         (,g :database (account-db-name ,account)
-             :user     (connector-user ,connector)
-             :host     (connector-host ,connector)
-             :port     (connector-port ,connector))
-       (let ((,gw (make-instance 'mita:gateway :db ,g)))
-         ,@body))))
+(defmacro with-db ((db account connector) &body body)
+  `(mita.postgres.db:with-transaction
+       (,db :database (account-db-name ,account)
+            :user     (connector-user ,connector)
+            :host     (connector-host ,connector)
+            :port     (connector-port ,connector))
+     ,@body))
 
-
-(defmacro with-admin-gateway ((gw connector) &body body)
-  (let ((g (gensym)))
-    `(mita.postgres.db:with-transaction
-         (,g :database "admin"
-             :user     (connector-user ,connector)
-             :host     (connector-host ,connector)
-             :port     (connector-port ,connector))
-       (let ((,gw (make-instance 'mita:gateway :db ,g)))
-         ,@body))))
+(defmacro with-admin-db ((db connector) &body body)
+  `(mita.postgres.db:with-transaction
+       (,db :database "admin"
+            :user     (connector-user ,connector)
+            :host     (connector-host ,connector)
+            :port     (connector-port ,connector))
+     ,@body))
 
 (defun create-account-database (postgres-dir account connector)
   (postmodern:with-connection (list "admin"
@@ -56,14 +51,14 @@
 
 (defun create-account (postgres-dir connector username password)
   (let ((account
-         (with-admin-gateway (gw connector)
-           (mita.account:create-account gw username password))))
+         (with-admin-db (db connector)
+           (mita.account:create-account db username password))))
     (create-account-database postgres-dir account connector)
     account))
 
 (defun init (postgres-dir connector drop-p)
-  (with-admin-gateway (gw connector)
-    (declare (ignore gw))
+  (with-admin-db (db connector)
+    (declare (ignore db))
     (when drop-p
       (mapc (lambda (q)
               (postmodern:execute q))
@@ -71,8 +66,8 @@
                   "CREATE SCHEMA public;"
                   "GRANT ALL ON SCHEMA public TO postgres;"
                   "GRANT ALL ON SCHEMA public TO public;"))))
-  (with-admin-gateway (gw connector)
-    (declare (ignore gw))
+  (with-admin-db (db connector)
+    (declare (ignore db))
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./account-ddl.sql")))
   (create-account postgres-dir connector "mita" "mita"))

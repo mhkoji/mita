@@ -25,14 +25,14 @@
   (let ((session (get-session session-holder)))
     (when-let* ((id-str (gethash *session-account-id-key* session))
                 (account-id (mita.id:parse-or-nil id-str)))
-      (mita.postgres:with-admin-gateway (gw connector)
-        (mita.account:find-account-by-id gw account-id)))))
+      (mita.postgres:with-admin-db (db connector)
+        (mita.account:find-account-by-id db account-id)))))
 
 (defun find-account (connector username password)
   (when (and username password)
-    (mita.postgres:with-admin-gateway (gw connector)
+    (mita.postgres:with-admin-db (db connector)
       (mita.account:find-account-with-password-checked
-       gw username password))))
+       db username password))))
 
 (defun authenticate (session-holder connector username password)
   (when-let ((account (find-account connector username password)))

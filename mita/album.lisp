@@ -1,5 +1,5 @@
 (defpackage :mita.album
-  (:use :cl :mita)
+  (:use :cl)
   (:export :album
            :album-id
            :album-name
@@ -38,83 +38,77 @@
 (defmethod album-name ((album album))
   (mita.db:album-name (album-album-row album)))
 
-(defun load-albums-in (gateway album-id-list)
-  (let ((db (gateway-db gateway)))
-    (when-let ((album-rows (mita.db:album-select db album-id-list)))
-      (let ((id->args (make-hash-table :test #'equal)))
-        (dolist (album-row album-rows)
-          (let ((album-id (mita.db:album-id album-row)))
-            (setf (gethash (mita.id:to-string album-id) id->args)
-                  (list :album-row album-row))))
-        (let ((id->image
-               (make-hash-table :test #'equal))
-              (album-thumbnail-image-row-list
-               (mita.db:album-thumbnail-image-select db album-id-list)))
-          (dolist (image (mita.image:load-images-by-ids
-                          gateway
-                          (mapcar #'mita.db:album-thumbnail-image-image-id
-                                  album-thumbnail-image-row-list)))
-            (setf (gethash (mita.id:to-string
-                            (mita.image:image-id image))
-                           id->image)
-                  image))
-          (dolist (row album-thumbnail-image-row-list)
-            (let* ((album-id
-                    (mita.db:album-thumbnail-image-album-id row))
-                   (image-id
-                    (mita.db:album-thumbnail-image-image-id row))
-                   (image
-                    (gethash (mita.id:to-string image-id) id->image)))
-              (alexandria:appendf (gethash (mita.id:to-string album-id)
-                                           id->args)
-                                  (list :thumbnail image)))))
-        (mapcar (lambda (id)
-                  (let ((args (gethash (mita.id:to-string id) id->args)))
-                    (apply #'make-instance 'album args)))
-                album-id-list)))))
+(defun load-albums-in (db album-id-list)
+  (when-let ((album-rows (mita.db:album-select db album-id-list)))
+    (let ((id->args (make-hash-table :test #'equal)))
+      (dolist (album-row album-rows)
+        (let ((album-id (mita.db:album-id album-row)))
+          (setf (gethash (mita.id:to-string album-id) id->args)
+                (list :album-row album-row))))
+      (let ((id->image
+             (make-hash-table :test #'equal))
+            (album-thumbnail-image-row-list
+             (mita.db:album-thumbnail-image-select db album-id-list)))
+        (dolist (image (mita.image:load-images-by-ids
+                        db
+                        (mapcar #'mita.db:album-thumbnail-image-image-id
+                                album-thumbnail-image-row-list)))
+          (setf (gethash (mita.id:to-string
+                          (mita.image:image-id image))
+                         id->image)
+                image))
+        (dolist (row album-thumbnail-image-row-list)
+          (let* ((album-id
+                  (mita.db:album-thumbnail-image-album-id row))
+                 (image-id
+                  (mita.db:album-thumbnail-image-image-id row))
+                 (image
+                  (gethash (mita.id:to-string image-id) id->image)))
+            (alexandria:appendf (gethash (mita.id:to-string album-id)
+                                         id->args)
+                                (list :thumbnail image)))))
+      (mapcar (lambda (id)
+                (let ((args (gethash (mita.id:to-string id) id->args)))
+                  (apply #'make-instance 'album args)))
+              album-id-list))))
 
-(defun load-albums (gateway offset limit)
-  (let ((ids (mita.db:album-select-album-ids (gateway-db gateway)
-                                             offset
-                                             limit)))
-    (load-albums-in gateway ids)))
+(defun load-albums (db offset limit)
+  (let ((ids (mita.db:album-select-album-ids db offset limit)))
+    (load-albums-in db ids)))
 
-(defun load-album-by-id (gateway album-id)
-  (car (load-albums-in gateway (list album-id))))
+(defun load-album-by-id (db album-id)
+  (car (load-albums-in db (list album-id))))
 
 
-(defun delete-albums (gateway album-id-list)
-  (let ((db (gateway-db gateway)))
-    (mita.db:album-thumbnail-image-delete db album-id-list)
-    (mita.db:album-image-delete db album-id-list)
-    (mita.db:album-delete db album-id-list)))
+(defun delete-albums (db album-id-list)
+  (mita.db:album-thumbnail-image-delete db album-id-list)
+  (mita.db:album-image-delete db album-id-list)
+  (mita.db:album-delete db album-id-list))
 
 (defstruct album-source id name created-on thumbnail)
 
-(defun create-albums (gateway sources)
-  (let ((db (gateway-db gateway)))
-    (mita.db:album-insert db
-     (mapcar (lambda (s)
-               (mita.db:make-album
-                :id (album-source-id s)
-                :name (album-source-name s)
-                :created-on (album-source-created-on s)))
-             sources))
-    (mita.db:album-thumbnail-image-insert db
-     (mapcar (lambda (s)
-               (mita.db:make-album-thumbnail-image
-                :album-id (album-source-id s)
-                :image-id (mita.image:image-id
-                           (album-source-thumbnail s))))
-             (remove-if-not #'album-source-thumbnail sources))))
-  (load-albums-in gateway (mapcar #'album-source-id sources)))
+(defun create-albums (db sources)
+  (mita.db:album-insert db
+   (mapcar (lambda (s)
+             (mita.db:make-album
+              :id (album-source-id s)
+              :name (album-source-name s)
+              :created-on (album-source-created-on s)))
+           sources))
+  (mita.db:album-thumbnail-image-insert db
+   (mapcar (lambda (s)
+             (mita.db:make-album-thumbnail-image
+              :album-id (album-source-id s)
+              :image-id (mita.image:image-id
+                         (album-source-thumbnail s))))
+           (remove-if-not #'album-source-thumbnail sources)))
+  (load-albums-in db (mapcar #'album-source-id sources)))
 
 
-(defun album-images (gateway album)
-  (mita.db:album-image-select (gateway-db gateway) (album-id album)))
+(defun album-images (db album)
+  (mita.db:album-image-select db (album-id album)))
 
-(defun update-album-images (gateway album images)
-  (let ((db (gateway-db gateway)))
-    (mita.db:album-image-delete db (list (album-id album)))
-    (mita.db:album-image-insert db (album-id album) images))
+(defun update-album-images (db album images)
+  (mita.db:album-image-delete db (list (album-id album)))
+  (mita.db:album-image-insert db (album-id album) images)
   (values))

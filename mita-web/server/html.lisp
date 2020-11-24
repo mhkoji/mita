@@ -54,7 +54,7 @@
       :type "text/javascript"
       :src "/static/gen/pages.bundle.js"))))
 
-(defun page (gw page)
+(defun page (db page)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -69,8 +69,8 @@
             ("page"
              (jsown:new-js
                ("page-id" (mita.page:page-id page))
-               ("text"    (mita.page:page-text gw page))
-               ("images"  (mita.page:page-images gw page))))))))))
+               ("text"    (mita.page:page-text db page))
+               ("images"  (mita.page:page-images db page))))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"
@@ -81,7 +81,7 @@
       :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
       :crossorigin "anonymous"))))
 
-(defun albums (gw offset limit)
+(defun albums (db offset limit)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -103,7 +103,7 @@
                          ("name" (mita.album:album-name album))
                          ("thumbnail" (or (mita.album:album-thumbnail album)
                                           :null))))
-                     (mita.album:load-albums gw offset limit)))
+                     (mita.album:load-albums db offset limit)))
             ("pager"
              (let ((format-str "/albums?offset=~A&limit=~A"))
                (jsown:new-js
@@ -121,7 +121,7 @@
       :type "text/javascript"
       :src "/static/gen/albums.bundle.js"))));
 
-(defun album (gw album)
+(defun album (db album)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -139,7 +139,7 @@
              (jsown:new-js
                ("id"     (mita.album:album-id album))
                ("name"   (mita.album:album-name album))
-               ("images" (mita.album:album-images gw album))))))))))
+               ("images" (mita.album:album-images db album))))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script
@@ -201,7 +201,7 @@
       :src "/static/gen/dir.bundle.js"))))
 
 
-(defun tags (gw)
+(defun tags (db)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -215,7 +215,7 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("tags" (mita.tag:load-tags gw))))))))
+            ("tags" (mita.tag:load-tags db))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"

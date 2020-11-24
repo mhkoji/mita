@@ -1,5 +1,5 @@
 (defpackage :mita.image
-  (:use :cl :mita)
+  (:use :cl)
   (:export :image
            :image-id
            :image-source
@@ -19,16 +19,15 @@
 
 (defstruct image id source path)
 
-(defun save-images (gw images)
-  (mita.db:image-insert (gateway-db gw) images)
+(defun save-images (db images)
+  (mita.db:image-insert db images)
   (values))
 
-(defun load-images-by-ids (gw image-ids)
-  (mita.db:image-select-by-ids (gateway-db gw) image-ids))
+(defun load-images-by-ids (db image-ids)
+  (mita.db:image-select-by-ids db image-ids))
 
-(defun load-image (gw image-id)
-  (car (load-images-by-ids gw (list image-id))))
+(defun load-image (db image-id)
+  (car (load-images-by-ids db (list image-id))))
 
-(defun delete-images (gw image-ids)
-  (mita.db:image-delete (gateway-db gw) image-ids))
-
+(defun delete-images (db image-ids)
+  (mita.db:image-delete db image-ids))

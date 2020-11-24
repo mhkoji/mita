@@ -35,13 +35,13 @@
                                  :req req
                                  :session-store session-store)
                   connector)))
-       (mita.postgres:with-gateway (gw account connector)
+       (mita.postgres:with-db (db account connector)
           (when-let* ((image-id
                        (mita.id:parse-short-or-nil
                         (subseq (puri:uri-path (net.aserve:request-uri req))
                                 8))) ;; (length "/images/")
                       (image
-                       (mita.image:load-image gw image-id))
+                       (mita.image:load-image db image-id))
                       (root
                        (cadr (assoc
                               (mita.image:image-source image)

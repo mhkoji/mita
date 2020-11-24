@@ -16,10 +16,10 @@
     `(let ((,g-conn (postmodern:connect ,database ,user "" ,host
                                         :port ,port)))
        (unwind-protect
-            (let ((,db (make-instance 'postgres :conn ,g-conn))
-                  (postmodern:*database* ,g-conn))
+            (let ((postmodern:*database* ,g-conn))
               (postmodern:with-transaction (nil :serializable)
-                ,@body))
+                (let ((,db (make-instance 'postgres :conn ,g-conn)))
+                  ,@body)))
          (postmodern:disconnect ,g-conn)))))
 
 (defun query (db query-string args)

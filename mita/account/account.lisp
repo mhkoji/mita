@@ -16,33 +16,27 @@
 (defmethod account-id ((a account))
   (mita.account.db:account-id (slot-value a 'row)))
 
-(defun find-account-with-password-checked (gw username password)
-  (when-let ((row (mita.account.db:account-select
-                   (mita:gateway-db gw)
-                   username)))
+(defun find-account-with-password-checked (db username password)
+  (when-let ((row (mita.account.db:account-select db username)))
     (when (mita.account.db:hashed-password-matches-p
            (mita.account.db:account-hashed-password row)
            password)
       (make-instance 'account :row row))))
 
-(defun find-account (gw username)
-  (when-let ((row (mita.account.db:account-select
-                   (mita:gateway-db gw)
-                   username)))
+(defun find-account (db username)
+  (when-let ((row (mita.account.db:account-select db username)))
     (make-instance 'account :row row)))
 
-(defun find-account-by-id (gw account-id)
+(defun find-account-by-id (db account-id)
   (when-let ((row (mita.account.db:account-select-by-id
-                   (mita:gateway-db gw)
-                   account-id)))
+                   db account-id)))
     (make-instance 'account :row row)))
 
-(defun create-account (gw username password)
-  (let ((db (mita:gateway-db gw))
-        (account (mita.account.db:make-account
+(defun create-account (db username password)
+  (let ((account (mita.account.db:make-account
                   :id (mita.id:gen)
                   :username username
                   :hashed-password
                   (mita.account.db:hash-password password))))
     (mita.account.db:account-insert db account))
-  (find-account gw username))
+  (find-account db username))

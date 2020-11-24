@@ -12,7 +12,7 @@
 (defmethod content-name ((album mita.album:album))
   (mita.album:album-name album))
 
-(defmethod load-contents ((loader gateway)
+(defmethod load-contents ((loader mita.db:db)
                           (type (eql :album))
                           (content-id-list list))
   (mita.album::load-albums-in loader content-id-list))
@@ -29,7 +29,7 @@
 (defmethod content-name ((page mita.page:page))
   nil)
 
-(defmethod load-contents ((loader gateway)
+(defmethod load-contents ((loader mita.db:db)
                           (type (eql :page))
                           (content-id-list list))
   ;; TODO: too many db accesses

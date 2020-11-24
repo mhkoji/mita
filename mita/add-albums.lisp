@@ -40,7 +40,7 @@
        (make-image mita.image:+source-thumbnail+
                    (mita.dir:as-file thumbnail-dir thumbnail-path))))))
 
-(defun run (gw dirs thumbnail-dir)
+(defun run (db dirs thumbnail-dir)
   (setq dirs (remove-if (lambda (dir)
                           (null (file-dir-list-contents-only dir)))
                         dirs))
@@ -48,26 +48,26 @@
                                 (create-source thumbnail-dir d))
                               dirs)))
     (let ((album-images
-	    (alexandria:mappend
-	     (lambda (a)
-	       (mita.album:album-images gw a))
-	     ;; TODO: too many db accesses
-	     (remove nil (mapcar (lambda (source)
-				   (mita.album:load-album-by-id
-				    gw
-				    (mita.album:album-source-id source)))
-				 sources)))))
-      (mita.album:delete-albums gw
+           (alexandria:mappend
+            (lambda (a)
+              (mita.album:album-images db a))
+            ;; TODO: too many db accesses
+            (remove nil (mapcar (lambda (source)
+                                  (mita.album:load-album-by-id
+                                   db
+                                   (mita.album:album-source-id source)))
+                                sources)))))
+      (mita.album:delete-albums db
        (mapcar #'mita.album:album-source-id sources))
-      (mita.image:delete-images gw
+      (mita.image:delete-images db
        (mapcar #'mita.image:image-id
 	       (remove nil (mapcar #'mita.album:album-source-thumbnail
 				   sources))))
-      (mita.image:delete-images gw
+      (mita.image:delete-images db
        (mapcar #'mita.image:image-id album-images)))
-    (mita.image:save-images gw
+    (mita.image:save-images db
      (remove nil (mapcar #'mita.album:album-source-thumbnail sources)))
-    (let ((albums (mita.album:create-albums gw sources)))
+    (let ((albums (mita.album:create-albums db sources)))
       ;; Update images
       (loop for dir in dirs
             for album in albums
@@ -75,8 +75,8 @@
                       (mapcar (lambda (p)
                                 (make-image mita.image:+source-content+ p))
                               (file-dir-list-contents-only dir))))
-                 (mita.image:delete-images gw (mapcar #'mita.image:image-id
+                 (mita.image:delete-images db (mapcar #'mita.image:image-id
                                                       images))
-                 (mita.image:save-images gw images)
-                 (mita.album:update-album-images gw album images)))))
+                 (mita.image:save-images db images)
+                 (mita.album:update-album-images db album images)))))
   (values))

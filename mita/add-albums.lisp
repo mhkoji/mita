@@ -47,26 +47,31 @@
   (when-let ((sources (mapcar (lambda (d)
                                 (create-source thumbnail-dir d))
                               dirs)))
-    (let ((album-images
-           (alexandria:mappend
-            (lambda (a)
-              (mita.album:album-images db a))
-            ;; TODO: too many db accesses
-            (remove nil (mapcar (lambda (source)
-                                  (mita.album:load-album-by-id
-                                   db
-                                   (mita.album:album-source-id source)))
-                                sources)))))
-      (mita.album:delete-albums db
-       (mapcar #'mita.album:album-source-id sources))
-      (mita.image:delete-images db
-       (mapcar #'mita.image:image-id
-	       (remove nil (mapcar #'mita.album:album-source-thumbnail
-				   sources))))
-      (mita.image:delete-images db
+    (let* ((existing-albums
+            (mita.album:load-albums-in
+             db
+             (mapcar #'mita.album:album-source-id sources)))
+           (album-images
+            (alexandria:mappend (lambda (a)
+                                  (mita.album:album-images db a))
+                                existing-albums))
+           (album-thumbnails
+            (remove nil (mapcar #'mita.album:album-thumbnail
+                                existing-albums))))
+      (mita.album:delete-albums
+       db
+       (mapcar #'mita.album:album-id existing-albums))
+      (mita.image:delete-images
+       db
+       (mapcar #'mita.image:image-id album-thumbnails))
+      (mita.image:delete-images
+       db
        (mapcar #'mita.image:image-id album-images)))
-    (mita.image:save-images db
-     (remove nil (mapcar #'mita.album:album-source-thumbnail sources)))
+
+    (mita.image:save-images
+     db
+     (remove nil (mapcar #'mita.album:album-source-thumbnail
+                         sources)))
     (let ((albums (mita.album:create-albums db sources)))
       ;; Update images
       (loop for dir in dirs

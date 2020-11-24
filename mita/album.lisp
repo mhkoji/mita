@@ -8,6 +8,7 @@
            :create-albums
            :load-album-by-id
            :load-albums
+           :load-albums-in
            :album-images
            :update-album-images
            :make-album-source

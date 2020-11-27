@@ -65,13 +65,17 @@
                   (mita.db:album-thumbnail-image-image-id row))
                  (image
                   (gethash (mita.id:to-string image-id) id->image)))
-            (alexandria:appendf (gethash (mita.id:to-string album-id)
-                                         id->args)
-                                (list :thumbnail image)))))
-      (mapcar (lambda (id)
-                (let ((args (gethash (mita.id:to-string id) id->args)))
-                  (apply #'make-instance 'album args)))
-              album-id-list))))
+            (when (gethash (mita.id:to-string album-id) id->args)
+              (alexandria:appendf (gethash (mita.id:to-string album-id)
+                                           id->args)
+                                  (list :thumbnail image))))))
+      (remove nil
+              (mapcar
+               (lambda (id)
+                 (when-let ((args (gethash (mita.id:to-string id)
+                                           id->args)))
+                   (apply #'make-instance 'album args)))
+               album-id-list)))))
 
 (defun load-albums (db offset limit)
   (let ((ids (mita.db:album-select-album-ids db offset limit)))

@@ -3,7 +3,7 @@
   (:import-from :alexandria
                 :when-let)
   (:export :postgres
-           :with-transaction))
+           :with-db))
 (in-package :mita.postgres.db)
 
 (defclass postgres (mita.db:db)
@@ -11,7 +11,7 @@
     :initarg :conn
     :reader postgres-conn)))
 
-(defmacro with-transaction ((db spec) &body body)
+(defmacro with-db ((db spec) &body body)
   `(postmodern:with-connection ,spec
      (postmodern:with-transaction (nil :serializable)
        (let ((,db (make-instance 'postgres :conn postmodern:*database*)))

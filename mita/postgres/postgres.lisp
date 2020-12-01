@@ -24,15 +24,12 @@
              (cl-ppcre:regex-replace-all "-" id-string "_")))))
 
 (defmacro with-db ((db account connector) &body body)
-  `(mita.postgres.db:with-transaction (,db (connector->spec
-                                            (account-db-name ,account)
-                                            ,connector))
+  `(mita.postgres.db:with-db (,db (connector->spec (account-db-name ,account)
+                                                   ,connector))
      ,@body))
 
 (defmacro with-admin-db ((db connector) &body body)
-  `(mita.postgres.db:with-transaction (,db (connector->spec
-                                            "admin"
-                                            ,connector))
+  `(mita.postgres.db:with-db (,db (connector->spec "admin" ,connector))
      ,@body))
 
 (defun create-account-database (postgres-dir account connector)

@@ -11,16 +11,11 @@
     :initarg :conn
     :reader postgres-conn)))
 
-(defmacro with-transaction ((db &key database user host port) &body body)
-  (let ((g-conn (gensym)))
-    `(let ((,g-conn (postmodern:connect ,database ,user "" ,host
-                                        :port ,port)))
-       (unwind-protect
-            (let ((postmodern:*database* ,g-conn))
-              (postmodern:with-transaction (nil :serializable)
-                (let ((,db (make-instance 'postgres :conn ,g-conn)))
-                  ,@body)))
-         (postmodern:disconnect ,g-conn)))))
+(defmacro with-transaction ((db spec) &body body)
+  `(postmodern:with-connection ,spec
+     (postmodern:with-transaction (nil :serializable)
+       (let ((,db (make-instance 'postgres :conn postmodern:*database*)))
+         ,@body))))
 
 (defun query (db query-string args)
   (let ((conn (postgres-conn db)))

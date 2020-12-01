@@ -9,6 +9,13 @@
 
 (defstruct connector user host port)
 
+(defun connector->spec (database connector)
+  (list database
+        (connector-user connector)
+        "" ;; password
+        (connector-host connector)
+        :port (connector-port connector)))
+
 (defun account-db-name (account)
   (let ((id-string (mita.id:to-string
                     (mita.account:account-id account))))
@@ -17,19 +24,15 @@
              (cl-ppcre:regex-replace-all "-" id-string "_")))))
 
 (defmacro with-db ((db account connector) &body body)
-  `(mita.postgres.db:with-transaction
-       (,db :database (account-db-name ,account)
-            :user     (connector-user ,connector)
-            :host     (connector-host ,connector)
-            :port     (connector-port ,connector))
+  `(mita.postgres.db:with-transaction (,db (connector->spec
+                                            (account-db-name ,account)
+                                            ,connector))
      ,@body))
 
 (defmacro with-admin-db ((db connector) &body body)
-  `(mita.postgres.db:with-transaction
-       (,db :database "admin"
-            :user     (connector-user ,connector)
-            :host     (connector-host ,connector)
-            :port     (connector-port ,connector))
+  `(mita.postgres.db:with-transaction (,db (connector->spec
+                                            "admin"
+                                            ,connector))
      ,@body))
 
 (defun create-account-database (postgres-dir account connector)

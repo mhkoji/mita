@@ -14,7 +14,8 @@
         (connector-user connector)
         "" ;; password
         (connector-host connector)
-        :port (connector-port connector)))
+        :port (connector-port connector)
+        :pooled-p t))
 
 (defun account-db-name (account)
   (let ((id-string (mita.id:to-string

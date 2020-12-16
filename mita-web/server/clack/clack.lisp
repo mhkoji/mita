@@ -62,7 +62,7 @@
 
           (lambda (env)
             (declare (ignore env))
-            '(404 (:content-type "text/plain") ("Not found"))))
+            '(302 (:location "/") nil)))
          ;; hunchentoot accepts nil as address, which means the server accepts connections from all IP addresses.
          :address nil
 	 ;; Don't have to invoke a debugger. No one can take care of it.

@@ -20,7 +20,7 @@
 
 (defun start (&rest argv)
   (declare (ignore argv))
-  (mita.web.server:start
+  (mita.web.server.clack:start
    :port 5001
    :static-root "/app/static/"
    :content-root "/data/albums/"
@@ -44,6 +44,6 @@
 
 (defun init (&rest argv)
   (declare (ignore argv))
-  (mita.web.server:init-db
+  (mita.web.server.clack:init-db
    :connector *connector*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))

@@ -4,17 +4,17 @@
 
   :components
   ((:file "externs")
-   (:file "auth")
    (:file "jsown")
    (:file "html")
-   (:file "ningle")
-   (:file "server"))
+   (:file "clack/auth")
+   (:file "clack/mita")
+   (:file "clack/clack"))
 
   :depends-on
   (:mita
    :mita-auth
 
-   :ningle
+   :myway
    :clack
    :jsown
    :cl-who

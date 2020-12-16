@@ -1,8 +1,8 @@
-(defpackage :mita.web.server
+(defpackage :mita.web.server.clack
   (:use :cl)
   (:export :start
            :init-db))
-(in-package :mita.web.server)
+(in-package :mita.web.server.clack)
 
 (defvar *connector* (mita.postgres:make-connector
                      :user "postgres"
@@ -43,7 +43,7 @@
 
           (:session :store session-store)
 
-          (mita.web.auth:make-middleware
+          (mita.web.server.clack.auth:make-middleware
            :login-url
            mita.web.server.externs:*login-url*
 
@@ -54,18 +54,15 @@
            (lambda (session-holder)
              (mita.auth:is-authenticated-p session-holder connector)))
 
-          (let ((app (make-instance 'ningle:<app>)))
-            (mita.web.server.ningle:route-album app connector)
-            (mita.web.server.ningle:route-view app connector)
-            (mita.web.server.ningle:route-page app connector)
-            (mita.web.server.ningle:route-tag app connector)
-            (mita.web.server.ningle:route-home app)
-            (when serve-image
-              (mita.web.server.ningle:route-image
-               app connector thumbnail-root content-root))
-            (mita.web.server.ningle:route-dir
-             app connector thumbnail-root content-root)
-            app))
+          (mita.web.server.clack.mita:make-middleware
+           connector
+           :thumbnail-root thumbnail-root
+           :content-root content-root
+           :serve-image-p serve-image)
+
+          (lambda (env)
+            (declare (ignore env))
+            '(404 (:content-type "text/plain") ("Not found"))))
          ;; hunchentoot accepts nil as address, which means the server accepts connections from all IP addresses.
          :address nil
 	 ;; Don't have to invoke a debugger. No one can take care of it.

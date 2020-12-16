@@ -1,9 +1,9 @@
-(defpackage :mita.web.auth
+(defpackage :mita.web.server.clack.auth
   (:use :cl)
   (:export :make-middleware)
   (:import-from :alexandria
                 :if-let))
-(in-package :mita.web.auth)
+(in-package :mita.web.server.clack.auth)
 
 (defun make-middleware (&key login-url permit-list is-authenticated-fn)
   (labels ((request-permitted-p (url)

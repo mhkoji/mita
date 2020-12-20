@@ -3,7 +3,8 @@
   :pathname "server/"
 
   :components
-  ((:file "aserve"))
+  ((:file "server")
+   (:file "aserve"))
 
   :depends-on
   (:mita

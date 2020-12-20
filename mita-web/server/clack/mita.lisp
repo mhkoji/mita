@@ -45,7 +45,7 @@
 
 (defmacro with-db ((db connector) &body body)
   `(mita.postgres:with-db
-       (,db (getf (lack.request:request-env *request*) :mita.account)
+       (,db (mita.web.server:request-account *request*)
             ,connector)
      ,@body))
 
@@ -77,6 +77,10 @@
                 (let ((*request* request))
                   (funcall handler request)))))
           (funcall app env)))))
+
+(defmethod mita.web.server:request-account ((req lack.request:request))
+  (getf (lack.request:request-env *request*) :mita.account))
+
 
 (defun connect-page (mapper connector)
   (connect
@@ -169,29 +173,19 @@
                (json-response (jsown:new-js))))))))
    :method :post))
 
-(defun connect-image (mapper connector thumbnail-root content-root)
+(defun connect-image (mapper server)
   (connect
    mapper "/images/:image-id"
    (lambda (params req)
-     (declare (ignore req))
-     (with-db (db connector)
-       (with-safe-html-response
-         (when-let*
-             ((image-id
-               (mita.id:parse-short-or-nil (getf params :image-id)))
-              (image
-               (mita.image:load-image db image-id))
-              (root
-               (cadr (assoc
-                      (mita.image:image-source image)
-                      (list (list mita.image:+source-content+
-                                  content-root)
-                            (list mita.image:+source-thumbnail+
-                                  thumbnail-root))))))
-           `(200 () ,(parse-namestring
-                      (format nil "~A/~A"
-                              root
-                              (mita.image:image-path image))))))))))
+     (with-safe-html-response
+       (mita.web.server:serve-image
+        server
+        req
+        (getf params :image-id)
+        :on-found (lambda (path)
+                    `(200 () ,path))
+        :on-not-found (lambda ()
+                        nil))))))
 
 (defun connect-album (mapper connector)
   (connect
@@ -364,9 +358,13 @@
     (connect-album mapper connector)
     (connect-view mapper connector)
     (connect-page mapper connector)
-    (connect-tag mapper connector)
     (connect-home mapper)
+    (connect-tag mapper connector)
     (connect-dir mapper connector thumbnail-root content-root)
     (when serve-image-p
-      (connect-image mapper connector thumbnail-root content-root))
+      (connect-image mapper
+                     (make-instance 'mita.web.server:server
+                      :connector connector
+                      :thumbnail-root thumbnail-root
+                      :content-root content-root)))
     (mapper->middleware mapper)))

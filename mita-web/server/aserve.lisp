@@ -18,6 +18,23 @@
           (mita.auth.session:fetch-session session-store sid))
         (make-hash-table :test #'equal))))
 
+(defmacro ensure-authenticated ((account req &key session-store connector)
+                                &body body)
+  `(when-let ((,account
+               (mita.auth:is-authenticated-p
+                (make-instance 'aserve-session-holder
+                               :req ,req
+                               :session-store ,session-store)
+                ,connector)))
+     (progn ,@body)))
+
+
+
+(defstruct req account)
+
+(defmethod mita.web.server:request-account ((req req))
+  (req-account req))
+
 (defun start (&key (port 5003)
                    content-root
                    thumbnail-root
@@ -29,35 +46,27 @@
    :prefix "/images/"
    :function
    (lambda (req ent)
-     (when-let ((account
-                 (mita.auth:is-authenticated-p
-                  (make-instance 'aserve-session-holder
-                                 :req req
-                                 :session-store session-store)
-                  connector)))
-       (mita.postgres:with-db (db account connector)
-          (when-let* ((image-id
-                       (mita.id:parse-short-or-nil
-                        (subseq (puri:uri-path (net.aserve:request-uri req))
-                                8))) ;; (length "/images/")
-                      (image
-                       (mita.image:load-image db image-id))
-                      (root
-                       (cadr (assoc
-                              (mita.image:image-source image)
-                              (list (list mita.image:+source-content+
-                                          content-root)
-                                    (list mita.image:+source-thumbnail+
-                                          thumbnail-root))))))
-            (let ((full-path (parse-namestring
-                              (format nil "~A/~A"
-                                      root
-                                      (mita.image:image-path image)))))
-              (net.aserve:with-http-response (req ent)
-                (net.aserve:with-http-body (req ent)
-                  (with-open-file (in full-path
-                                      :direction :input
-                                      :element-type '(unsigned-byte 8))
-                    (ignore-errors
-                      (alexandria:copy-stream
-                       in net.html.generator:*html-stream*))))))))))))
+     (ensure-authenticated (account req
+                            :connector connector
+                            :session-store session-store)
+       (mita.web.server:serve-image
+        (make-instance 'mita.web.server:server
+                       :connector connector
+                       :thumbnail-root thumbnail-root
+                       :content-root content-root)
+        (make-req :account account)
+        ;; (length "/images/")
+        (subseq (puri:uri-path (net.aserve:request-uri req)) 8)
+        :on-found
+        (lambda (path)
+          (net.aserve:with-http-response (req ent)
+            (net.aserve:with-http-body (req ent)
+              (with-open-file (in path
+                                  :direction :input
+                                  :element-type '(unsigned-byte 8))
+                (ignore-errors
+                 (alexandria:copy-stream
+                  in net.html.generator:*html-stream*))))))
+        :on-not-found
+        (lambda ()
+          nil))))))

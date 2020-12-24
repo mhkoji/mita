@@ -34,17 +34,18 @@ RUN cd /build && \
 
 ## uax-15 needs the followings
 RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 COPY third-party /root/quicklisp/local-projects
+COPY ./docker/requirements.lisp /build
 RUN sbcl --noinform \
          --no-userinit \
          --no-sysinit \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
-         --eval "(ql:quickload '(:uax-15 :postmodern :ironclad :cl-bcrypt))"
+         --load "/build/requirements.lisp"
 
 COPY --from=static_builder /static /app/static
 

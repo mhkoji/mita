@@ -43,6 +43,8 @@
 
           (:session :store session-store)
 
+          (mita.web.server.clack.log:make-middleware)
+
           (mita.web.server.clack.auth:make-middleware
            :login-url
            mita.web.server.externs:*login-url*

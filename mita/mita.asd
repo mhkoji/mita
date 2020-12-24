@@ -3,7 +3,9 @@
   :pathname "./"
 
   :components
-  ((:file "id")
+  ((:file "timezone")
+
+   (:file "id")
    (:file "db")
    (:file "image")
    (:file "page")

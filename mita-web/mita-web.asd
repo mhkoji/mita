@@ -9,6 +9,7 @@
    (:file "server")
    (:file "clack/auth")
    (:file "clack/mita")
+   (:file "clack/log")
    (:file "clack/clack"))
 
   :depends-on

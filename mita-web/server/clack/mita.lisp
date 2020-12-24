@@ -7,6 +7,33 @@
                 :if-let))
 (in-package :mita.web.server.clack.mita)
 
+
+(define-condition bad-request () ())
+
+(define-condition server-error () ())
+
+
+(defun ensure-integer (obj &optional default-value)
+  (cond ((null obj)
+         (if (typep default-value 'integer)
+             default-value
+             (error 'server-error)))
+        ((stringp obj)
+         (handler-case (parse-integer obj)
+           (error ()
+             (error 'bad-request))))
+        (t
+         (error 'bad-request))))
+
+(defun ensure-uuid-short (obj)
+  (if (stringp obj)
+      (handler-case (mita.id:parse-short obj)
+        (error ()
+          (error 'bad-request)))
+      (error 'bad-request)))
+
+
+
 (defun html-response (body-string &key (status-code 200))
   `(,status-code (:content-type "text/html")
                  (,body-string)))
@@ -35,6 +62,12 @@
        (or (progn ,@body)
            (html-response (mita.web.server.html:not-found)
                           :status-code 404))
+     (bad-request ()
+       (html-response "Bad Request"
+                      :status-code 400))
+     (server-error ()
+       (html-response (mita.web.server.html:internal-server-error)
+                      :status-code 500))
      (error (e)
        (warn "Error: ~A" e)
        (html-response (mita.web.server.html:internal-server-error)
@@ -197,12 +230,8 @@
          (html-response
           (mita.web.server.html:albums
            db
-           (if-let ((offset (q req "offset")))
-             (parse-integer offset)
-             0)
-           (if-let ((limit (q req "limit")))
-             (parse-integer limit)
-             50)))))))
+           (ensure-integer (q req "offset") 0)
+           (ensure-integer (q req "limit") 50)))))))
 
   (connect
    mapper "/albums/:album-id"
@@ -212,8 +241,7 @@
        (with-db (db connector)
          (when-let*
              ((album-id
-               (mita.id:parse-short-or-nil
-                (getf params :album-id)))
+               (ensure-uuid-short (getf params :album-id)))
               (album
                (mita.album:load-album-by-id db album-id)))
            (html-response
@@ -354,7 +382,11 @@
 (defun make-middleware (connector &key thumbnail-root
                                        content-root
                                        serve-image-p)
-  (let ((mapper (myway:make-mapper)))
+  (let ((mapper (myway:make-mapper))
+        (server (make-instance 'mita.web.server:server
+                               :connector connector
+                               :thumbnail-root thumbnail-root
+                               :content-root content-root)))
     (connect-album mapper connector)
     (connect-view mapper connector)
     (connect-page mapper connector)
@@ -362,9 +394,5 @@
     (connect-tag mapper connector)
     (connect-dir mapper connector thumbnail-root content-root)
     (when serve-image-p
-      (connect-image mapper
-                     (make-instance 'mita.web.server:server
-                      :connector connector
-                      :thumbnail-root thumbnail-root
-                      :content-root content-root)))
+      (connect-image mapper server))
     (mapper->middleware mapper)))

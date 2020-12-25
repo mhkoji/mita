@@ -40,7 +40,10 @@
    (jsown:new-js
      ("url" (url-for obj))
      ("name" (mita.dir:file-name obj))
-     ("isDirectory" (mita.dir:file-dir-p obj)))))
+     ("isDirectory" (mita.dir:file-dir-p obj))
+     ("size" (with-open-file (in (mita.dir:file-full-path obj)
+                                 :element-type '(unsigned-byte 8))
+               (file-length in))))))
 
 (defun as-content (c)
   (jsown:new-js

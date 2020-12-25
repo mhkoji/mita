@@ -10,16 +10,34 @@ function FileList(props) {
     return <div>EMPTY!</div>;
   }
 
-  const liEls = props.files.map((f) => {
+  const rowEls = props.files.map((f) => {
     return (
-        <li className="list-group-item">
-          <a href={f.url}>
-            {f.name}
-          </a>
-        </li>);
-  })
+        <tr>
+          <td>
+            <a href={f.url}>
+              {f.name}
+            </a>
+          </td>
+          <td>
+            {f.size}
+          </td>
+        </tr>
+    );
+  });
 
-  return <ul className="list-group">{liEls}</ul>;
+  return (
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rowEls}
+        </tbody>
+      </table>
+  );
 }
 
 function AddButton(props) {

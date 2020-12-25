@@ -7,6 +7,8 @@
            :init))
 (in-package :mita.postgres)
 
+(setq *read-eval* nil)
+
 (defstruct connector user host port)
 
 (defun connector->spec (database connector)

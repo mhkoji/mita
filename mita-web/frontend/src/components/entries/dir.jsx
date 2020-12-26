@@ -40,6 +40,16 @@ function FileList(props) {
   );
 }
 
+function Total(props) {
+  const { size } = props;
+  if (size === 0) {
+    return null;
+  }
+  return (
+      <span>Total: {size} file(s)</span>
+  );
+}
+
 function AddButton(props) {
   return (
       <button
@@ -81,6 +91,7 @@ function App () {
           </div>
 
           <div className="p-md-5">
+            <Total size={files.length} />
             <div className="container">
               <FileList files={files} />
             </div>

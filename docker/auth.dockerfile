@@ -15,24 +15,24 @@ FROM ubuntu:18.04
 RUN apt update && apt install -y \
     wget \
     sbcl \
-    ## for locale-gen
-    locales
-
-RUN mkdir \
+    ### for locale-gen
+    locales && \
+    ##
+    mkdir \
     /app \
-    /build
-
-RUN cd /build && \
+    /build && \
+    ##
+    cd /build && \
     wget https://beta.quicklisp.org/quicklisp.lisp && \
     sbcl --noinform \
          --no-userinit \
          --no-sysinit \
          --non-interactive \
          --load /build/quicklisp.lisp \
-         --eval "(quicklisp-quickstart:install)"
+         --eval "(quicklisp-quickstart:install)" && \
+    ## uax-15 needs the followings
+    locale-gen en_US.UTF-8
 
-## uax-15 needs the followings
-RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8

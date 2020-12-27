@@ -23,6 +23,7 @@
 
    :myway
    :clack
+   :clack-handler-hunchentoot
    :jsown
    :cl-who
    :marshal

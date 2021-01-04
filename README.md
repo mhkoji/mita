@@ -4,8 +4,6 @@ An application written in Common Lisp
 ## Start the Server
 
 ```shell
-git submodule update --init
-
 docker-compose build
 
 ## Start the Server

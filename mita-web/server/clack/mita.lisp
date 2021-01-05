@@ -45,6 +45,16 @@
                       ("success" (or success :f))
                       ("value" value))))))
 
+(defun print-backtrace (&key (stream *standard-output*))
+  #+sbcl
+  (progn
+    (format stream "Backtrace for: ~A~%"
+            (sb-thread:thread-name sb-thread:*current-thread*))
+    (loop for i from 0
+          for (name &rest args) in (sb-debug:list-backtrace)
+          ;; Should not print args because they may contain sensitive information such as a password.
+          do (format stream "~&~S: ~A~%" i name))))
+
 (defmacro with-safe-json-response (&body body)
   `(handler-case
        (or (progn ,@body)
@@ -52,27 +62,35 @@
                           :success nil
                           :status-code 404))
      (error (e)
-       (warn "Error: ~A" e)
+       (print-backtrace)
        (json-response (jsown:new-js)
                       :success nil
                       :status-code 500))))
 
 (defmacro with-safe-html-response (&body body)
-  `(handler-case
+  `(block nil
+     (handler-bind
+         ((bad-request
+           (lambda (c)
+             (print-backtrace)
+             (return (html-response
+                      "Bad Request"
+                      :status-code 400))))
+          (server-error
+           (lambda (c)
+             (print-backtrace)
+             (return (html-response
+                      (mita.web.server.html:internal-server-error)
+                      :status-code 500))))
+          (error
+           (lambda (c)
+             (print-backtrace)
+             (return (html-response
+                      (mita.web.server.html:internal-server-error)
+                      :status-code 500)))))
        (or (progn ,@body)
            (html-response (mita.web.server.html:not-found)
-                          :status-code 404))
-     (bad-request ()
-       (html-response "Bad Request"
-                      :status-code 400))
-     (server-error ()
-       (html-response (mita.web.server.html:internal-server-error)
-                      :status-code 500))
-     (error (e)
-       (warn "Error: ~A" e)
-       (html-response (mita.web.server.html:internal-server-error)
-                      :status-code 500))))
-
+                          :status-code 404)))))
 
 (defvar *request*)
 

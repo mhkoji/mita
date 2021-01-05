@@ -51,6 +51,7 @@
     (format stream "Backtrace for: ~A~%"
             (sb-thread:thread-name sb-thread:*current-thread*))
     (loop for i from 0
+          ;; See also: https://github.com/sbcl/sbcl/blob/dd4bcce1ca218502ca044da7596ce5953fd81d9e/src/code/debug.lisp#L385
           for (name &rest args) in (sb-debug:list-backtrace)
           ;; Should not print args because they may contain sensitive information such as a password.
           do (format stream "~&~S: ~A~%" i name))))

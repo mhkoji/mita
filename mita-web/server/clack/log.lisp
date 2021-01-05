@@ -6,7 +6,10 @@
 (defun make-middleware (&key (stream *standard-output*))
   (lambda (app)
     (lambda (env)
-      (let ((id (uuid:make-v4-uuid)))
+      (let ((id #+sbcl
+                (sb-thread:thread-name sb-thread:*current-thread*)
+                #-sbcl
+                (uuid:make-v4-uuid)))
         (format stream "~A ~A ~A ~A before~%"
                 (local-time:to-rfc3339-timestring (local-time:now))
                 id

@@ -33,7 +33,10 @@ services:
   web-aserve:
     build:
       context: ./
-      dockerfile: ./docker/web-aserve.dockerfile
+      dockerfile: ./docker/web.dockerfile
+    entrypoint:
+      - /app/web
+      - aserve
     expose:
       - 5003
     volumes:

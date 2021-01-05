@@ -40,7 +40,6 @@ ENV LANG=en_US.UTF-8 \
 
 ## Cache fasls so that docker builds become faster from next time,
 ## even though not recommended.
-COPY third-party /root/quicklisp/local-projects
 COPY ./docker/requirements.lisp /build
 RUN sbcl --noinform \
          --no-userinit \

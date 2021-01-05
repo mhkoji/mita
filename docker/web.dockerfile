@@ -38,7 +38,6 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-COPY third-party /root/quicklisp/local-projects
 COPY ./docker/requirements.lisp /build
 RUN sbcl --noinform \
          --no-userinit \
@@ -59,16 +58,6 @@ RUN sbcl --noinform \
          --eval "(sb-ext:save-lisp-and-die \
                   \"/app/web\" \
                   :executable t \
-                  :toplevel #'mita.docker.web:start)"  && \
-    sbcl --noinform \
-         --no-userinit \
-         --no-sysinit \
-         --non-interactive \
-         --load "/root/quicklisp/setup.lisp" \
-         --load "/root/quicklisp/local-projects/mita/docker/web.lisp" \
-         --eval "(sb-ext:save-lisp-and-die \
-                  \"/app/web-init\" \
-                  :executable t \
-                  :toplevel #'mita.docker.web:init)"
+                  :toplevel #'mita.docker.web:main)"
 
-ENTRYPOINT ["/app/web"]
+ENTRYPOINT ["/app/web", "clack"]

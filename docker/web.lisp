@@ -1,8 +1,6 @@
 (defpackage :mita.docker.web
   (:use :cl)
-  (:export :start
-           :start-aserve
-           :init))
+  (:export :main))
 (in-package :mita.docker.web)
 (ql:quickload '(:mita-web
                 :mita-web-aserve))
@@ -18,8 +16,7 @@
    :host "redis"))
 
 
-(defun start (&rest argv)
-  (declare (ignore argv))
+(defun clack ()
   (mita.web.server.clack:start
    :port 5001
    :static-root "/app/static/"
@@ -32,8 +29,7 @@
    :connector *connector*
    :use-thread nil))
 
-(defun start-aserve (&rest argv)
-  (declare (ignore argv))
+(defun aserve ()
   (mita.web.server.aserve:start
    :port 5003
    :content-root "/data/albums/"
@@ -42,8 +38,15 @@
    :connector *connector*)
   (loop do (sleep 1000)))
 
-(defun init (&rest argv)
-  (declare (ignore argv))
+(defun init ()
   (mita.web.server.clack:init-db
    :connector *connector*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))
+
+#+sbcl
+(defun main ()
+  (let ((cmd (second sb-ext:*posix-argv*)))
+    (cond ((string= cmd "clack") (clack))
+          ((string= cmd "aserve") (aserve))
+          ((string= cmd "init") (init))
+          (t (error "no such command: ~A" cmd)))))

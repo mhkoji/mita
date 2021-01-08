@@ -73,18 +73,21 @@
      (handler-bind
          ((bad-request
            (lambda (c)
+             (declare (ignore c))
              (print-backtrace)
              (return (html-response
                       "Bad Request"
                       :status-code 400))))
           (server-error
            (lambda (c)
+             (declare (ignore c))
              (print-backtrace)
              (return (html-response
                       (mita.web.server.html:internal-server-error)
                       :status-code 500))))
           (error
            (lambda (c)
+             (declare (ignore c))
              (print-backtrace)
              (return (html-response
                       (mita.web.server.html:internal-server-error)
@@ -248,7 +251,16 @@
        (with-db (db connector)
          (let ((offset (ensure-integer (q req "offset") 0))
                (limit (ensure-integer (q req "limit") 50)))
-           (html-response (mita.web.server.html:albums db offset limit)))))))
+           (let* ((albums (mita.album:load-albums db offset (1+ limit)))
+                  (full-loaded-p (= (length albums) (1+ limit)))
+                  (format-str "/albums?offset=~A&limit=~A"))
+             (html-response
+              (mita.web.server.html:albums
+               (if full-loaded-p (butlast albums) albums)
+               (when (< 0 offset)
+                 (format nil format-str (max (- offset limit) 0) limit))
+               (when full-loaded-p
+                 (format nil format-str (+ offset limit) limit))))))))))
 
   (connect
    mapper "/albums/:album-id"

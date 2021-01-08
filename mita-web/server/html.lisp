@@ -81,7 +81,7 @@
       :integrity "sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="
       :crossorigin "anonymous"))))
 
-(defun albums (db offset limit)
+(defun albums (albums prev-url next-url)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -103,23 +103,16 @@
                          ("name" (mita.album:album-name album))
                          ("thumbnail" (or (mita.album:album-thumbnail album)
                                           :null))))
-                     (mita.album:load-albums db offset limit)))
+                     albums))
             ("pager"
-             (let ((format-str "/albums?offset=~A&limit=~A"))
-               (jsown:new-js
-                 ("prev"
-                  (if (< 0 offset)
-                      (format nil format-str
-                              (max (- offset limit) 0) limit)
-                      :null))
-                 ("next"
-                  (format nil format-str
-                          (+ offset limit) limit)))))))))))
+             (jsown:new-js
+               ("prev" (or prev-url :null))
+               ("next" (or next-url :null))))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script
       :type "text/javascript"
-      :src "/static/gen/albums.bundle.js"))));
+      :src "/static/gen/albums.bundle.js"))))
 
 (defun album (db album)
   (cl-who:with-html-output-to-string (s nil :prologue t)

@@ -16,7 +16,7 @@ function Pager(props) {
               <ArrowLeft />
             </a>
           </li>
-          <li className="page-item">
+          <li className={'page-item' + (next ? '' : ' disabled')}>
             <a className="page-link" href={next}>
               <ArrowRight />
             </a>

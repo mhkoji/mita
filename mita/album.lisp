@@ -15,7 +15,9 @@
            :album-source-id
            :album-source-name
            :album-source-thumbnail
-           :album-source-created-on)
+           :album-source-created-on
+           :create-with-images
+           :delete-with-imagesn)
   (:import-from :alexandria :when-let))
 (in-package :mita.album)
 

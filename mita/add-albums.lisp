@@ -47,32 +47,7 @@
   (when-let ((sources (mapcar (lambda (d)
                                 (create-source thumbnail-dir d))
                               dirs)))
-    (let* ((existing-albums
-            (mita.album:load-albums-in
-             db
-             (mapcar #'mita.album:album-source-id sources)))
-           (album-images
-            (alexandria:mappend (lambda (a)
-                                  (mita.album:album-images db a))
-                                existing-albums))
-           (album-thumbnails
-            (remove nil (mapcar #'mita.album:album-thumbnail
-                                existing-albums))))
-      (mita.album:delete-albums
-       db
-       (mapcar #'mita.album:album-id existing-albums))
-      (mita.image:delete-images
-       db
-       (mapcar #'mita.image:image-id album-thumbnails))
-      (mita.image:delete-images
-       db
-       (mapcar #'mita.image:image-id album-images)))
-
-    (mita.image:save-images
-     db
-     (remove nil (mapcar #'mita.album:album-source-thumbnail
-                         sources)))
-    (let ((albums (mita.album:create-albums db sources)))
+    (let ((albums (mita.album:create-with-images db sources)))
       ;; Update images
       (loop for dir in dirs
             for album in albums
@@ -80,8 +55,8 @@
                       (mapcar (lambda (p)
                                 (make-image mita.image:+source-content+ p))
                               (file-dir-list-contents-only dir))))
-                 (mita.image:delete-images db (mapcar #'mita.image:image-id
-                                                      images))
+                 (mita.image:delete-images
+                  db (mapcar #'mita.image:image-id images))
                  (mita.image:save-images db images)
                  (mita.album:update-album-images db album images)))))
   (values))

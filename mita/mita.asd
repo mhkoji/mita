@@ -16,6 +16,8 @@
 
    (:file "dir")
    (:file "thumbnail")
+
+   (:file "album-with-images")
    (:file "add-albums")
 
    (:file "account/db")

@@ -23,8 +23,8 @@
 
 
 (defmacro with-db ((db server req) &body body)
-  `(mita.postgres:with-db (,db (request-account ,req)
-                               (server-connector ,server))
+  `(mita.db.impl:with-db (,db (request-account ,req)
+                              (server-connector ,server))
      ,@body))
 
 (defun serve-image (server req image-id-string

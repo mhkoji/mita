@@ -39,7 +39,7 @@
   (loop do (sleep 1000)))
 
 (defun init ()
-  (mita.web.server.clack:init-db
+  (mita.db.impl:init-db
    :connector *connector*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))
 

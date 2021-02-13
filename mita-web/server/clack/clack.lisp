@@ -4,21 +4,12 @@
            :init-db))
 (in-package :mita.web.server.clack)
 
-(defvar *connector* (mita.postgres:make-connector
-                     :user "postgres"
-                     :host "localhost"
-                     :port 5432))
+(defvar *connector* (mita.db.impl:make-connector))
 
 (defvar *handler* nil)
 
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
-
-(defun init-db (&key (drop-p nil)
-                     (connector *connector*)
-                     (postgres-dir
-                      (system-relative-pathname "../postgres/")))
-  (mita.postgres:init postgres-dir connector drop-p))
 
 (defun start (&key (port 5001)
                    (static-root

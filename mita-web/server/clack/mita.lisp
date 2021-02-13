@@ -63,6 +63,7 @@
                           :success nil
                           :status-code 404))
      (error (e)
+       (declare (ignore e))
        (print-backtrace)
        (json-response (jsown:new-js)
                       :success nil
@@ -99,9 +100,8 @@
 (defvar *request*)
 
 (defmacro with-db ((db connector) &body body)
-  `(mita.postgres:with-db
-       (,db (mita.web.server:request-account *request*)
-            ,connector)
+  `(mita.db.impl:with-db (,db (mita.web.server:request-account *request*)
+                              ,connector)
      ,@body))
 
 (defmacro with-json-api ((db connector) &body body)

@@ -24,7 +24,10 @@
    (:file "account/account")
 
    (:file "postgres/db")
-   (:file "postgres/postgres"))
+   (:file "postgres/postgres")
+
+   (:file "db-file")
+   (:file "db-impl"))
 
   :depends-on
   (:alexandria
@@ -32,6 +35,9 @@
    :uuid
    :postmodern
    :cl-fad
+
+   ;; for db-file
+   :cl-csv
 
    ;; for account
    :cl-bcrypt))

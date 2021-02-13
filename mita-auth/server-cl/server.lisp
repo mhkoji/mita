@@ -19,10 +19,7 @@
                    (session-store *session-store*)
                    (use-thread t)
                    (connector
-                    (mita.postgres:make-connector
-                     :user "postgres"
-                     :host "localhost"
-                     :port 5432)))
+                    (mita.db.impl:make-connector)))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler* (clack:clackup

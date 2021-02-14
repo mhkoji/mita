@@ -1,5 +1,5 @@
 ;; ref: https://www.geeksforgeeks.org/insertion-in-a-b-tree/
-(defpackage :mita.b+tree
+(defpackage :mita.util.b+tree
   (:use :cl)
   (:export :search
            :delete
@@ -8,20 +8,23 @@
   (:shadow :search
            :delete
            :copy-tree))
-(in-package :mita.b+tree)
+(in-package :mita.util.b+tree)
 
 (defstruct node id keys ptrs size leaf-p)
 
-(defstruct tree root nodes (counter 100) predicate)
+(defstruct tree
+  root
+  (node-id 1000)
+  nodes)
 
 (defvar *MAX* 3)
 
 (defun new-node (tree leaf-p)
-  (let ((node
-         (make-node :id (incf (tree-counter tree))
-                    :keys (make-array *MAX* :initial-element nil)
-                    :ptrs (make-array (1+ *MAX*) :initial-element nil)
-                    :leaf-p leaf-p)))
+  (let ((node (make-node
+               :id (incf (tree-node-id tree))
+               :keys (make-array *MAX* :initial-element nil)
+               :ptrs (make-array (1+ *MAX*) :initial-element nil)
+               :leaf-p leaf-p)))
     (push node (tree-nodes tree))
     node))
 
@@ -108,37 +111,32 @@
           (setf (node-size node)
                 (floor (1+ *MAX*) 2))
           (setf (node-size new-internal)
-                (- *MAX* (node-size node)))
-          #+nil
-          (loop for i from 0 below (node-size node) do
-            (setf (aref (node-keys node) i) (aref virtual-key i)))
-          #+nil          
-          (loop for i from 0 below (1+ (node-size node)) do
-            (setf (aref (node-ptrs node) i) (aref virtual-ptr i)))
+                (- (1+ *MAX*) (node-size node)))
+          (loop for i from 0 below (node-size node)
+                do (setf (aref (node-keys node) i) (aref virtual-key i)))
+          (loop for i from 0 below (node-size node)
+                do (setf (aref (node-ptrs node) i) (aref virtual-ptr i)))
+          (setf (aref (node-ptrs node) (node-size node)) nil)
           (loop for i from 0 below (node-size new-internal)
-                for j from (1+ (node-size node)) do
+                for j from (+ (node-size node)) do
             (setf (aref (node-keys new-internal) i)
                   (aref virtual-key j)))
           (loop for i from 0 below (1+ (node-size new-internal))
-                for j from (1+ (node-size node)) do
+                for j from (+ (node-size node)) do
                  (setf (aref (node-ptrs new-internal) i)
                        (aref virtual-ptr j)))
-          (if (eq node (tree-root tree))
-              (let ((new-root (new-node tree nil)))
-                (setf (aref (node-keys new-root) 0)
-                      (aref (node-keys node) (node-size node)))
-                (setf (aref (node-ptrs new-root) 0) node)
-                (setf (aref (node-ptrs new-root) 1) new-internal)
-                (setf (node-size new-root) 1)
-                (setf (tree-root tree) new-root)
-                (print (list i virtual-key))
-                (print (list node new-root new-internal)))
-              (insert-to-parent tree
-                                (find-parent (tree-root tree)
-                                             node)
-                                (aref (node-keys node)
-                                      (node-size node))
-                                new-internal))))))
+          (let ((new-x (aref (node-keys node) (node-size node))))
+            (if (eq node (tree-root tree))
+                (let ((new-root (new-node tree nil)))
+                  (setf (aref (node-keys new-root) 0) new-x)
+                  (setf (aref (node-ptrs new-root) 0) node)
+                  (setf (aref (node-ptrs new-root) 1) new-internal)
+                  (setf (node-size new-root) 1)
+                  (setf (tree-root tree) new-root))
+                (insert-to-parent tree
+                                  (find-parent (tree-root tree) node)
+                                  new-x
+                                  new-internal)))))))
 
 (defun insert (tree x)
   (if (null (tree-root tree))
@@ -192,18 +190,18 @@
                       for j from (node-size node)
                       do (setf (aref (node-keys new-leaf) i)
                                (aref virtual-node j)))
-                (if (eq node (tree-root tree))
-                    (let ((new-root (new-node tree nil)))
-                      (setf (aref (node-keys new-root) 0)
-                            (aref (node-keys new-leaf) 0))
-                      (setf (aref (node-ptrs new-root) 0) node)
-                      (setf (aref (node-ptrs new-root) 1) new-leaf)
-                      (setf (node-size new-root) 1)
-                      (setf (tree-root tree) new-root))
-                    (insert-to-parent tree
-                                      parent
-                                      (aref (node-keys new-leaf) 0)
-                                      new-leaf))))))))
+                (let ((new-x (aref (node-keys new-leaf) 0))) 
+                  (if (eq node (tree-root tree))
+                      (let ((new-root (new-node tree nil)))
+                        (setf (aref (node-keys new-root) 0) new-x)
+                        (setf (aref (node-ptrs new-root) 0) node)
+                        (setf (aref (node-ptrs new-root) 1) new-leaf)
+                        (setf (node-size new-root) 1)
+                        (setf (tree-root tree) new-root))
+                      (insert-to-parent tree
+                                        parent
+                                        new-x
+                                        new-leaf)))))))))
 
 (defun search (tree x)
   (let ((node (search-leaf-node tree x)))

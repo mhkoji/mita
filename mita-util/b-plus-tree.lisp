@@ -45,19 +45,18 @@
 (defun search-leaf-node (tree x)
   (let ((parent nil)
         (node (tree-root tree)))
-    (loop while (not (node-leaf-p node))
-      do (let ((keys (node-keys node))
-               (size (node-size node))
-               (ptrs (node-ptrs node)))
-           (setq parent node)
-           (loop for i from 0 below size
-                 for key = (aref keys i)
-                 if (< x key)
-                    do (progn (setq node (aref ptrs i))
-                              (return))
-                 if (= i (1- size))
-                    do (progn (setq node (aref ptrs (1+ i)))
-                              (return)))))
+    (loop while (and node (not (node-leaf-p node))) do
+      (with-accessors ((keys node-keys)
+                       (ptrs node-ptrs)
+                       (size node-size)) node
+        (setq parent node)
+        (loop for i from 0 below size
+              if (< x (aref keys i))
+                do (progn (setq node (aref ptrs i))
+                          (return))
+              if (= i (1- size))
+                do (progn (setq node (aref ptrs (1+ i)))
+                          (return)))))
     (values node parent)))
 
 (defun find-parent (node child)
@@ -77,7 +76,6 @@
       (with-accessors ((keys node-keys)
                        (ptrs node-ptrs)
                        (size node-size)) node
-
         (let ((i 0))
           (loop while (and (< i size) (< (aref keys i) x))
                 do (incf i))
@@ -114,15 +112,14 @@
                 (- (1+ *MAX*) (node-size node)))
           (loop for i from 0 below (node-size node)
                 do (setf (aref (node-keys node) i) (aref virtual-key i)))
-          (loop for i from 0 below (node-size node)
+          (loop for i from 0 below (1+ (node-size node))
                 do (setf (aref (node-ptrs node) i) (aref virtual-ptr i)))
-          (setf (aref (node-ptrs node) (node-size node)) nil)
           (loop for i from 0 below (node-size new-internal)
-                for j from (+ (node-size node)) do
+                for j from (+ 0 (node-size node)) do
             (setf (aref (node-keys new-internal) i)
                   (aref virtual-key j)))
-          (loop for i from 0 below (1+ (node-size new-internal))
-                for j from (+ (node-size node)) do
+          (loop for i from 1 below (1+ (node-size new-internal))
+                for j from (+ 1 (node-size node)) do
                  (setf (aref (node-ptrs new-internal) i)
                        (aref virtual-ptr j)))
           (let ((new-x (aref (node-keys new-internal) 0)))

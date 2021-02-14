@@ -202,6 +202,41 @@
                                         new-x
                                         new-leaf)))))))))
 
+;; CL-USER> (let ((tr (mita.util.b+tree:make-tree)))
+;;            (mita.util.b+tree:insert tr 10)
+;;            (mita.util.b+tree:insert tr 11)
+;;            (mita.util.b+tree:insert tr -9)
+;;            (mita.util.b+tree:insert tr -8)
+;;            (mita.util.b+tree:insert tr 0)
+;;            (mita.util.b+tree:insert tr -1)
+;;            (mita.util.b+tree:insert tr 5)
+;;            (mita.util.b+tree:insert tr 4)
+;;            (mita.util.b+tree:insert tr 2)
+;;            (mita.util.b+tree:insert tr 3)
+;;            tr)
+;; #S(MITA.UTIL.B+TREE::TREE
+;;    :ROOT #<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
+;;                                    :LEAF-P NIL) {100329DCB3}>
+;;    :NODE-ID 1008
+;;    :NODES (#<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
+;;                                      :LEAF-P NIL) {100329DCB3}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1007 :KEYS #(4 10) :PTRS
+;;                                      #(NIL 1005 1002) :LEAF-P
+;;                                      NIL) {100329DBA3}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1006 :KEYS #(2 3) :PTRS
+;;                                      #(NIL NIL 1005) :LEAF-P T) {100329DB03}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1005 :KEYS #(4 5) :PTRS
+;;                                      #(NIL NIL 1002) :LEAF-P T) {100329DA33}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1004 :KEYS #(-1 0) :PTRS
+;;                                      #(NIL NIL 1006) :LEAF-P T) {100329D963}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1003 :KEYS #(-1 2) :PTRS
+;;                                      #(1001 1004 1006) :LEAF-P
+;;                                      NIL) {100329D893}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1002 :KEYS #(10 11) :PTRS
+;;                                      #(NIL NIL NIL) :LEAF-P T) {100329D7F3}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1001 :KEYS #(-9 -8) :PTRS
+;;                                      #(NIL NIL 1004) :LEAF-P T) {100329D723}>))
+
 (defun search (tree x)
   (let ((node (search-leaf-node tree x)))
     (let ((keys (node-keys node))

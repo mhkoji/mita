@@ -244,3 +244,66 @@
       (loop for i from 0 below size
             for key = (aref keys i)
             if (= key x) return node))))
+
+
+(defun handle-vanish-node (tree parent node)
+  (with-accessors ((keys node-keys)
+                   (ptrs node-ptrs)
+                   (size node-size)) parent
+    (let ((pos (position node ptrs)))
+      (cond ((= pos 0)
+             (loop for i from 0 below (1- size) do
+               (setf (aref keys i) (aref keys (1+ i))))
+             (loop for j from 0 below size do
+               (setf (aref ptrs j) (aref ptrs (1+ j)))))
+            ((= pos size)
+             (decf size))
+            (t
+             (setf (aref ptrs i) nil))))))
+
+(defun handle-delete-first-key (tree parent x child)
+  (let ((i (position x (node-keys parent)
+                     :test #'=
+                     :end (node-size parent))))
+    (when i
+      (setf (aref (node-keys parent) i)
+            (aref (node-keys child) 0))
+      (when (= i 0)
+        (handle-delete-first-key tree
+                                 (find-parent (tree-root tree) parent)
+                                 x
+                                 child)))))
+
+(defun delete (tree x)
+  (when (tree-root tree)
+    (multiple-value-bind (leaf parent)
+        (search-leaf-node tree x)
+      (when leaf
+        (with-accessors ((keys node-keys)
+                         (ptrs node-ptrs)
+                         (size node-size)) leaf
+          (let ((i (position x keys :test #'= :end size)))
+            (when i
+              (let ((h 0))
+                (loop while (= x (aref keys (+ i h))) do (incf h))
+                (cond ((= h size)
+                       (let ((ii (position node (node-ptrs parent)
+                                           :test #'=
+                                           :end (node-size parent))))
+                         (setf (aref (node-ptrs parent) ii) nil)
+                         (dolist (n (tree-nodes tree))
+                           (when (eq (aref (node-ptrs n) (node-size n))
+                                     node)
+                             (setf (aref (node-ptrs n) (node-size n))
+                                   (aref ptrs size)))))
+                       (handle-vanish-node tree parent node)
+                       (alexandria:deletef (tree-nodes tree) node))
+                      (t
+                       (loop k from 0 while (< (+ i h k) size) do
+                         (setf (aref keys (+ i k))
+                               (aref keys (+ i k h))))
+                       (setf (aref ptrs (- size h)) (aref ptrs size))
+                       (decf size h)
+                       (when (= i 0)
+                         (handle-delete-first-key
+                          tree parent x leaf))))))))))))

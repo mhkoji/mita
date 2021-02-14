@@ -125,7 +125,7 @@
                 for j from (+ (node-size node)) do
                  (setf (aref (node-ptrs new-internal) i)
                        (aref virtual-ptr j)))
-          (let ((new-x (aref (node-keys node) (node-size node))))
+          (let ((new-x (aref (node-keys new-internal) 0)))
             (if (eq node (tree-root tree))
                 (let ((new-root (new-node tree nil)))
                   (setf (aref (node-keys new-root) 0) new-x)

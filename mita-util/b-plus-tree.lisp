@@ -109,7 +109,12 @@
           (setf (node-size node)
                 (floor (1+ *MAX*) 2))
           (setf (node-size new-internal)
-                (- (1+ *MAX*) (node-size node)))
+                (- ;; the number of the total keys
+                   (1+ *MAX*)
+                   ;; the left-most key is not needed
+                   1
+                   ;; the number of the keys on the other nodes))
+                   (node-size node)))
           (loop for i from 0 below (node-size node)
                 do (setf (aref (node-keys node) i)
                          (aref virtual-key i)))
@@ -117,14 +122,16 @@
                 do (setf (aref (node-ptrs node) i)
                          (aref virtual-ptr i)))
           (loop for i from 0 below (node-size new-internal)
-                for j from (+ 0 (node-size node)) do
+                ;; node-size + 1 because the left-most key is not needed
+                for j from (+ (node-size node) 1) do
             (setf (aref (node-keys new-internal) i)
                   (aref virtual-key j)))
           (loop for i from 1 below (1+ (node-size new-internal))
                 for j from (+ 1 (node-size node)) do
             (setf (aref (node-ptrs new-internal) i)
                   (aref virtual-ptr j)))
-          (let ((new-x (aref (node-keys new-internal) 0)))
+          ;; new-x is between the updated node and the new-internal node
+          (let ((new-x (aref virtual-key (node-size node))))
             (if (eq node (tree-root tree))
                 (let ((new-root (new-node tree nil)))
                   (setf (aref (node-keys new-root) 0) new-x)
@@ -202,40 +209,39 @@
                                         new-x
                                         new-leaf)))))))))
 
-;; CL-USER> (let ((tr (mita.util.b+tree:make-tree)))
-;;            (mita.util.b+tree:insert tr 10)
-;;            (mita.util.b+tree:insert tr 11)
-;;            (mita.util.b+tree:insert tr -9)
-;;            (mita.util.b+tree:insert tr -8)
-;;            (mita.util.b+tree:insert tr 0)
-;;            (mita.util.b+tree:insert tr -1)
-;;            (mita.util.b+tree:insert tr 5)
-;;            (mita.util.b+tree:insert tr 4)
-;;            (mita.util.b+tree:insert tr 2)
-;;            (mita.util.b+tree:insert tr 3)
-;;            tr)
+;; CL-USER> (let ((tree (mita.util.b+tree:make-tree)))
+;;            (mita.util.b+tree:insert tree 10)
+;;            (mita.util.b+tree:insert tree 11)
+;;            (mita.util.b+tree:insert tree -9)
+;;            (mita.util.b+tree:insert tree -8)
+;;            (mita.util.b+tree:insert tree 0)
+;;            (mita.util.b+tree:insert tree -1)
+;;            (mita.util.b+tree:insert tree 5)
+;;            (mita.util.b+tree:insert tree 4)
+;;            (mita.util.b+tree:insert tree 2)
+;;            (mita.util.b+tree:insert tree 3)
+;;            tree)
 ;; #S(MITA.UTIL.B+TREE::TREE
 ;;    :ROOT #<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
-;;                                    :LEAF-P NIL) {100329DCB3}>
+;;                                    :LEAF-P NIL) {1008C46AD3}>
 ;;    :NODE-ID 1008
 ;;    :NODES (#<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
-;;                                      :LEAF-P NIL) {100329DCB3}>
-;;            #<MITA.UTIL.B+TREE::NODE (:ID 1007 :KEYS #(4 10) :PTRS
-;;                                      #(NIL 1005 1002) :LEAF-P
-;;                                      NIL) {100329DBA3}>
+;;                                      :LEAF-P NIL) {1008C46AD3}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1007 :KEYS #(10) :PTRS #(NIL 1005)
+;;                                      :LEAF-P NIL) {1008C469C3}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1006 :KEYS #(2 3) :PTRS
-;;                                      #(NIL NIL 1005) :LEAF-P T) {100329DB03}>
+;;                                      #(NIL NIL 1005) :LEAF-P T) {1008C46923}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1005 :KEYS #(4 5) :PTRS
-;;                                      #(NIL NIL 1002) :LEAF-P T) {100329DA33}>
+;;                                      #(NIL NIL 1002) :LEAF-P T) {1008C46853}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1004 :KEYS #(-1 0) :PTRS
-;;                                      #(NIL NIL 1006) :LEAF-P T) {100329D963}>
+;;                                      #(NIL NIL 1006) :LEAF-P T) {1008C46783}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1003 :KEYS #(-1 2) :PTRS
 ;;                                      #(1001 1004 1006) :LEAF-P
-;;                                      NIL) {100329D893}>
+;;                                      NIL) {1008C466B3}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1002 :KEYS #(10 11) :PTRS
-;;                                      #(NIL NIL NIL) :LEAF-P T) {100329D7F3}>
+;;                                      #(NIL NIL NIL) :LEAF-P T) {1008C46613}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1001 :KEYS #(-9 -8) :PTRS
-;;                                      #(NIL NIL 1004) :LEAF-P T) {100329D723}>))
+;;                                      #(NIL NIL 1004) :LEAF-P T) {1008C46543}>))
 
 (defun search (tree x)
   (let ((node (search-leaf-node tree x)))

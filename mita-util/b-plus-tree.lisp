@@ -126,7 +126,7 @@
                 for j from (+ (node-size node) 1) do
             (setf (aref (node-keys new-internal) i)
                   (aref virtual-key j)))
-          (loop for i from 1 below (1+ (node-size new-internal))
+          (loop for i from 0 below (1+ (node-size new-internal))
                 for j from (+ 1 (node-size node)) do
             (setf (aref (node-ptrs new-internal) i)
                   (aref virtual-ptr j)))
@@ -209,6 +209,17 @@
                                         new-x
                                         new-leaf)))))))))
 
+
+
+(defun search (tree x)
+  (let ((node (search-leaf-node tree x)))
+    (let ((keys (node-keys node))
+          (size (node-size node)))
+      (loop for i from 0 below size
+            for key = (aref keys i)
+            if (= key x) return node))))
+
+
 ;; CL-USER> (let ((tree (mita.util.b+tree:make-tree)))
 ;;            (mita.util.b+tree:insert tree 10)
 ;;            (mita.util.b+tree:insert tree 11)
@@ -221,95 +232,25 @@
 ;;            (mita.util.b+tree:insert tree 2)
 ;;            (mita.util.b+tree:insert tree 3)
 ;;            tree)
+
 ;; #S(MITA.UTIL.B+TREE::TREE
 ;;    :ROOT #<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
-;;                                    :LEAF-P NIL) {1008C46AD3}>
+;;                                    :LEAF-P NIL) {100881F773}>
 ;;    :NODE-ID 1008
 ;;    :NODES (#<MITA.UTIL.B+TREE::NODE (:ID 1008 :KEYS #(4) :PTRS #(1003 1007)
-;;                                      :LEAF-P NIL) {1008C46AD3}>
-;;            #<MITA.UTIL.B+TREE::NODE (:ID 1007 :KEYS #(10) :PTRS #(NIL 1005)
-;;                                      :LEAF-P NIL) {1008C469C3}>
+;;                                      :LEAF-P NIL) {100881F773}>
+;;            #<MITA.UTIL.B+TREE::NODE (:ID 1007 :KEYS #(10) :PTRS #(1005 1002)
+;;                                      :LEAF-P NIL) {100881F663}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1006 :KEYS #(2 3) :PTRS
-;;                                      #(NIL NIL 1005) :LEAF-P T) {1008C46923}>
+;;                                      #(NIL NIL 1005) :LEAF-P T) {100881F5C3}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1005 :KEYS #(4 5) :PTRS
-;;                                      #(NIL NIL 1002) :LEAF-P T) {1008C46853}>
+;;                                      #(NIL NIL 1002) :LEAF-P T) {100881F4F3}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1004 :KEYS #(-1 0) :PTRS
-;;                                      #(NIL NIL 1006) :LEAF-P T) {1008C46783}>
+;;                                      #(NIL NIL 1006) :LEAF-P T) {100881F423}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1003 :KEYS #(-1 2) :PTRS
 ;;                                      #(1001 1004 1006) :LEAF-P
-;;                                      NIL) {1008C466B3}>
+;;                                      NIL) {100881F353}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1002 :KEYS #(10 11) :PTRS
-;;                                      #(NIL NIL NIL) :LEAF-P T) {1008C46613}>
+;;                                      #(NIL NIL NIL) :LEAF-P T) {100881F2B3}>
 ;;            #<MITA.UTIL.B+TREE::NODE (:ID 1001 :KEYS #(-9 -8) :PTRS
-;;                                      #(NIL NIL 1004) :LEAF-P T) {1008C46543}>))
-
-(defun search (tree x)
-  (let ((node (search-leaf-node tree x)))
-    (let ((keys (node-keys node))
-          (size (node-size node)))
-      (loop for i from 0 below size
-            for key = (aref keys i)
-            if (= key x) return node))))
-
-
-(defun handle-vanish-node (tree parent node)
-  (with-accessors ((keys node-keys)
-                   (ptrs node-ptrs)
-                   (size node-size)) parent
-    (let ((pos (position node ptrs)))
-      (cond ((= pos 0)
-             (loop for i from 0 below (1- size) do
-               (setf (aref keys i) (aref keys (1+ i))))
-             (loop for j from 0 below size do
-               (setf (aref ptrs j) (aref ptrs (1+ j)))))
-            ((= pos size)
-             (decf size))
-            (t
-             (setf (aref ptrs i) nil))))))
-
-(defun handle-delete-first-key (tree parent x child)
-  (let ((i (position x (node-keys parent)
-                     :test #'=
-                     :end (node-size parent))))
-    (when i
-      (setf (aref (node-keys parent) i)
-            (aref (node-keys child) 0))
-      (when (= i 0)
-        (handle-delete-first-key tree
-                                 (find-parent (tree-root tree) parent)
-                                 x
-                                 child)))))
-
-(defun delete (tree x)
-  (when (tree-root tree)
-    (multiple-value-bind (leaf parent)
-        (search-leaf-node tree x)
-      (when leaf
-        (with-accessors ((keys node-keys)
-                         (ptrs node-ptrs)
-                         (size node-size)) leaf
-          (let ((i (position x keys :test #'= :end size)))
-            (when i
-              (let ((h 0))
-                (loop while (= x (aref keys (+ i h))) do (incf h))
-                (cond ((= h size)
-                       (let ((ii (position node (node-ptrs parent)
-                                           :test #'=
-                                           :end (node-size parent))))
-                         (setf (aref (node-ptrs parent) ii) nil)
-                         (dolist (n (tree-nodes tree))
-                           (when (eq (aref (node-ptrs n) (node-size n))
-                                     node)
-                             (setf (aref (node-ptrs n) (node-size n))
-                                   (aref ptrs size)))))
-                       (handle-vanish-node tree parent node)
-                       (alexandria:deletef (tree-nodes tree) node))
-                      (t
-                       (loop k from 0 while (< (+ i h k) size) do
-                         (setf (aref keys (+ i k))
-                               (aref keys (+ i k h))))
-                       (setf (aref ptrs (- size h)) (aref ptrs size))
-                       (decf size h)
-                       (when (= i 0)
-                         (handle-delete-first-key
-                          tree parent x leaf))))))))))))
+;;                                      #(NIL NIL 1004) :LEAF-P T) {100881F1E3}>))

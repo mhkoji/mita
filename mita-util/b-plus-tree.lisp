@@ -306,10 +306,13 @@
                         (<= (floor *MAX* 2) (1- (node-size right))))
                    (progn ;; extend node
                      (setf (aref (node-keys node) (node-size node))
-                           (aref (node-keys right) 0))
+                           (aref (node-keys parent) j))
                      (incf (node-size node))
                      (setf (aref (node-ptrs node) (node-size node))
                            (aref (node-ptrs right) 0)))
+                   (progn ;; update parent
+                     (setf (aref (node-keys parent) j)
+                           (aref (node-keys right) 0)))
                    (progn ;; shrink right
                      (loop for k from 0 below (1- (node-size right))
                            do (setf (aref (node-keys right) k)
@@ -317,9 +320,7 @@
                      (loop for k from 0 below (node-size right)
                            do (setf (aref (node-ptrs right) k)
                                     (aref (node-ptrs right) (1+ k))))
-                     (decf (node-size right)))
-                   (setf (aref (node-keys parent) j)
-                         (aref (node-keys right) 0)))
+                     (decf (node-size right))))
                   ((and left
                         (<= (floor *MAX* 2) (1- (node-size left))))
                    (progn ;; extend node
@@ -327,21 +328,21 @@
                            do (setf (aref (node-keys node) k)
                                     (aref (node-keys node) (1- k))))
                      (setf (aref (node-keys node) 0)
-                           (aref (node-keys left) (1- (node-size left))))
-                     (loop for k from (node-size node) downto 1
-                           do (setf (aref (node-ptrs node) k)
-                                    (aref (node-ptrs node) (1- k))))
+                           (aref (node-keys parent) (1- j)))
+                     (loop for k from (node-size node) downto 0
+                           do (setf (aref (node-ptrs node) (1+ k))
+                                    (aref (node-ptrs node) k)))
                      (setf (aref (node-ptrs node) 0)
-                           (aref (node-ptrs left)
-                                 (node-size left)))
+                           (aref (node-ptrs left) (node-size left)))
                      (incf (node-size node)))
-                   (progn ;; shring left
+                   (progn ;; update parent
+                     (setf (aref (node-keys parent) (1- j))
+                           (aref (node-keys left)
+                                 (1- (node-size left)))))
+                   (progn ;; shrink left
                      (setf (aref (node-ptrs left) (node-size left))
                            nil)
-                     (decf (node-size left)))
-                   #+nil
-                   (setf (aref (node-keys parent) j)
-                         (aref (node-keys right) 0)))
+                     (decf (node-size left))))
                   (right
                    ;; node <- node + parent-key + right
                    (setf (aref (node-keys node) (node-size node))
@@ -357,7 +358,7 @@
                          do (setf (aref (node-ptrs node) j) p))
                    (setf (node-size node) (+ (node-size node)
                                              (node-size right)))
-                   (delete-child tree right (cddr parents)))
+                   (delete-child tree right (cdr parents)))
                   (t
                    (assert left)
                    ;; left <- left + node
@@ -376,7 +377,7 @@
                          do (setf (aref (node-ptrs left) j) p))
                    (setf (node-size left) (+ (node-size left)
                                              (node-size node)))
-                   (delete-child tree node (cddr parents))
+                   (delete-child tree node (cdr parents))
                    (setf (car parents) left))))))))
 
 ;; https://www.youtube.com/watch?v=pGOdeCpuwpI
@@ -431,11 +432,11 @@
                     ((and left
                           (<= (floor *MAX* 2) (1- (node-size left))))
                      (let ((borrowed-key ;; extend leaf
-                             (aref (node-keys left)
-                                   (1- (node-size left)))))
-                       (loop for k from (1- (node-size leaf)) downto 1
-                             do (setf (aref (node-keys leaf) k)
-                                      (aref (node-keys leaf) (1- k))))
+                            (aref (node-keys left)
+                                  (1- (node-size left)))))
+                       (loop for k from (1- (node-size leaf)) downto 0
+                             do (setf (aref (node-keys leaf) (1+ k))
+                                      (aref (node-keys leaf) k)))
                        (setf (aref (node-keys leaf) 0)
                              borrowed-key)
                        (setf (aref (node-ptrs leaf) (1+ (node-size leaf)))

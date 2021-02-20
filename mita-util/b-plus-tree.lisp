@@ -266,42 +266,42 @@
                                         (cons node acc)))))))
     (iter (tree-root tree) nil)))
 
-(defun delete-child (tree node child)
-  (let ((i (position child (node-ptrs node)
-                     :test #'eq
-                     :end (1+ (node-size node)))))
-    (assert i)
-    (if (= i (node-size node))
-        (decf (node-size node))
-        (progn
-          (loop for k from i below (1- (node-size node)) do
-            (setf (aref (node-keys node) k)
-                  (aref (node-keys node) (1+ k))))
-          (loop for k from i below (node-size node) do
-            (setf (aref (node-ptrs node) k)
-                  (aref (node-ptrs node) (1+ k))))
-          (decf (node-size node))))
-    (alexandria:deletef (tree-nodes tree) child))
+(defun delete-child (tree child parents)
+  (let ((node (car parents)))
+    (let ((i (position child (node-ptrs node)
+                       :test #'eq
+                       :end (1+ (node-size node)))))
+      (assert i)
+      (cond ((= i (node-size node))
+             (setf (aref (node-ptrs node) (node-size node)) nil)
+             (decf (node-size node)))
+            (t
+             (loop for k from i below (1- (node-size node)) do
+               (setf (aref (node-keys node) k)
+                     (aref (node-keys node) (1+ k))))
+             (loop for k from i below (node-size node) do
+               (setf (aref (node-ptrs node) k)
+                     (aref (node-ptrs node) (1+ k))))
+             (decf (node-size node))))
+      (alexandria:deletef (tree-nodes tree) child))
 
-  (when (< (node-size node) (floor *MAX* 2))
-    (if (eq node (tree-root tree))
-        (when (= (node-size node) 1)
-          ;; The node has only one child, which should be the new root
-          (setf (tree-root tree)
-                (or (aref (node-ptrs node) 0)
-                    (aref (node-ptrs node) 1)))
-          (alexandria:deletef (tree-nodes tree) node))
-        (let* ((parent (find-parent (tree-root tree) node))
-               (parent-ptrs (node-ptrs parent))
-               (j (position node parent-ptrs
-                            :test #'eq
-                            :end (1+ (node-size parent)))))
-          (let ((left
-                 (when (<= 0 (1- j))
-                   (aref parent-ptrs (1- j))))
-                (right
-                 (when (<= (1+ j) (node-size parent))
-                   (aref parent-ptrs (1+ j)))))
+    (when (< (node-size node) (floor *MAX* 2))
+      (if (eq node (tree-root tree))
+          (when (= (node-size node) 0)
+            ;; The node has only one child, which should be the new root
+            (setf (tree-root tree)
+                  (or (aref (node-ptrs node) 0)
+                      (aref (node-ptrs node) 1)))
+            (alexandria:deletef (tree-nodes tree) node))
+          (let* ((parent (cadr parents))
+                 (parent-ptrs (node-ptrs parent))
+                 (j (position node parent-ptrs
+                              :test #'eq
+                              :end (1+ (node-size parent))))
+                 (left (when (<= 0 (1- j))
+                         (aref parent-ptrs (1- j))))
+                 (right (when (<= (1+ j) (node-size parent))
+                          (aref parent-ptrs (1+ j)))))
             (cond ((and right
                         (<= (floor *MAX* 2) (1- (node-size right))))
                    (progn ;; extend node
@@ -327,7 +327,7 @@
                            do (setf (aref (node-keys node) k)
                                     (aref (node-keys node) (1- k))))
                      (setf (aref (node-keys node) 0)
-                           (aref (node-keys parent) (1- j)))
+                           (aref (node-keys left) (1- (node-size left))))
                      (loop for k from (node-size node) downto 1
                            do (setf (aref (node-ptrs node) k)
                                     (aref (node-ptrs node) (1- k))))
@@ -336,46 +336,55 @@
                                  (node-size left)))
                      (incf (node-size node)))
                    (progn ;; shring left
-                     (decf (node-size left))))
+                     (setf (aref (node-ptrs left) (node-size left))
+                           nil)
+                     (decf (node-size left)))
+                   #+nil
+                   (setf (aref (node-keys parent) j)
+                         (aref (node-keys right) 0)))
                   (right
-                   ;; node <- node + right
+                   ;; node <- node + parent-key + right
+                   (setf (aref (node-keys node) (node-size node))
+                         (aref (node-keys parent) 0))
+                   (incf (node-size node))
                    (loop for i from 0 below (node-size right)
                          for x = (aref (node-keys right) i)
                          for j from (node-size node)
                          do (setf (aref (node-keys node) j) x))
                    (loop for i from 0 below (1+ (node-size right))
                          for p = (aref (node-ptrs right) i)
-                         for j from (1+ (node-size node))
+                         for j from (node-size node)
                          do (setf (aref (node-ptrs node) j) p))
                    (setf (node-size node) (+ (node-size node)
                                              (node-size right)))
-                   (delete-child tree parent right))
+                   (delete-child tree right (cddr parents)))
                   (t
                    (assert left)
                    ;; left <- left + node
                    (loop for i from 0 below (node-size node)
-                         for x = (if (and (= i 0)
-                                          (aref (node-ptrs node) 0))
-                                     (aref (node-keys
-                                            (aref (node-ptrs node) 0))
-                                           0)
-                                     (aref (node-keys node) i))
                          for j from (node-size left)
-                         do (setf (aref (node-keys left) j) x))
+                         do (let ((x (if (and (= i 0)
+                                              (aref (node-ptrs node) 0))
+                                         (aref (node-keys
+                                                (aref (node-ptrs node) 0))
+                                               0)
+                                         (aref (node-keys node) i)) ))
+                              (setf (aref (node-keys left) j) x)))
                    (loop for i from 1 below (1+ (node-size node))
                          for p = (aref (node-ptrs node) i)
                          for j from (1+ (node-size left))
                          do (setf (aref (node-ptrs left) j) p))
                    (setf (node-size left) (+ (node-size left)
                                              (node-size node)))
-                   (delete-child tree parent node))))))))
+                   (delete-child tree node (cddr parents))
+                   (setf (car parents) left))))))))
 
 ;; https://www.youtube.com/watch?v=pGOdeCpuwpI
 (defun delete (tree x)
   (when (tree-root tree)
-    (let ((leaf-to-root (search-sequence-to-leaf tree x)))
-      (when leaf-to-root
-        (destructuring-bind (leaf &rest rest-nodes) leaf-to-root
+    (let ((nodes (search-sequence-to-leaf tree x)))
+      (when nodes
+        (let ((leaf (car nodes)))
           (let ((i (position x (node-keys leaf)
                              :test #'=
                              :end (node-size leaf))))
@@ -387,93 +396,92 @@
               (setf (aref ptrs (1- size)) (aref ptrs size))
               (setf (aref ptrs      size) nil)
               (decf size)))
-          (when (and (< (node-size leaf) (floor *MAX* 2))
+          (when (and (< (node-size leaf)
+                        (floor *MAX* 2))
                      (not (eq leaf (tree-root tree))))
-            (assert rest-nodes)
+            (assert (cadr nodes))
+
             ;; should merge
-            (let* ((parent (car rest-nodes))
+            (let* ((parent (cadr nodes))
                    (parent-ptrs (node-ptrs parent))
                    (j (position leaf parent-ptrs
                                 :test #'eq
-                                :end (1+ (node-size parent)))))
-              (let ((left
-                     (when (<= 0 (1- j))
-                       (aref parent-ptrs (1- j))))
-                    (right
-                     (when (<= (1+ j) (node-size parent))
-                       (aref parent-ptrs (1+ j)))))
-                (cond ((and right
-                            (<= (floor *MAX* 2) (1- (node-size right))))
-                       (progn ;; extend leaf
-                         (setf (aref (node-keys leaf) (node-size leaf))
-                               (aref (node-keys right) 0))
-                         (setf (aref (node-ptrs leaf) (1+ (node-size leaf)))
-                               (aref (node-ptrs leaf) (node-size leaf)))
-                         (incf (node-size leaf)))
-                       (progn ;; shrink right
-                         (loop for k from 0 below (1- (node-size right))
-                               do (setf (aref (node-keys right) k)
-                                        (aref (node-keys right) (1+ k))))
-                         (setf (aref (node-ptrs right) (node-size right))
-                               (aref (node-ptrs right) (1- (node-size right))))
-                         (decf (node-size right)))
-                       (setf (aref (node-keys parent) j)
-                             (aref (node-keys right) 0)))
-                      ((and left
-                            (<= (floor *MAX* 2) (1- (node-size left))))
-                       (let ((borrowed-key ;; extend leaf
-                              (aref (node-keys left)
-                                    (1- (node-size left)))))
-                         (loop for k from (1- (node-size leaf)) downto 1
-                               do (setf (aref (node-keys leaf) k)
-                                        (aref (node-keys leaf) (1- k))))
-                         (setf (aref (node-keys leaf) 0)
-                               borrowed-key)
-                         (setf (aref (node-ptrs leaf) (1+ (node-size leaf)))
-                               (aref (node-ptrs leaf) (node-size leaf)))
-                         (incf (node-size leaf)))
-                       (progn ;; shrink left
-                         (setf (aref (node-ptrs left) (1- (node-size left)))
-                               (aref (node-ptrs leaf) (node-size left)))
-                         (decf (node-size left)))
-                       (setf (aref (node-keys parent) (1- j))
-                             (aref (node-keys leaf) 0)))
-                      (right
-                       ;; leaf <- leaf + right
-                       (loop for i from 0 below (node-size right)
-                             for x = (aref (node-keys right) i)
-                             for j from (node-size leaf)
-                             do (setf (aref (node-keys leaf) j) x))
+                                :end (1+ (node-size parent))))
+                   (left (when (<= 0 (1- j))
+                           (aref parent-ptrs (1- j))))
+                   (right (when (<= (1+ j) (node-size parent))
+                            (aref parent-ptrs (1+ j)))))
+              (cond ((and right
+                          (<= (floor *MAX* 2) (1- (node-size right))))
+                     (progn ;; extend leaf
+                       (setf (aref (node-keys leaf) (node-size leaf))
+                             (aref (node-keys right) 0))
+                       (setf (aref (node-ptrs leaf) (1+ (node-size leaf)))
+                             (aref (node-ptrs leaf) (node-size leaf)))
+                       (incf (node-size leaf)))
+                     (progn ;; shrink right
+                       (loop for k from 0 below (1- (node-size right))
+                             do (setf (aref (node-keys right) k)
+                                      (aref (node-keys right) (1+ k))))
+                       (setf (aref (node-ptrs right) (node-size right))
+                             (aref (node-ptrs right) (1- (node-size right))))
+                       (decf (node-size right)))
+                     (setf (aref (node-keys parent) j)
+                           (aref (node-keys right) 0)))
+                    ((and left
+                          (<= (floor *MAX* 2) (1- (node-size left))))
+                     (let ((borrowed-key ;; extend leaf
+                             (aref (node-keys left)
+                                   (1- (node-size left)))))
+                       (loop for k from (1- (node-size leaf)) downto 1
+                             do (setf (aref (node-keys leaf) k)
+                                      (aref (node-keys leaf) (1- k))))
+                       (setf (aref (node-keys leaf) 0)
+                             borrowed-key)
+                       (setf (aref (node-ptrs leaf) (1+ (node-size leaf)))
+                             (aref (node-ptrs leaf) (node-size leaf)))
                        (setf (aref (node-ptrs leaf) (node-size leaf))
                              nil)
-                       (setf (node-size leaf) (+ (node-size leaf)
-                                                 (node-size right)))
-                       (setf (aref (node-ptrs leaf) (node-size leaf))
-                             (aref (node-ptrs right) (node-size right)))
-                       (delete-child tree parent right))
-                      (left
-                       (assert left)
-                       ;; left <- left + leaf
-                       (loop for i from 0 below (node-size leaf)
-                             for x = (aref (node-keys leaf) i)
-                             for j from (node-size left)
-                             do (setf (aref (node-keys left) j) x))
-                       (setf (node-size left) (+ (node-size left)
-                                                 (node-size leaf)))
-                       (setf (aref (node-ptrs left) (node-size left))
-                             (aref (node-ptrs leaf) (node-size leaf)))
-                       (delete-child tree parent leaf))))))
-          ;; maybe buggy
-          (loop for node in rest-nodes
-                when (and (not (eq node (tree-root tree)))
-                          (position node (tree-nodes tree)))
-                do (let ((i (position x (node-keys node)
-                                      :test #'=
-                                      :end (node-size leaf))))
-                     (when i
-                       (let ((child (aref (node-ptrs node) (1+ i))))
-                         (setf (aref (node-keys node) i)
-                               (aref (node-keys child) 0)))))))))))
+                       (incf (node-size leaf)))
+                     (progn ;; shrink left
+                       (setf (aref (node-ptrs left) (1- (node-size left)))
+                             (aref (node-ptrs left) (node-size left)))
+                       (decf (node-size left)))
+                     (setf (aref (node-keys parent) (1- j))
+                           (aref (node-keys leaf) 0)))
+                    (right
+                     ;; leaf <- leaf + right
+                     (loop for i from 0 below (node-size right)
+                           for x = (aref (node-keys right) i)
+                           for j from (node-size leaf)
+                           do (setf (aref (node-keys leaf) j) x))
+                     (setf (aref (node-ptrs leaf) (node-size leaf))
+                           nil)
+                     (setf (node-size leaf) (+ (node-size leaf)
+                                               (node-size right)))
+                     (setf (aref (node-ptrs leaf) (node-size leaf))
+                           (aref (node-ptrs right) (node-size right)))
+                     (delete-child tree right (cdr nodes)))
+                    (t
+                     (assert left)
+                     ;; left <- left + leaf
+                     (loop for i from 0 below (node-size leaf)
+                           for x = (aref (node-keys leaf) i)
+                           for j from (node-size left)
+                           do (setf (aref (node-keys left) j) x))
+                     (setf (node-size left) (+ (node-size left)
+                                               (node-size leaf)))
+                     (setf (aref (node-ptrs left) (node-size left))
+                           (aref (node-ptrs leaf) (node-size leaf)))
+                     (delete-child tree leaf (cdr nodes))))))
+          (dolist (node (cdr nodes))
+            ;; skip (car nodes) = leaf
+            (let ((i (position x (node-keys node)
+                               :test #'=
+                               :end (node-size node))))
+              (when i
+                (setf (aref (node-keys node) i)
+                      (aref (node-keys leaf) 0))))))))))
 
 ;; CL-USER> (let ((tree (mita.util.b+tree:make-tree)))
 ;;            (mita.util.b+tree:insert tree 10)

@@ -4,7 +4,7 @@ RUN mkdir /static
 
 WORKDIR /build
 
-COPY mita-auth/frontend .
+COPY mita-admin/frontend .
 
 RUN npm install && npm run build
 

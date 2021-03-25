@@ -2,7 +2,7 @@
   (:use :cl)
   (:export :main))
 (in-package :mita.docker.auth)
-(ql:quickload :mita-auth :silent t)
+(ql:quickload :mita-auth-server :silent t)
 
 (defun main (&rest argv)
   (declare (ignore argv))

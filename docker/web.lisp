@@ -2,8 +2,8 @@
   (:use :cl)
   (:export :main))
 (in-package :mita.docker.web)
-(ql:quickload '(:mita-web
-                :mita-web-aserve))
+(ql:quickload '(:mita-server
+                :mita-server-aserve))
 
 (defvar *connector*
   (mita.postgres:make-connector
@@ -17,7 +17,7 @@
 
 
 (defun clack ()
-  (mita.web.server.clack:start
+  (mita.server.clack:start
    :port 5001
    :static-root "/app/static/"
    :content-root "/data/albums/"
@@ -30,7 +30,7 @@
    :use-thread nil))
 
 (defun aserve ()
-  (mita.web.server.aserve:start
+  (mita.server.aserve:start
    :port 5003
    :content-root "/data/albums/"
    :thumbnail-root "/data/thumbnails/"
@@ -39,9 +39,10 @@
   (loop do (sleep 1000)))
 
 (defun init ()
-  (mita.db.impl:init-db
-   :connector *connector*
-   :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"))
+  (mita.admin:init
+   "/root/quicklisp/local-projects/mita/postgres/"
+   *connector*
+   nil))
 
 #+sbcl
 (defun main ()

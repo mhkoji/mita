@@ -1,6 +1,6 @@
-(asdf:defsystem :mita-web-aserve
+(asdf:defsystem :mita-server-aserve
   :serial t
-  :pathname "server/"
+  :pathname "server/server/"
 
   :components
   ((:file "server")

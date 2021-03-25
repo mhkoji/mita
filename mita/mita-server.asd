@@ -1,6 +1,6 @@
-(asdf:defsystem :mita-web
+(asdf:defsystem :mita-server
   :serial t
-  :pathname "server/"
+  :pathname "server/server/"
 
   :components
   ((:file "externs")
@@ -14,6 +14,7 @@
   :depends-on
   (:mita
    :mita-auth
+   :mita-auth-server
 
    :myway
    :clack

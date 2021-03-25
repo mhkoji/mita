@@ -1,10 +1,10 @@
-(defpackage :mita.web.server.aserve
+(defpackage :mita.server.aserve
   (:use :cl)
   (:import-from :alexandria
                 :when-let
                 :when-let*)
   (:export :start))
-(in-package :mita.web.server.aserve)
+(in-package :mita.server.aserve)
 
 (defclass aserve-session-holder (mita.auth:session-holder)
   ((req :initarg :req)
@@ -32,7 +32,7 @@
 
 (defstruct req account)
 
-(defmethod mita.web.server:request-account ((req req))
+(defmethod mita.server:request-account ((req req))
   (req-account req))
 
 (defun start (&key (port 5003)
@@ -49,8 +49,8 @@
      (ensure-authenticated (account req
                             :connector connector
                             :session-store session-store)
-       (mita.web.server:serve-image
-        (make-instance 'mita.web.server:server
+       (mita.server:serve-image
+        (make-instance 'mita.server:server
                        :connector connector
                        :thumbnail-root thumbnail-root
                        :content-root content-root)

@@ -1,8 +1,8 @@
-(defpackage :mita.web.server.jsown
+(defpackage :mita.server.jsown
   (:use :cl)
   (:export :url-for
            :as-content))
-(in-package :mita.web.server.jsown)
+(in-package :mita.server.jsown)
 
 (defgeneric url-for (content))
 

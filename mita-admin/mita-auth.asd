@@ -1,22 +1,16 @@
 (asdf:defsystem :mita-auth
   :serial t
-  :pathname "server-cl/"
+  :pathname "server-cl/auth/"
 
   :components
   ((:file "auth")
    (:file "lack")
-   (:file "session")
-   (:file "ningle")
-   (:file "server"))
+   (:file "session"))
 
   :depends-on
-  (:mita
+  (:mita-admin
 
-   :ningle
-   :cl-who
-   :cl-redis
    :marshal
-   :jsown
-   :clack
+   :cl-redis
    :lack
    :lack-middleware-session))

@@ -1,6 +1,6 @@
 (asdf:defsystem :mita
   :serial t
-  :pathname "./"
+  :pathname "server/"
 
   :components
   ((:file "timezone")
@@ -19,9 +19,6 @@
 
    (:file "album-with-images")
    (:file "add-albums")
-
-   (:file "account/db")
-   (:file "account/account")
 
    (:file "postgres/db")
    (:file "postgres/postgres")

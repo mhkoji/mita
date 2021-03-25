@@ -1,4 +1,4 @@
-(defpackage :mita.web.server.html
+(defpackage :mita.server.html
   (:use :cl)
   (:export :pages
            :page
@@ -10,7 +10,7 @@
            :dir
            :not-found
            :internal-server-error))
-(in-package :mita.web.server.html)
+(in-package :mita.server.html)
 
 (defun internal-server-error ()
   (cl-who:with-html-output-to-string (s nil :prologue t)
@@ -43,7 +43,7 @@
             ("pages"
              (mapcar (lambda (p)
                        (jsown:new-js
-                         ("url"  (mita.web.server.jsown:url-for p))
+                         ("url"  (mita.server.jsown:url-for p))
                          ("name" (mita.id:to-string
                                   (mita.page:page-id p)))))
                      pages))))))))
@@ -99,7 +99,7 @@
              (mapcar (lambda (album)
                        (jsown:new-js
                          ("id"  (mita.album:album-id album))
-                         ("url" (mita.web.server.jsown:url-for album))
+                         ("url" (mita.server.jsown:url-for album))
                          ("name" (mita.album:album-name album))
                          ("thumbnail" (or (mita.album:album-thumbnail album)
                                           :null))))

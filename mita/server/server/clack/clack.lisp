@@ -1,8 +1,8 @@
-(defpackage :mita.web.server.clack
+(defpackage :mita.server.clack
   (:use :cl)
   (:export :start
            :init-db))
-(in-package :mita.web.server.clack)
+(in-package :mita.server.clack)
 
 (defvar *connector* (mita.db.impl:make-connector))
 
@@ -13,7 +13,7 @@
 
 (defun start (&key (port 5001)
                    (static-root
-                    (system-relative-pathname "../mita-web/static/"))
+                    (system-relative-pathname "../mita/static/"))
                    (use-thread t)
                    (serve-image t)
                    (thumbnail-root
@@ -34,17 +34,17 @@
 
           (:session :store session-store)
 
-          (mita.web.server.clack.log:make-middleware)
+          (mita.server.clack.log:make-middleware)
 
 	  (mita.auth.lack:authenticate :connector connector)
 
           (mita.auth.lack:pass-or-deny
            :login-url
-           mita.web.server.externs:*login-url*
+           mita.server.externs:*login-url*
            :permit-list
-           (list mita.web.server.externs:*login-url*))
+           (list mita.server.externs:*login-url*))
 
-          (mita.web.server.clack.mita:make-middleware
+          (mita.server.clack.mita:make-middleware
            connector
            :thumbnail-root thumbnail-root
            :content-root content-root

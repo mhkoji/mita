@@ -1,7 +1,7 @@
-(defpackage :mita.web.server.clack.log
+(defpackage :mita.server.clack.log
   (:use :cl)
   (:export :make-middleware))
-(in-package :mita.web.server.clack.log)
+(in-package :mita.server.clack.log)
 
 (defun make-middleware (&key (stream *standard-output*))
   (lambda (app)

@@ -1,10 +1,13 @@
 (defpackage :mita.db.file
   (:use :cl)
   (:export :make-connector
+           :account-db-name
            :with-admin-db
            :with-db
-           :init))
+           :file-db))
 (in-package :mita.db.file)
+
+(defgeneric account-db-name (account))
 
 (defstruct connector dir)
 
@@ -54,13 +57,6 @@
               (progn ,@body)
            (write-table-hash ,g (table-hash ,db)))))))
 
-(defun account-table-name (account)
-  (let ((id-string (mita.id:to-string
-                    (mita.account:account-id account))))
-    (format nil "account_~A"
-            (string-downcase
-             (cl-ppcre:regex-replace-all "-" id-string "_")))))
-
 (defmacro with-admin-db ((db connector) &body body)
   `(with-file-db (,db (connector-dir ,connector))
      ,@body))
@@ -68,15 +64,13 @@
 (defmacro with-db ((db account connector) &body body)
   `(with-file-db (,db (format nil "~A/~A/"
                               (connector-dir ,connector)
-                              (account-table-name ,account)))
+                              (account-db-name ,account)))
      ,@body))
 
 (defvar +image+ "image")
 (defvar +album+ "album")
 (defvar +album-thumbnail-image+ "album-thumbnail-image")
 (defvar +album-image+ "album-image")
-
-(defvar +account+ "account")
 
 (defun select-rows-if (db name row-pred)
   (remove-if-not row-pred (gethash name (table-hash db))))
@@ -227,65 +221,3 @@
                            (lambda (row)
                              (mita.id:id= (mita.id:parse (first row))
                                           album-id))))))
-
-;;;;
-
-(defmethod mita.account.db:account-insert ((db file-db)
-                                           (account mita.account.db:account))
-  (push (list (mita.id:to-string
-               (mita.account.db:account-id account))
-              (mita.account.db:account-username account)
-              (mita.account.db:hashed-password-string
-               (mita.account.db:account-hashed-password account)))
-        (gethash +account+ (table-hash db))))
-
-(labels ((parse-account (row)
-           (mita.account.db:make-account
-            :id (mita.id:parse (first row))
-            :username (second row)
-            :hashed-password (mita.account.db:make-hashed-password
-                              :string (third row)))))
-  (defmethod mita.account.db:account-select ((db file-db)
-                                             (username string))
-    (car (mapcar
-          #'parse-account
-          (select-rows-if db +account+
-                          (lambda (row)
-                            (string= (second row) username))))))
-
-  (defmethod mita.account.db:account-select-by-id ((db file-db)
-                                                   (id mita.id:id))
-    (car (mapcar
-          #'parse-account
-          (select-rows-if db +account+
-                          (lambda (row)
-                            (mita.id:id= (mita.id:parse (first row))
-                                         id)))))))
-
-;;;;
-
-(defun create-account-database (connector account)
-  (let ((hash (make-hash-table :test #'equal)))
-    (dolist (name (list +image+
-                        +album+
-                        +album-thumbnail-image+
-                        +album-image+))
-      (setf (gethash name hash) nil))
-    (write-table-hash (format nil "~A/~A/"
-                              (connector-dir connector)
-                              (account-table-name account))
-                      hash)))
-
-(defun create-account (connector username password)
-  (let ((account
-         (with-admin-db (db connector)
-           (mita.account:create-account db username password))))
-    (create-account-database connector account)
-    account))
-
-(defun init (connector)
-  (let ((hash (make-hash-table :test #'equal)))
-    (dolist (name (list +account+))
-      (setf (gethash name hash) nil))
-    (write-table-hash (connector-dir connector) hash))
-  (create-account connector "mita" "mita"))

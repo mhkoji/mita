@@ -21,7 +21,7 @@
 (defgeneric renew-session-id (holder))
 
 (defmacro with-admin-db ((db connector) &body body)
-  `(mita.db.impl::with-admin-db (,db ,connector)
+  `(mita.db.impl:with-admin-db (,db ,connector)
      ,@body))
 
 (defun is-authenticated-p (session-holder connector)

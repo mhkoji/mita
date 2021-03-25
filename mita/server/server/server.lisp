@@ -1,12 +1,27 @@
-(defpackage :mita.web.server
+(defpackage :mita.server
   (:use :cl)
   (:export :server
            :serve-image
            :request-account)
   (:import-from :alexandria
                 :when-let*))
-(in-package :mita.web.server)
+(in-package :mita.server)
 
+(defun account-db-name (account)
+  (let ((id-string (mita.id:to-string
+                    (mita.account:account-id account))))
+    (format nil "account_~A"
+            (string-downcase
+             (cl-ppcre:regex-replace-all "-" id-string "_")))))
+
+(defmethod mita.postgres:account-db-name ((account mita.account:account))
+  (account-db-name account))
+
+(defmethod mita.db.file:account-db-name ((account mita.account:account))
+  (account-db-name account))
+
+;;;;;
+  
 (defclass server ()
   ((connector
     :initarg :connector

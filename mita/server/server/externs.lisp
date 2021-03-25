@@ -1,6 +1,6 @@
-(defpackage :mita.web.server.externs
+(defpackage :mita.server.externs
   (:use :cl)
   (:export :*login-url*))
-(in-package :mita.web.server.externs)
+(in-package :mita.server.externs)
 
 (defvar *login-url* "/auth/login")

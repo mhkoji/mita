@@ -1,7 +1,6 @@
 (defpackage :mita.auth
   (:use :cl)
   (:export :session-holder
-           :lack-session-holder
            :get-session
            :renew-session-id
            :is-authenticated-p
@@ -45,17 +44,3 @@
             (mita.id:to-string (mita.account:account-id account)))
       (renew-session-id session-holder)
       t)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defclass lack-session-holder (session-holder)
-  ((env :initarg :env)))
-
-(defmethod get-session ((holder lack-session-holder))
-  (with-slots (env) holder
-    (getf env :lack.session)))
-
-(defmethod renew-session-id ((holder lack-session-holder))
-  (with-slots (env) holder
-    (symbol-macrolet ((options (getf env :lack.session.options)))
-      (setf (getf options :change-id) t))))

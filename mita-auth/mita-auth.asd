@@ -4,6 +4,7 @@
 
   :components
   ((:file "auth")
+   (:file "lack")
    (:file "session")
    (:file "ningle")
    (:file "server"))

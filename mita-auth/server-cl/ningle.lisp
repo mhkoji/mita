@@ -39,7 +39,7 @@
           (declare (ignore params))
           (if (mita.auth:is-authenticated-p
                (make-instance
-                'mita.auth:lack-session-holder
+                'mita.auth.lack:lack-session-holder
                 :env (lack.request:request-env ningle:*request*))
                connector)
               `(302 (:location ,top-url) nil)
@@ -54,7 +54,7 @@
                   (body
                    (lack.request:request-body-parameters ningle:*request*)))
               (if (mita.auth:authenticate
-                   (make-instance 'mita.auth:lack-session-holder
+                   (make-instance 'mita.auth.lack:lack-session-holder
                                   :env env)
                    connector
                    (cdr (assoc "username" body :test #'string=))

@@ -36,16 +36,13 @@
 
           (mita.web.server.clack.log:make-middleware)
 
-          (mita.web.server.clack.auth:make-middleware
+	  (mita.auth.lack:authenticate :connector connector)
+
+          (mita.auth.lack:pass-or-deny
            :login-url
            mita.web.server.externs:*login-url*
-
            :permit-list
-           (list mita.web.server.externs:*login-url*)
-
-           :is-authenticated-fn
-           (lambda (session-holder)
-             (mita.auth:is-authenticated-p session-holder connector)))
+           (list mita.web.server.externs:*login-url*))
 
           (mita.web.server.clack.mita:make-middleware
            connector

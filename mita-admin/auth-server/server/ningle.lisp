@@ -1,7 +1,7 @@
-(defpackage :mita.auth.ningle
+(defpackage :mita.auth.server.ningle
   (:use :cl)
   (:export :route-auth))
-(in-package :mita.auth.ningle)
+(in-package :mita.auth.server.ningle)
 
 (defmacro with-admin-db ((db connector) &body body)
   `(mita.db.impl:with-admin-db (,db ,connector)

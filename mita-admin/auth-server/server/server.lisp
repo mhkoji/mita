@@ -16,7 +16,8 @@
 
 (defun start (&key (port 5002)
                    (static-root
-                    (system-relative-pathname "../mita-auth/static/"))
+                    (system-relative-pathname
+                     "../mita-admin/auth-server/static/"))
                    (session-store *session-store*)
                    (use-thread t)
                    (connector
@@ -30,7 +31,7 @@
                     (:session :store session-store)
 
                     (let ((app (make-instance 'ningle:<app>)))
-                      (mita.auth.ningle:route-auth
+                      (mita.auth.server.ningle:route-auth
                        app connector :top-url "/albums")
                       app))
                    :address nil

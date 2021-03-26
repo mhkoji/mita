@@ -12,7 +12,7 @@
 
 (defun start (&key (port 5001)
                    (static-root
-                    (system-relative-pathname "../mita/static/"))
+                    (system-relative-pathname "./static/"))
                    (use-thread t)
                    (serve-image t)
                    (thumbnail-root

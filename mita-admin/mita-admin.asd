@@ -1,6 +1,6 @@
 (asdf:defsystem :mita-admin
   :serial t
-  :pathname "server-cl/"
+  :pathname "src/"
 
   :components
   ((:module :account

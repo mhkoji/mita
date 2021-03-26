@@ -1,6 +1,6 @@
 (asdf:defsystem :mita-auth-server
   :serial t
-  :pathname "auth-server/server/"
+  :pathname "auth/server/"
 
   :components
   ((:file "ningle")

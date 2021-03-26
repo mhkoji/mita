@@ -13,6 +13,7 @@
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
+
 (defun start (&key (port 5002)
                    (static-root
                     (system-relative-pathname "../mita-auth/static/"))

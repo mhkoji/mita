@@ -12,7 +12,7 @@
    :port 5432))
 
 (defvar *sesson-store*
-  (mita.auth.session:make-redis-store
+  (mita.util.auth.session:make-redis-store
    :host "redis"))
 
 

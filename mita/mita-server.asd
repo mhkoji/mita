@@ -6,14 +6,14 @@
   ((:file "externs")
    (:file "jsown")
    (:file "html")
-   (:file "server")
+   (:file "app")
    (:file "clack/mita")
    (:file "clack/log")
    (:file "clack/clack"))
 
   :depends-on
   (:mita
-   :mita-auth
+   :mita-util-auth
    :mita-auth-server
 
    :myway

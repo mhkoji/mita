@@ -3,11 +3,12 @@
   :pathname "server/server/"
 
   :components
-  ((:file "server")
+  ((:file "app")
    (:file "aserve"))
 
   :depends-on
   (:mita
-   :mita-auth
+   :mita-util-auth
+   :mita-auth-server
 
    :aserve))

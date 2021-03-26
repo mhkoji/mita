@@ -1,4 +1,4 @@
-(defpackage :mita.auth.session
+(defpackage :mita.util.auth.session
   (:use :cl)
   (:import-from :lack.middleware.session.store
                 :fetch-session
@@ -11,7 +11,7 @@
            :remove-session)
   (:import-from :alexandria
                 :when-let))
-(in-package :mita.auth.session)
+(in-package :mita.util.auth.session)
 
 (defun serialize (data)
   (cl-base64:usb8-array-to-base64-string

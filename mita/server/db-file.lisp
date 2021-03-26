@@ -61,10 +61,10 @@
   `(with-file-db (,db (connector-dir ,connector))
      ,@body))
 
-(defmacro with-db ((db account connector) &body body)
+(defmacro with-db ((db db-name connector) &body body)
   `(with-file-db (,db (format nil "~A/~A/"
                               (connector-dir ,connector)
-                              (account-db-name ,account)))
+                              ,db-name))
      ,@body))
 
 (defvar +image+ "image")

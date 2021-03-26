@@ -1,6 +1,6 @@
-(asdf:defsystem :mita-auth
+(asdf:defsystem :mita-util-auth
   :serial t
-  :pathname "server-cl/auth/"
+  :pathname "auth/"
 
   :components
   ((:file "auth")

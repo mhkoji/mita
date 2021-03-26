@@ -3,6 +3,27 @@
   (:export :route-auth))
 (in-package :mita.auth.ningle)
 
+(defmacro with-admin-db ((db connector) &body body)
+  `(mita.db.impl:with-admin-db (,db ,connector)
+     ,@body))
+
+(defclass account-repository ()
+  ((connector :initarg :connector)))
+
+(defmethod mita.util.auth:account-identity
+    ((account mita.account:account))
+  (mita.id:to-string (mita.account:account-id account)))
+
+(defmethod mita.util.auth:find-account ((repos account-repository)
+                                        username
+                                        password)
+  (when (and username password)
+    (with-admin-db (db (slot-value repos 'connector))
+      (mita.account:find-account-with-password-checked
+       db username password))))
+
+;;;
+
 (defun login-page ()
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
@@ -37,11 +58,10 @@
   (setf (ningle:route app "/auth/login")
         (lambda (params)
           (declare (ignore params))
-          (if (mita.auth:is-authenticated-p
+          (if (mita.util.auth:is-authenticated-p
                (make-instance
-                'mita.auth.lack:lack-session-holder
-                :env (lack.request:request-env ningle:*request*))
-               connector)
+                'mita.util.auth.lack:lack-session-holder
+                :env (lack.request:request-env ningle:*request*)))
               `(302 (:location ,top-url) nil)
               (login-page))))
 
@@ -53,10 +73,11 @@
                    (lack.request:request-env ningle:*request*))
                   (body
                    (lack.request:request-body-parameters ningle:*request*)))
-              (if (mita.auth:authenticate
-                   (make-instance 'mita.auth.lack:lack-session-holder
+              (if (mita.util.auth:authenticate
+                   (make-instance 'mita.util.auth.lack:lack-session-holder
                                   :env env)
-                   connector
+                   (make-instance 'account-repository
+                                  :connector connector)
                    (cdr (assoc "username" body :test #'string=))
                    (cdr (assoc "password" body :test #'string=)))
                   t

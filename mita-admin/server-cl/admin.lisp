@@ -7,7 +7,10 @@
   (let ((account
          (mita.postgres:with-admin-db (db connector)
            (mita.account:create-account db username password))))
-    (mita.postgres:create-account-database postgres-dir account connector)
+    (mita.postgres:create-account-database
+     postgres-dir
+     (mita.id:to-string (mita.account:account-id account))
+     connector)
     account))
 
 (defun init (postgres-dir connector drop-p)

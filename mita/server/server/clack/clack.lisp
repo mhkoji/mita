@@ -1,7 +1,6 @@
 (defpackage :mita.server.clack
   (:use :cl)
-  (:export :start
-           :init-db))
+  (:export :start))
 (in-package :mita.server.clack)
 
 (defvar *connector* (mita.db.impl:make-connector))
@@ -36,9 +35,9 @@
 
           (mita.server.clack.log:make-middleware)
 
-	  (mita.auth.lack:authenticate :connector connector)
+	  (mita.util.auth.lack:authenticate)
 
-          (mita.auth.lack:pass-or-deny
+          (mita.util.auth.lack:pass-or-deny
            :login-url
            mita.server.externs:*login-url*
            :permit-list

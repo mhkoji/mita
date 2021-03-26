@@ -1,12 +1,18 @@
 (defpackage :mita.server.clack.mita
   (:use :cl)
   (:export :make-middleware)
+  (:import-from :mita.server.app
+                :with-db)
   (:import-from :alexandria
                 :when-let
                 :when-let*
                 :if-let))
 (in-package :mita.server.clack.mita)
 
+(defmethod mita.server.app:request-account-id ((req lack.request:request))
+  (getf (lack.request:request-env req) :mita.util.auth.identity))
+
+;;;
 
 (define-condition bad-request () ())
 
@@ -97,16 +103,9 @@
            (html-response (mita.server.html:not-found)
                           :status-code 404)))))
 
-(defvar *request*)
-
-(defmacro with-db ((db connector) &body body)
-  `(mita.db.impl:with-db (,db (mita.server:request-account *request*)
-                              ,connector)
-     ,@body))
-
-(defmacro with-json-api ((db connector) &body body)
+(defmacro with-json-api ((db conn-holder req) &body body)
   `(with-safe-json-response
-     (with-db (,db ,connector)
+     (with-db (,db ,conn-holder ,req)
        ,@body)))
 
 (defun q (req name)
@@ -129,21 +128,17 @@
                  mapper (lack.request:request-path-info request)
                  :method (lack.request:request-method request))
               (when foundp
-                (let ((*request* request))
-                  (funcall handler request)))))
+                (funcall handler request))))
           (funcall app env)))))
-
-(defmethod mita.server:request-account ((req lack.request:request))
-  (getf (lack.request:request-env *request*) :mita.account))
 
 
 (defun connect-page (mapper connector)
   (connect
    mapper "/pages"
    (lambda (params req)
-     (declare (ignore params req))
+     (declare (ignore params))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (let ((pages (mita.page:load-pages db)))
            (html-response
             (mita.server.html:pages pages)))))))
@@ -151,9 +146,8 @@
   (connect
    mapper "/pages/:page-id"
    (lambda (params req)
-     (declare (ignore req))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (when-let*
              ((page-id
                (mita.id:parse-short-or-nil
@@ -166,7 +160,7 @@
   (connect
    mapper "/api/pages/:page-id/text"
    (lambda (params req)
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (when-let*
            ((page-id
              (mita.id:parse-short-or-nil
@@ -184,8 +178,8 @@
   (connect
    mapper "/api/pages/_create"
    (lambda (params req)
-     (declare (ignore params req))
-     (with-json-api (db connector)
+     (declare (ignore params))
+     (with-json-api (db connector req)
        (let ((page (mita.page:create-page db)))
          (json-response
           (jsown:new-js
@@ -217,7 +211,7 @@
    (lambda (params req)
      (declare (ignore params))
      (with-safe-json-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (when-let ((path (q req "path")))
            (let ((full-path
                    (parse-namestring
@@ -228,15 +222,13 @@
                (json-response (jsown:new-js))))))))
    :method :post))
 
-(defun connect-image (mapper server)
+(defun connect-image (mapper spec)
   (connect
    mapper "/images/:image-id"
    (lambda (params req)
      (with-safe-html-response
-       (mita.server:serve-image
-        server
-        req
-        (getf params :image-id)
+       (mita.server.app:serve-image
+        spec req (getf params :image-id)
         :on-found (lambda (path)
                     `(200 () ,path))
         :on-not-found (lambda ()
@@ -248,7 +240,7 @@
    (lambda (params req)
      (declare (ignore params))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (let ((offset (ensure-integer (q req "offset") 0))
                (limit (ensure-integer (q req "limit") 50)))
            (let* ((albums (mita.album:load-albums db offset (1+ limit)))
@@ -265,9 +257,8 @@
   (connect
    mapper "/albums/:album-id"
    (lambda (params req)
-     (declare (ignore req))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (let ((album-id (ensure-uuid-short (getf params :album-id))))
            (when-let ((album (mita.album:load-album-by-id db album-id)))
              (html-response (mita.server.html:album db album)))))))))
@@ -276,9 +267,8 @@
   (connect
    mapper "/view/album/:album-id"
    (lambda (params req)
-     (declare (ignore req))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (let ((album-id (ensure-uuid-short (getf params :album-id))))
            (when-let ((album (mita.album:load-album-by-id db album-id)))
              (html-response (mita.server.html:view
@@ -296,16 +286,16 @@
   (connect
    mapper "/tags"
    (lambda (params req)
-     (declare (ignore params req))
+     (declare (ignore params))
      (with-safe-html-response
-       (with-db (db connector)
+       (with-db (db connector req)
          (html-response (mita.server.html:tags db))))))
 
   (connect
    mapper "/api/tags/_create"
    (lambda (params req)
      (declare (ignore params))
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((name (q req "name")))
          (mita.tag:create-tag db name)
          (json-response (jsown:new-js)))))
@@ -315,15 +305,14 @@
   (connect
    mapper "/api/tags"
    (lambda (params req)
-     (declare (ignore params req))
-     (with-json-api (db connector)
+     (declare (ignore params))
+     (with-json-api (db connector req)
        (json-response (mita.tag:load-tags db)))))
 
   (connect
    mapper "/api/tags/:tag-id"
    (lambda (params req)
-     (declare (ignore req))
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((tag-id (ensure-uuid-short (getf params :tag-id))))
          (mita.tag:delete-tag db tag-id)
          (json-response (jsown:new-js)))))
@@ -332,7 +321,7 @@
   (connect
    mapper "/api/tags/:tag-id"
    (lambda (params req)
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((tag-id (ensure-uuid-short (getf params :tag-id)))
              (name (q req "name")))
          (when-let ((tag (mita.tag:load-tag-by-id db tag-id)))
@@ -343,8 +332,7 @@
   (connect
    mapper "/api/tags/:tag-id/contents"
    (lambda (params req)
-     (declare (ignore req))
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((tag-id (ensure-uuid-short (getf params :tag-id))))
          (when-let ((tag (mita.tag:load-tag-by-id db tag-id)))
            (json-response (mapcar
@@ -355,8 +343,7 @@
   (connect
    mapper "/api/albumTags/:album-id"
    (lambda (params req)
-     (declare (ignore req))
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((album-id (ensure-uuid-short (getf params :album-id))))
          (when-let ((album (mita.album:load-album-by-id db album-id)))
            (json-response (mita.tag:content-tags db album)))))))
@@ -364,7 +351,7 @@
   (connect
    mapper "/api/albumTags/:album-id"
    (lambda (params req)
-     (with-json-api (db connector)
+     (with-json-api (db connector req)
        (let ((album-id
               (ensure-uuid-short (getf params :album-id)))
              (nullable-tag-id-list
@@ -382,11 +369,11 @@
 (defun make-middleware (connector &key thumbnail-root
                                        content-root
                                        serve-image-p)
-  (let ((mapper (myway:make-mapper))
-        (server (make-instance 'mita.server:server
-                               :connector connector
-                               :thumbnail-root thumbnail-root
-                               :content-root content-root)))
+  (let ((spec (make-instance 'mita.server.app:spec
+                             :connector connector
+                             :thumbnail-root thumbnail-root
+                             :content-root content-root))
+        (mapper (myway:make-mapper)))
     (connect-album mapper connector)
     (connect-view mapper connector)
     (connect-page mapper connector)
@@ -394,5 +381,5 @@
     (connect-tag mapper connector)
     (connect-dir mapper connector thumbnail-root content-root)
     (when serve-image-p
-      (connect-image mapper server))
+      (connect-image mapper spec))
     (mapper->middleware mapper)))

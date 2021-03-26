@@ -6,34 +6,33 @@
   (:export :start))
 (in-package :mita.server.aserve)
 
-(defclass aserve-session-holder (mita.auth:session-holder)
+(defclass aserve-session-holder (mita.util.auth:session-holder)
   ((req :initarg :req)
    (session-store :initarg :session-store)))
 
-(defmethod mita.auth:get-session ((holder aserve-session-holder))
+(defmethod mita.util.auth:get-session ((holder aserve-session-holder))
   (with-slots (req session-store) holder
     (or (when-let ((sid (cdr (assoc "lack.session"
                                     (net.aserve:get-cookie-values req)
                                     :test #'string=))))
-          (mita.auth.session:fetch-session session-store sid))
+          (mita.util.auth.session:fetch-session session-store sid))
         (make-hash-table :test #'equal))))
 
-(defmacro ensure-authenticated ((account req &key session-store connector)
+(defmacro ensure-authenticated ((account-id req &key session-store)
                                 &body body)
-  `(when-let ((,account
-               (mita.auth:is-authenticated-p
+  `(when-let ((,account-id
+               (mita.util.auth:is-authenticated-p
                 (make-instance 'aserve-session-holder
                                :req ,req
-                               :session-store ,session-store)
-                ,connector)))
+                               :session-store ,session-store))))
      (progn ,@body)))
 
 
 
-(defstruct req account)
+(defstruct req account-id)
 
-(defmethod mita.server:request-account ((req req))
-  (req-account req))
+(defmethod mita.server.app:request-account-id ((req req))
+  (req-account-id req))
 
 (defun start (&key (port 5003)
                    content-root
@@ -46,15 +45,13 @@
    :prefix "/images/"
    :function
    (lambda (req ent)
-     (ensure-authenticated (account req
-                            :connector connector
-                            :session-store session-store)
-       (mita.server:serve-image
-        (make-instance 'mita.server:server
+     (ensure-authenticated (account-id req :session-store session-store)
+       (mita.server.app:serve-image
+        (make-instance 'mita.server.app:spec
                        :connector connector
                        :thumbnail-root thumbnail-root
                        :content-root content-root)
-        (make-req :account account)
+        (make-req :account-id account-id)
         ;; (length "/images/")
         (subseq (puri:uri-path (net.aserve:request-uri req)) 8)
         :on-found

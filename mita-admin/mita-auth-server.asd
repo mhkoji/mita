@@ -7,7 +7,8 @@
    (:file "server"))
 
   :depends-on
-  (:mita-auth
+  (:mita-admin
+   :mita-util-auth
 
    :ningle
    :cl-who

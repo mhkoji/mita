@@ -7,7 +7,7 @@
   (push (list (mita.id:to-string
                (mita.account.db:account-id account))
               (mita.account.db:account-username account)
-              (mita.account.db:hashed-password-string
+              (mita.util.password:hashed-password-string
                (mita.account.db:account-hashed-password account)))
         (gethash +account+ (table-hash db))))
 
@@ -15,7 +15,7 @@
            (mita.account.db:make-account
             :id (mita.id:parse (first row))
             :username (second row)
-            :hashed-password (mita.account.db:make-hashed-password
+            :hashed-password (mita.util.password:make-hashed-password
                               :string (third row)))))
   (defmethod mita.account.db:account-select ((db file-db)
                                              (username string))

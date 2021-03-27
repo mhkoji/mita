@@ -12,4 +12,5 @@
    (:file "admin"))
 
   :depends-on
-  (:mita))
+  (:mita
+   :mita-util-password))

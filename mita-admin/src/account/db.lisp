@@ -7,26 +7,8 @@
            :account-hashed-password
            :account-select
            :account-select-by-id
-           :account-insert
-           :make-hashed-password
-           :hash-password
-           :hashed-password-string
-           :hashed-password-matches-p))
+           :account-insert))
 (in-package :mita.account.db)
-
-(defstruct hashed-password string)
-
-(defun hash-password (raw)
-  (make-hashed-password
-   :string
-   (cl-bcrypt:encode
-    (cl-bcrypt:make-password raw))))
-
-(defun hashed-password-matches-p (hashed password)
-  (cl-bcrypt:password= password (hashed-password-string hashed)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Use defclass instead of defstruct so that the hashed password of an object is not printed accidentally.
 (defclass account ()

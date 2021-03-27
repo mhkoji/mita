@@ -18,7 +18,7 @@
 
 (defun find-account-with-password-checked (db username password)
   (when-let ((row (mita.account.db:account-select db username)))
-    (when (mita.account.db:hashed-password-matches-p
+    (when (mita.util.password:hashed-password-matches-p
            (mita.account.db:account-hashed-password row)
            password)
       (make-instance 'account :row row))))
@@ -37,6 +37,6 @@
                   :id (mita.id:gen)
                   :username username
                   :hashed-password
-                  (mita.account.db:hash-password password))))
+                  (mita.util.password:hash password))))
     (mita.account.db:account-insert db account))
   (find-account db username))

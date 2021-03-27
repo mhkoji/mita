@@ -3,6 +3,7 @@
   (:export :request-account-id
            :get-connector
            :with-db
+           :with-db-spec
            :spec
            :serve-image)
   (:import-from :alexandria
@@ -11,16 +12,9 @@
 
 (defgeneric request-account-id (request))
 
-(defgeneric get-connector (conn-holder))
-
-(defmethod get-connector ((conn mita.util.postgres:connector))
-  conn)
-
-(defmacro with-db ((db conn-holder req) &body body)
-  `(mita.db.impl:with-db (,db (request-account-id ,req)
-                              (get-connector ,conn-holder))
+(defmacro with-db ((db conn req) &body body)
+  `(mita.db.impl:with-db (,db (request-account-id ,req) ,conn)
      ,@body))
-
 
 ;;;;;
   
@@ -35,13 +29,14 @@
     :initarg :thumbnail-root
     :reader spec-thumbnail-root)))
 
-(defmethod get-connector ((spec spec))
-  (spec-connector spec))
+(defmacro with-db-spec ((db spec rec) &body body)
+  `(with-db (,db (spec-connector ,spec) ,rec)
+     ,@body))
 
 (defun serve-image (spec req image-id-string
                     &key on-found
                          on-not-found)
-  (with-db (db spec req)
+  (with-db-spec (db spec req)
     (let ((image-id (mita.id:parse-short-or-nil image-id-string)))
       (unless image-id
         (return-from serve-image (funcall on-not-found)))

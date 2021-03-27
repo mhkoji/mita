@@ -70,16 +70,12 @@ export function putAlbumTags(albumId, tags) {
   });
 }
 
-export function authenticate(username, password) {
-  return fetch('/api/authenticate', {
+export function logout() {
+  return fetch('/auth/api/logout', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      'username': username,
-      'password': password
-    })
   }).then((resp) => resp.json()).then((body) => {
     return body.value;
   });

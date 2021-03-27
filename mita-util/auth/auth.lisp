@@ -4,7 +4,8 @@
            :get-session
            :renew-session-id
            :is-authenticated-p
-           :authenticate
+           :login
+           :logout
            :account-identity
            :find-account
            :find-account-from-unique-string
@@ -29,10 +30,15 @@
   (let ((session (get-session session-holder)))
     (gethash *session-account-id-key* session)))
 
-(defun authenticate (session-holder repos username password)
+(defun login (session-holder repos username password)
   (when-let ((account (find-account repos username password)))
     (let ((session (get-session session-holder)))
       (setf (gethash *session-account-id-key* session)
             (account-identity account))
       (renew-session-id session-holder)
       t)))
+
+(defun logout (session-holder)
+  (let ((session (get-session session-holder)))
+    (clrhash session))
+  (renew-session-id session-holder))

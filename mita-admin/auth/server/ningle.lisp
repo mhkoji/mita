@@ -65,7 +65,17 @@
               `(302 (:location ,top-url) nil)
               (login-page))))
 
-  (setf (ningle:route app "/auth/api/authenticate" :method :post)
+  (setf (ningle:route app "/auth/api/logout" :method :post)
+        (lambda (params)
+          (declare (ignore params))
+          (with-safe-json-response
+            (let ((env (lack.request:request-env ningle:*request*)))
+              (mita.util.auth:logout
+               (make-instance 'mita.util.auth.lack:lack-session-holder
+                              :env env)))
+            t)))
+
+  (setf (ningle:route app "/auth/api/login" :method :post)
         (lambda (params)
           (declare (ignore params))
           (with-safe-json-response
@@ -73,7 +83,7 @@
                    (lack.request:request-env ningle:*request*))
                   (body
                    (lack.request:request-body-parameters ningle:*request*)))
-              (if (mita.util.auth:authenticate
+              (if (mita.util.auth:login
                    (make-instance 'mita.util.auth.lack:lack-session-holder
                                   :env env)
                    (make-instance 'account-repository

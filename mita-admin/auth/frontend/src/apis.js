@@ -1,5 +1,5 @@
 export function authenticate(username, password) {
-  return fetch('/auth/api/authenticate', {
+  return fetch('/auth/api/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

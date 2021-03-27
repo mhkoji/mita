@@ -2,11 +2,22 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
+import * as apis from '../apis';
+
 export default function Header() {
   const brand = {
     url: '/',
     name: 'Mita'
   };
+
+  function handleSubmitLogout(evt) {
+    evt.preventDefault();
+    apis.logout().then((ok) => {
+      if (ok) {
+        location.href = '/';
+      }
+    });
+  }
 
   const pages = [
     {
@@ -53,6 +64,12 @@ export default function Header() {
             }
           </ul>
         </div>
+
+        <form class="form-inline my-2 my-lg-0" onSubmit={handleSubmitLogout}>
+          <button class="btn btn-outline-light my-2 my-sm-0" type="submit">
+            Logout
+          </button>
+        </form>
       </nav>
   );
 }

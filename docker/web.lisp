@@ -6,7 +6,7 @@
                 :mita-server-aserve))
 
 (defvar *connector*
-  (mita.postgres:make-connector
+  (mita.util.postgres:make-connector
    :user "postgres"
    :host "postgres"
    :port 5432))

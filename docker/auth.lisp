@@ -10,7 +10,7 @@
    :port 5002
    :static-root "/app/static/"
    :session-store (mita.util.auth.session:make-redis-store :host "redis")
-   :connector (mita.postgres:make-connector
+   :connector (mita.util.postgres:make-connector
                :user "postgres"
                :host "postgres"
                :port 5432)

@@ -33,13 +33,14 @@
 
 (defun create-account-database (postgres-dir account-id connector)
   (let ((db-name (account-id->db-name account-id)))
-    (postmodern:with-connection (connector->spec "admin" connector)
+    (postmodern:with-connection
+        (mita.util.postgres::connector->spec "admin" connector)
       (postmodern:query
        (format nil "CREATE DATABASE ~A" db-name)))
-    (postmodern:with-connection (connector->spec db-name connector)
+    (postmodern:with-connection
+        (mita.util.postgres::connector->spec db-name connector)
       (postmodern:execute-file
        (merge-pathnames postgres-dir "./mita-ddl.sql")))))
-
 
 ;;;
 

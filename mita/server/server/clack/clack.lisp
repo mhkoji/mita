@@ -35,7 +35,7 @@
 
           (:session :store session-store)
 
-          (mita.server.clack.log:make-middleware)
+          (mita.util.clack:middleware-log)
 
 	  (mita.util.auth.lack:authenticate)
 

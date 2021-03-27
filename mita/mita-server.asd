@@ -8,13 +8,13 @@
    (:file "html")
    (:file "app")
    (:file "clack/mita")
-   (:file "clack/log")
    (:file "clack/clack"))
 
   :depends-on
-  (:mita
-   :mita-util-auth
+  (:mita-util-auth
+   :mita-util-clack
    :mita-auth-server
+   :mita
 
    :myway
    :clack

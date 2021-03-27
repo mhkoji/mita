@@ -11,7 +11,7 @@
 
 (progn
   (defun make-connector ()
-    (mita.postgres:make-connector
+    (mita.util.postgres:make-connector
      :user "postgres"
      :host "localhost"
      :port 5432))
@@ -19,13 +19,12 @@
   (defun system-relative-pathname (name)
     (asdf:system-relative-pathname (asdf:find-system :mita) name))
   
-  (reexport '(mita.postgres:with-db
-              mita.postgres:with-admin-db)))
+  (reexport '(mita.db.postgres:with-db)))
 
 #+nil
 (progn
   (defun make-connector ()
     (mita.db.file:make-connector :dir "./db-file/"))
 
-  (reexport '(mita.db.file:with-db
-              mita.db.file:with-admin-db)))
+  (reexport '(mita.db.file:with-db)))
+

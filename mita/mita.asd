@@ -20,17 +20,16 @@
    (:file "album-with-images")
    (:file "add-albums")
 
-   (:file "postgres/db")
-   (:file "postgres/postgres")
-
+   (:file "db-postgres")
    (:file "db-file")
    (:file "db-impl"))
 
   :depends-on
-  (:alexandria
+  (:mita-util-postgres
+
+   :alexandria
    :local-time
    :uuid
-   :postmodern
    :cl-fad
 
    ;; for db-file

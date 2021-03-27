@@ -3,6 +3,8 @@
   (:export :start))
 (in-package :mita.server.clack)
 
+(setq *read-eval* nil)
+
 (defvar *connector* (mita.db.impl:make-connector))
 
 (defvar *handler* nil)

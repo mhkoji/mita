@@ -13,7 +13,7 @@
 
 (defgeneric get-connector (conn-holder))
 
-(defmethod get-connector ((conn mita.postgres:connector))
+(defmethod get-connector ((conn mita.util.postgres:connector))
   conn)
 
 (defmacro with-db ((db conn-holder req) &body body)

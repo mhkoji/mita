@@ -4,7 +4,7 @@
 (in-package :mita.auth.server.ningle)
 
 (defmacro with-admin-db ((db connector) &body body)
-  `(mita.db.impl:with-admin-db (,db ,connector)
+  `(mita.admin:with-admin-db (,db ,connector)
      ,@body))
 
 (defclass account-repository ()

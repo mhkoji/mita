@@ -1,4 +1,4 @@
-(in-package :mita.postgres.db)
+(in-package :mita.db.postgres)
 
 (defun parse-account (row)
   (mita.account.db:make-account

@@ -1,107 +1,47 @@
-(defpackage :mita.postgres.db
+(defpackage :mita.db.postgres
   (:use :cl)
   (:import-from :alexandria
                 :when-let)
+  (:import-from :mita.util.postgres
+                :execute
+                :insert-into
+                :select-from
+                :delete-from
+                :single)
   (:export :postgres
-           :with-db))
-(in-package :mita.postgres.db)
+           :with-db
+           :create-account-database))
+(in-package :mita.db.postgres)
 
-(defclass postgres (mita.db:db)
-  ((conn
-    :initarg :conn
-    :reader postgres-conn)))
+(defclass postgres (mita.db:db
+                    mita.util.postgres:postgres)
+  ())
 
-(defmacro with-db ((db spec) &body body)
-  `(postmodern:with-connection ,spec
-     (postmodern:with-transaction (nil :serializable)
-       (let ((,db (make-instance 'postgres :conn postmodern:*database*)))
+(defun account-id->db-name (id-string)
+  (format nil "account_~A"
+          (string-downcase (cl-ppcre:regex-replace-all "-" id-string "_"))))
+
+(defmacro with-db ((db account-id connector) &body body)
+  (let ((g (gensym)))
+    `(mita.util.postgres:with-db (,g (account-id->db-name ,account-id)
+                                     ,connector)
+       (let ((,db (change-class ,g 'postgres)))
          ,@body))))
 
-(defun query (db query-string args)
-  (let ((conn (postgres-conn db)))
-    (cl-postgres:prepare-query conn "" query-string)
-    (cl-postgres:exec-prepared conn "" args #'cl-postgres:list-row-reader)))
 
-(defun insert-into (db table-name column-name-list values-list)
-  (query db
-         (with-output-to-string (s)
-           (format s "INSERT INTO ~A" table-name)
-           (format s " (~{~A~^,~})" column-name-list)
-           (format s " VALUES ~{~A~^,~}"
-            (let ((i 0)
-                  (column-count (length column-name-list)))
-              (loop repeat (length values-list)
-                    for vals = (loop repeat column-count
-                                     collect (format nil "$~A" (incf i)))
-                        collect (format nil "(~{~A~^,~})" vals)))))
-         (reduce #'append values-list)))
+;;;
+
+(defun create-account-database (postgres-dir account-id connector)
+  (let ((db-name (account-id->db-name account-id)))
+    (postmodern:with-connection (connector->spec "admin" connector)
+      (postmodern:query
+       (format nil "CREATE DATABASE ~A" db-name)))
+    (postmodern:with-connection (connector->spec db-name connector)
+      (postmodern:execute-file
+       (merge-pathnames postgres-dir "./mita-ddl.sql")))))
 
 
-(defun parse-clause (clause)
-  (let ((i 0))
-    (labels ((rec (clause k)
-               (if (not (keywordp (car clause)))
-                   (funcall k
-                    (if (null clause)
-                        ""
-                        (format nil "~A" clause))
-                    nil)
-                   (ecase (car clause)
-                     (:and
-                      (destructuring-bind (left right) (cdr clause)
-                        (rec left
-                         (lambda (l-cond l-acc-values)
-                           (rec right
-                            (lambda (r-cond r-acc-values)
-                              (funcall k
-                               (format nil "~A AND ~A" l-cond r-cond)
-                               (append l-acc-values r-acc-values))))))))
-                     ((:in :=)
-                      (let ((op (car clause))
-                            (column-name (second clause)))
-                        (rec (third clause)
-                         (lambda (cond acc-values)
-                           (funcall k
-                            (format nil "(~A ~A ~A)" column-name op cond)
-                            acc-values)))))
-                     (:p
-                      (let ((values (alexandria:ensure-list
-                                     (second clause))))
-                        (funcall k
-                         (format nil "(~{~A~^,~})"
-                          (loop repeat (length values)
-                                collect (format nil "$~A" (incf i))))
-                         values)))
-                     (:where
-                      (rec (second clause)
-                       (lambda (cond acc-values)
-                         (funcall k
-                          (format nil "WHERE ~A" cond)
-                          acc-values))))))))
-      (rec clause #'list))))
-
-(defun delete-from (db table-name cond)
-  (destructuring-bind (cond-string values) (parse-clause cond)
-    (query db
-           (format nil "DELETE FROM ~A ~A"
-                   table-name
-                   cond-string)
-           values)))
-
-(defun select-from (db column-names table-name cond &key order-by)
-  (destructuring-bind (cond-string values) (parse-clause cond)
-    (query db
-           (with-output-to-string (s)
-             (format s "SELECT ~A FROM ~A ~A"
-                     column-names
-                     table-name
-                     cond-string)
-             (when order-by
-               (format s "ORDER BY ~A" order-by)))
-           values)))
-
-(defun single (row-parser select-result)
-  (car (mapcar row-parser select-result)))
+;;;
 
 
 (defclass page (mita.page:page)
@@ -142,7 +82,7 @@
                         (:p ,(mita.id:to-string page-id)))))))
 
 (defmethod mita.db:page-select ((db postgres))
-  (mapcar #'parse-page (query db "SELECT * FROM pages" nil)))
+  (mapcar #'parse-page (execute db "SELECT * FROM pages" nil)))
 
 
 (defmethod mita.db:page-text-delete ((db postgres)
@@ -167,9 +107,9 @@
 (defmethod mita.db:page-text-update ((db postgres)
                                      (page-id mita.id:id)
                                      (text string))
-  (query db
-         "UPDATE page_text set string = $1 where page_id = $2"
-         (list text (mita.id:to-string page-id))))
+  (execute db
+           "UPDATE page_text set string = $1 where page_id = $2"
+           (list text (mita.id:to-string page-id))))
 
 
 (defun parse-image (row)
@@ -265,9 +205,9 @@
 (defmethod mita.db:album-select-album-ids ((db postgres) offset limit)
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
-          (query db
-                 "SELECT album_id FROM albums ORDER BY created_on DESC OFFSET $1 LIMIT $2"
-                 (list offset limit))))
+          (execute db
+                   "SELECT album_id FROM albums ORDER BY created_on DESC OFFSET $1 LIMIT $2"
+                   (list offset limit))))
 
 
 (defmethod mita.db:album-thumbnail-image-delete ((db postgres)
@@ -346,7 +286,7 @@
 
 (defmethod mita.db:tag-select ((db postgres))
   (mapcar #'parse-tag
-          (query db "SELECT * FROM tags ORDER BY added_on" nil)))
+          (execute db "SELECT * FROM tags ORDER BY added_on" nil)))
 
 (defmethod mita.db:tag-insert ((db postgres)
                                (tag mita.tag:tag))
@@ -360,9 +300,9 @@
 (defmethod mita.db:tag-update ((db postgres)
                                (tag-id mita.id:id)
                                (name string))
-  (query db
-         "UPDATE tags SET name = $1 where tag_id = $2"
-         (list name (mita.id:to-string tag-id))))
+  (execute db
+           "UPDATE tags SET name = $1 where tag_id = $2"
+           (list name (mita.id:to-string tag-id))))
 
 (defmethod mita.db:tag-content-delete ((db postgres)
                                        (tag-id mita.id:id))

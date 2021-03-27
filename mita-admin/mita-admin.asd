@@ -12,5 +12,6 @@
    (:file "admin"))
 
   :depends-on
-  (:mita
-   :mita-util-password))
+  (:mita-util-postgres
+   :mita-util-password
+   :mita))

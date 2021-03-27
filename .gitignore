@@ -3,5 +3,5 @@
 data
 
 ## for webapps
-*/static/gen
+**/*/static/gen
 node_modules

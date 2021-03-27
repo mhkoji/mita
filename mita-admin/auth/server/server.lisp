@@ -17,7 +17,7 @@
 (defun start (&key (port 5002)
                    (static-root
                     (system-relative-pathname
-                     "../mita-admin/auth-server/static/"))
+                     "../mita-admin/auth/static/"))
                    (session-store *session-store*)
                    (use-thread t)
                    (connector

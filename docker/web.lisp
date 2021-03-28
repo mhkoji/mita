@@ -21,7 +21,6 @@
    :port 5001
    :static-root "/app/static/"
    :thumbnail-root "/data/thumbnails/"
-   :content-root "/data/albums/"
    :account-content-base "/data/accounts/"
    :session-store *sesson-store*
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
@@ -33,7 +32,7 @@
 (defun aserve ()
   (mita.server.aserve:start
    :port 5003
-   :content-root "/data/albums/"
+   :account-content-base "/data/accounts/"
    :thumbnail-root "/data/thumbnails/"
    :session-store *sesson-store*
    :connector *connector*)

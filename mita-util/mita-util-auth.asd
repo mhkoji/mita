@@ -8,9 +8,9 @@
    (:file "session"))
 
   :depends-on
-  (:mita-admin
-
-   :marshal
+  (:cl-base64
    :cl-redis
+   :marshal
    :lack
-   :lack-middleware-session))
+   :lack-middleware-session
+   :trivial-utf-8))

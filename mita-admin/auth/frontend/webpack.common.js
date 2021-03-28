@@ -14,7 +14,8 @@ module.exports = {
   ],
 
   entry: {
-    login: './src/components/entries/login.jsx'
+    login: './src/components/entries/login.jsx',
+    admin: './src/components/entries/admin.jsx'
   },
 
   output: {

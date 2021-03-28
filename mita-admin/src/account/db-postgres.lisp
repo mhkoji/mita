@@ -22,15 +22,22 @@
                         account))))))
 
 (defmethod mita.admin.account.db:account-select ((db postgres)
-                                           (username string))
+                                                 (username string))
   (single #'parse-account
           (select-from
            db "account_id, username, password_hashed" "accounts"
            `(:where (:= "username" (:p ,username))))))
 
 (defmethod mita.admin.account.db:account-select-by-id ((db postgres)
-                                                 (id mita.id:id))
+                                                       (id mita.id:id))
   (single #'parse-account
           (select-from
            db "account_id, username, password_hashed" "accounts"
            `(:where (:= "account_id" (:p ,(mita.id:to-string id)))))))
+
+(defmethod mita.admin.account.db:account-select-all ((db postgres))
+  (mapcar #'parse-account
+          (execute
+           db
+           "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
+           (list 0 50))))

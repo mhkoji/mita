@@ -33,6 +33,8 @@
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.auth.server.ningle:route-auth
                        app connector :top-url "/albums")
+                      (mita.admin.server.ningle:route-admin
+                       app connector)
                       app))
                    :address nil
                    :use-thread use-thread

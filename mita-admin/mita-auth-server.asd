@@ -1,14 +1,34 @@
 (asdf:defsystem :mita-auth-server
   :serial t
-  :pathname "auth/server/"
 
   :components
-  ((:file "ningle")
-   (:file "server"))
+  ((:module :src
+    :pathname "src"
+    :components
+    ((:module :account
+      :pathname "account"
+      :components ((:file "db")
+                   (:file "account")
+                   (:file "db-postgres")
+                   (:file "db-file")))
+     (:file "admin")))
+
+   (:module :admin/server
+    :pathname "admin/server/"
+    :components
+    ((:file "ningle")))
+
+   (:module :auth/server
+    :pathname "auth/server/"
+    :components
+    ((:file "ningle")
+     (:file "server"))))
 
   :depends-on
-  (:mita-admin
+  (:mita-util-postgres
+   :mita-util-password
    :mita-util-auth
+   :mita
 
    :ningle
    :cl-who

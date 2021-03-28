@@ -1,11 +1,9 @@
 (defpackage :mita.auth.server.ningle
   (:use :cl)
+  (:import-from :mita.admin
+                :with-admin-db)
   (:export :route-auth))
 (in-package :mita.auth.server.ningle)
-
-(defmacro with-admin-db ((db connector) &body body)
-  `(mita.admin:with-admin-db (,db ,connector)
-     ,@body))
 
 (defclass account-repository ()
   ((connector :initarg :connector)))

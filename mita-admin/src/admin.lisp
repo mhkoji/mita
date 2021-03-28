@@ -1,7 +1,9 @@
 (defpackage :mita.admin
   (:use :cl)
-  (:export :init
-           :with-admin-db))
+  (:export :with-admin-db
+           :create-account
+           :list-accounts
+           :init))
 (in-package :mita.admin)
 
 (defmacro with-admin-db ((db connector) &body body)
@@ -28,6 +30,10 @@
                                    postgres-dir
                                    account-content-base-dir))
     account))
+
+(defun list-accounts (connector)
+  (with-admin-db (db connector)
+    (mita.admin.account:load-accounts db)))
 
 ;;;
 

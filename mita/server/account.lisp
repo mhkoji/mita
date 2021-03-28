@@ -2,7 +2,8 @@
   (:use :cl)
   (:export :with-db
            :account-content-root
-           :create-account))
+           :create-account
+           :delete-account))
 (in-package :mita.account)
 
 (defun account-id->db-name (id-string)
@@ -24,6 +25,13 @@
       (postmodern:execute-file
        (merge-pathnames postgres-dir "./mita-ddl.sql")))))
 
+(defun drop-account-database (account-id connector)
+  (let ((db-name (account-id->db-name account-id)))
+    (postmodern:with-connection
+        (mita.util.postgres::connector->spec "admin" connector)
+      (postmodern:query
+       (format nil "DROP DATABASE IF EXISTS ~A" db-name)))))
+
 (defun account-content-root (account-id account-content-base-dir)
   (concatenate 'string
                account-content-base-dir
@@ -38,3 +46,10 @@
   (ensure-directories-exist (account-content-root
                              account-id
                              account-content-base-dir)))
+
+(defun delete-account (account-id connector account-content-base-dir)
+  (drop-account-database account-id connector)
+  (cl-fad:delete-directory-and-files (account-content-root
+                                      account-id
+                                      account-content-base-dir)
+                                     :if-does-not-exist :ignore))

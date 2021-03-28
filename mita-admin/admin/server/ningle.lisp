@@ -53,7 +53,7 @@
         (lambda (params)
           (declare (ignore params))
           (admin-page (mita.admin:list-accounts connector))))
-  (setf (ningle:route app "/admin/api/create-account" :method :post)
+  (setf (ningle:route app "/admin/api/account" :method :post)
         (lambda (params)
           (declare (ignore params))
           (with-safe-json-response
@@ -65,4 +65,12 @@
                connector
                postgres-dir
                account-content-base-dir))
+            t)))
+  (setf (ningle:route app "/admin/api/account/:id" :method :delete)
+        (lambda (params)
+          (with-safe-json-response
+            (mita.admin:delete-account
+             (mita.id:parse (cdr (assoc :id params)))
+             connector
+             account-content-base-dir)
             t))))

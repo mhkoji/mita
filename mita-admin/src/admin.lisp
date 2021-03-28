@@ -2,6 +2,7 @@
   (:use :cl)
   (:export :with-admin-db
            :create-account
+           :delete-account
            :list-accounts
            :init))
 (in-package :mita.admin)
@@ -30,6 +31,14 @@
                                    postgres-dir
                                    account-content-base-dir))
     account))
+
+(defun delete-account (account-id connector account-content-base-dir)
+  (let ((id-string (mita.id:to-string account-id)))
+    (mita.account:delete-account id-string
+                                 connector
+                                 account-content-base-dir))
+  (with-admin-db (db connector)
+    (mita.admin.account:delete-account db account-id)))
 
 (defun list-accounts (connector)
   (with-admin-db (db connector)

@@ -41,3 +41,8 @@
            db
            "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
            (list 0 50))))
+
+(defmethod mita.admin.account.db:account-delete ((db postgres)
+                                                 (id mita.id:id))
+  (delete-from db "accounts" `(:where (:= "account_id"
+                                          (:p ,(mita.id:to-string id))))))

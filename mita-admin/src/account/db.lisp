@@ -8,7 +8,8 @@
            :account-select
            :account-select-all
            :account-select-by-id
-           :account-insert))
+           :account-insert
+           :account-delete))
 (in-package :mita.admin.account.db)
 
 ;; Use defclass instead of defstruct so that the hashed password of an object is not printed accidentally.
@@ -35,3 +36,5 @@
 (defgeneric account-select (db username))
 
 (defgeneric account-select-all (db))
+
+(defgeneric account-delete (db account-id))

@@ -11,8 +11,19 @@ function AccountList(props) {
   const rows = accounts.map((a) => {
     return (
         <tr key={a.id}>
-          <td>{a.id}</td>
-          <td>{a.username}</td>
+          <td>
+            {a.id}
+          </td>
+          <td>
+            {a.username}
+          </td>
+          <td>
+            <button type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => props.onDelete(a.id)} >
+              Delete
+            </button>
+          </td>
         </tr>
     );
   });
@@ -22,6 +33,7 @@ function AccountList(props) {
           <tr>
             <th scope="col">Account Id</th>
             <th scope="col">Username</th>
+            <th scope="col">Ops</th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
@@ -104,7 +116,7 @@ class CreateAccountModal extends React.Component {
 
   handleCreate(username, password) {
     this.setState({ type: 'saving' });
-    fetch('/admin/api/create-account', {
+    fetch('/admin/api/account', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -162,6 +174,15 @@ function App () {
   const { accounts } = window['$mita'];
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
+  function handleDeleteAccount(id) {
+    fetch('/admin/api/account/' + id, {
+      method: 'DELETE'
+    }).then((resp) => {
+        alert('Success!')
+        window.location = window.location;
+    });
+  }
+  
   return (
       <div>
         <main className="p-md-5">
@@ -173,7 +194,9 @@ function App () {
               <Plus />
             </button>
 
-            <AccountList accounts={accounts} />
+            <AccountList
+              accounts={accounts}
+              onDelete={handleDeleteAccount} />
           </div>
         </main>
 

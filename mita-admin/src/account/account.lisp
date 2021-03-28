@@ -7,6 +7,7 @@
            :find-account
            :find-account-by-id
            :create-account
+           :delete-account
            :load-accounts)
   (:import-from :alexandria
                 :when-let))
@@ -45,6 +46,9 @@
                   (mita.util.password:hash password))))
     (mita.admin.account.db:account-insert db account))
   (find-account db username))
+
+(defun delete-account (db account-id)
+  (mita.admin.account.db:account-delete db account-id))
 
 (defun load-accounts (db)
   (mapcar (lambda (row)

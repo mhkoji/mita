@@ -5,10 +5,8 @@
 (in-package :mita.admin)
 
 (defmacro with-admin-db ((db connector) &body body)
-  (let ((g (gensym)))
-    `(mita.util.postgres:with-db (,g "admin" ,connector)
-       (let ((,db (change-class ,g 'mita.db.postgres:postgres)))
-         ,@body))))
+  `(mita.db.impl:with-db (,db "admin" ,connector)
+     ,@body))
 
 (defun create-admin-database (postgres-dir connector)
   (with-admin-db (db connector)
@@ -19,12 +17,13 @@
 (defun create-account (postgres-dir connector username password)
   (let ((account
          (with-admin-db (db connector)
-           (mita.account:create-account db username password))))
-    (mita.db.postgres:create-account-database
-     postgres-dir
-     (mita.id:to-string (mita.account:account-id account))
-     connector)
+           (mita.admin.account:create-account db username password))))
+    (let ((id-string (mita.id:to-string
+                      (mita.admin.account:account-id account))))
+      (mita.account:create-account postgres-dir id-string connector))
     account))
+
+;;;
 
 (defun init (postgres-dir connector drop-p)
   (when drop-p

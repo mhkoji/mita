@@ -22,7 +22,9 @@
 
    (:file "db-postgres")
    (:file "db-file")
-   (:file "db-impl"))
+   (:file "db-impl")
+
+   (:file "account"))
 
   :depends-on
   (:mita-util-postgres

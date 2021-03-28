@@ -13,7 +13,7 @@
 (defgeneric request-account-id (request))
 
 (defmacro with-db ((db conn req) &body body)
-  `(mita.db.impl:with-db (,db (request-account-id ,req) ,conn)
+  `(mita.account:with-db (,db (request-account-id ,req) ,conn)
      ,@body))
 
 ;;;;;

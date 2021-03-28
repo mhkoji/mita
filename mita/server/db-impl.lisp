@@ -1,7 +1,5 @@
 (defpackage :mita.db.impl
-  (:use :cl)
-  (:export :init-db
-           :make-connector))
+  (:use :cl))
 (in-package :mita.db.impl)
 
 (defun reexport (syms)
@@ -16,15 +14,13 @@
      :host "localhost"
      :port 5432))
 
-  (defun system-relative-pathname (name)
-    (asdf:system-relative-pathname (asdf:find-system :mita) name))
-  
-  (reexport '(mita.db.postgres:with-db)))
+  (reexport '(make-connector
+              mita.db.postgres:with-db)))
 
 #+nil
 (progn
   (defun make-connector ()
     (mita.db.file:make-connector :dir "./db-file/"))
 
-  (reexport '(mita.db.file:with-db)))
-
+  (reexport '(make-connector
+              mita.db.file:with-db)))

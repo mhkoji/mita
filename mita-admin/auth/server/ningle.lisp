@@ -11,15 +11,15 @@
   ((connector :initarg :connector)))
 
 (defmethod mita.util.auth:account-identity
-    ((account mita.account:account))
-  (mita.id:to-string (mita.account:account-id account)))
+    ((account mita.admin.account:account))
+  (mita.id:to-string (mita.admin.account:account-id account)))
 
 (defmethod mita.util.auth:find-account ((repos account-repository)
                                         username
                                         password)
   (when (and username password)
     (with-admin-db (db (slot-value repos 'connector))
-      (mita.account:find-account-with-password-checked
+      (mita.admin.account:find-account-with-password-checked
        db username password))))
 
 ;;;

@@ -36,11 +36,9 @@
      ,@body))
 
 (defun account-content-root (spec req)
-  (concatenate 'string
-   (namestring (spec-account-content-base spec))
-   (mita.account::account-id->db-name
-    (mita.server.app:request-account-id req))
-   "/"))
+  (mita.account:account-content-root
+   (request-account-id req)
+   (namestring (spec-account-content-base spec))))
 
 ;;;
 

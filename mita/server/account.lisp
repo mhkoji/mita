@@ -1,6 +1,7 @@
 (defpackage :mita.account
   (:use :cl)
   (:export :with-db
+           :account-content-root
            :create-account))
 (in-package :mita.account)
 
@@ -23,12 +24,17 @@
       (postmodern:execute-file
        (merge-pathnames postgres-dir "./mita-ddl.sql")))))
 
+(defun account-content-root (account-id account-content-base-dir)
+  (concatenate 'string
+               account-content-base-dir
+               (account-id->db-name account-id)
+               "/"))
+
 (defun create-account (account-id
                        connector
                        postgres-dir
                        account-content-base-dir)
   (create-account-database postgres-dir account-id connector)
-  (let ((name (account-id->db-name account-id)))
-    (ensure-directories-exist (format nil "~A/~A/"
-                                      account-content-base-dir
-                                      name))))
+  (ensure-directories-exist (account-content-root
+                             account-id
+                             account-content-base-dir)))

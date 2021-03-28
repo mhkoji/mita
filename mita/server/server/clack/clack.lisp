@@ -21,9 +21,6 @@
                     ;; Call directory-exists-p to resolve symlink beforehand
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/thumbnails/")))
-                   (content-root
-                    (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/albums/")))
                    (account-content-base
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/accounts/")))
@@ -51,7 +48,6 @@
           (mita.server.clack.mita:make-middleware
            connector
            :thumbnail-root thumbnail-root
-           :content-root content-root
            :account-content-base account-content-base
            :serve-image-p serve-image)
 

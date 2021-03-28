@@ -184,55 +184,34 @@
               ("redirect"
                (mita.server.jsown:url-for page)))))))))))
 
-(defun connect-dir (mapper connector
-                    thumbnail-root
-                    account-content-base)
-  (setq account-content-base (namestring account-content-base))
-  (setq thumbnail-root (namestring thumbnail-root))
-  (labels ((account-content-root (req)
-             (concatenate 'string
-                          account-content-base
-                          (mita.account::account-id->db-name
-                           (mita.server.app:request-account-id req))
-                          "/")))
-    (connect-all mapper
-     (("/dir/*"
-       (lambda (params req)
-         (with-safe-html-response
-           (when-let ((path (car (getf params :splat))))
-             (let* ((content-root
-                     (account-content-root req))
-                    (full-path
-                     (parse-namestring
-                      (concatenate 'string content-root "/" path))))
-               (when (cl-fad:file-exists-p full-path)
-                 (if (cl-fad:directory-pathname-p full-path)
-                     (html-response
-                      (mita.server.html:dir
-                       (mita.dir:as-file content-root full-path)))
-                     `(200 () ,full-path))))))))
-      (("/api/dir/add-albums" :method :post)
-       (lambda (params req)
-         (declare (ignore params))
-         (with-safe-json-response
-           (with-db (db connector req)
-             (when-let ((path (q req "path")))
-               (let* ((content-root
-                       (account-content-root req))
-                      (full-path
-                        (parse-namestring
-                         (concatenate 'string content-root "/" path))))
-                 (when (cl-fad:file-exists-p full-path)
-                   (let ((dirs (mita.dir:list-dirs content-root full-path)))
-                     (mita.add-albums:run db dirs thumbnail-root))
-                   (json-response (jsown:new-js)))))))))))))
+(defun connect-dir (mapper spec)
+  (connect-all mapper
+   (("/dir/*"
+     (lambda (params req)
+       (with-safe-html-response
+         (mita.server.app:dir-serve
+          spec req (car (getf params :splat))
+          :on-found
+          (lambda (file)
+            (let ((full-path (mita.dir:file-full-path file)))
+              (if (cl-fad:directory-pathname-p full-path)
+                  (html-response (mita.server.html:dir file))
+                  `(200 () ,full-path))))
+          :on-not-found
+          (lambda ())))))
+    (("/api/dir/add-albums" :method :post)
+     (lambda (params req)
+       (declare (ignore params))
+       (with-safe-json-response
+         (mita.server.app:dir-add-albums spec req (q req "path"))
+         (json-response (jsown:new-js))))))))
 
 (defun connect-image (mapper spec)
   (connect-all mapper
    (("/images/:image-id"
      (lambda (params req)
        (with-safe-html-response
-         (mita.server.app:serve-image
+         (mita.server.app:image-serve
           spec req (getf params :image-id)
           :on-found (lambda (path)
                       `(200 () ,path))
@@ -353,20 +332,14 @@
 
 ;;;
 
-(defun make-middleware (connector &key thumbnail-root
-                                       account-content-base
-                                       serve-image-p)
-  (let ((spec (make-instance 'mita.server.app:spec
-                             :connector connector
-                             :account-content-base account-content-base
-                             :thumbnail-root thumbnail-root))
-        (mapper (myway:make-mapper)))
+(defun make-middleware (connector spec &key serve-image-p)
+  (let ((mapper (myway:make-mapper)))
     (connect-album mapper connector)
     (connect-view mapper connector)
     (connect-page mapper connector)
     (connect-home mapper)
     (connect-tag mapper connector)
-    (connect-dir mapper connector thumbnail-root account-content-base)
+    (connect-dir mapper spec)
     (when serve-image-p
       (connect-image mapper spec))
     (mapper->middleware mapper)))

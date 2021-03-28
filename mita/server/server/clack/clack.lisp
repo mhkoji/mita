@@ -47,8 +47,10 @@
 
           (mita.server.clack.mita:make-middleware
            connector
-           :thumbnail-root thumbnail-root
-           :account-content-base account-content-base
+           (make-instance 'mita.server.app:spec
+                          :connector connector
+                          :account-content-base account-content-base
+                          :thumbnail-root thumbnail-root)
            :serve-image-p serve-image)
 
           (lambda (env)

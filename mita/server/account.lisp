@@ -23,5 +23,12 @@
       (postmodern:execute-file
        (merge-pathnames postgres-dir "./mita-ddl.sql")))))
 
-(defun create-account (postgres-dir account-id connector)
-  (create-account-database postgres-dir account-id connector))
+(defun create-account (account-id
+                       connector
+                       postgres-dir
+                       account-content-base-dir)
+  (create-account-database postgres-dir account-id connector)
+  (let ((name (account-id->db-name account-id)))
+    (ensure-directories-exist (format nil "~A/~A/"
+                                      account-content-base-dir
+                                      name))))

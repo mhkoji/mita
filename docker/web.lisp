@@ -40,8 +40,9 @@
 
 (defun init ()
   (mita.admin:init
-   "/root/quicklisp/local-projects/mita/postgres/"
    *connector*
+   "/root/quicklisp/local-projects/mita/postgres/"
+   "/data/accounts/"
    nil))
 
 #+sbcl

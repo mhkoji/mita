@@ -24,6 +24,9 @@
                    (content-root
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/albums/")))
+                   (account-content-base
+                    (cl-fad:directory-exists-p
+                     (system-relative-pathname "../data/accounts/")))
                    (session-store mita.auth.server:*session-store*)
                    (connector *connector*))
   (when *handler*
@@ -49,6 +52,7 @@
            connector
            :thumbnail-root thumbnail-root
            :content-root content-root
+           :account-content-base account-content-base
            :serve-image-p serve-image)
 
           (lambda (env)

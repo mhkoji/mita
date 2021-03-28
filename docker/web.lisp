@@ -20,8 +20,9 @@
   (mita.server.clack:start
    :port 5001
    :static-root "/app/static/"
-   :content-root "/data/albums/"
    :thumbnail-root "/data/thumbnails/"
+   :content-root "/data/albums/"
+   :account-content-base "/data/accounts/"
    :session-store *sesson-store*
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
    ;; Thus we use aserve instead.

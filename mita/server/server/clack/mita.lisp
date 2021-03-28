@@ -184,7 +184,10 @@
               ("redirect"
                (mita.server.jsown:url-for page)))))))))))
 
-(defun connect-dir (mapper connector thumbnail-root content-root)
+(defun connect-dir (mapper connector
+                    thumbnail-root
+                    content-root
+                    account-content-base)
   (setq content-root (namestring content-root))
   (setq thumbnail-root (namestring thumbnail-root))
   (connect-all mapper
@@ -214,8 +217,26 @@
                (when (cl-fad:file-exists-p full-path)
                  (let ((dirs (mita.dir:list-dirs content-root full-path)))
                    (mita.add-albums:run db dirs thumbnail-root))
-                 (json-response (jsown:new-js))))))))))))
-
+                 (json-response (jsown:new-js)))))))))
+    ("/account-dir/*"
+     (lambda (params req)
+       (with-safe-html-response
+         (when-let ((path (car (getf params :splat))))
+           (let* ((content-root
+                   (concatenate 'string
+                                account-content-base
+                                "/"
+                                (mita.account::account-id->db-name
+                                 (mita.server.app:request-account-id req))))
+                  (full-path
+                    (parse-namestring
+                     (concatenate 'string content-root "/" path))))
+             (when (cl-fad:file-exists-p full-path)
+               (if (cl-fad:directory-pathname-p full-path)
+                   (html-response
+                    (mita.server.html:dir
+                     (mita.dir:as-file content-root full-path)))
+                   `(200 () ,full-path)))))))))))
 
 (defun connect-image (mapper spec)
   (connect-all mapper
@@ -345,6 +366,7 @@
 
 (defun make-middleware (connector &key thumbnail-root
                                        content-root
+                                       account-content-base
                                        serve-image-p)
   (let ((spec (make-instance 'mita.server.app:spec
                              :connector connector
@@ -356,7 +378,8 @@
     (connect-page mapper connector)
     (connect-home mapper)
     (connect-tag mapper connector)
-    (connect-dir mapper connector thumbnail-root content-root)
+    (connect-dir mapper connector
+                 thumbnail-root content-root account-content-base)
     (when serve-image-p
       (connect-image mapper spec))
     (mapper->middleware mapper)))

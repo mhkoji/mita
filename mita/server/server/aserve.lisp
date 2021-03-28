@@ -46,7 +46,7 @@
    :function
    (lambda (req ent)
      (ensure-authenticated (account-id req :session-store session-store)
-       (mita.server.app:serve-image
+       (mita.server.app:image-serve
         (make-instance 'mita.server.app:spec
                        :connector connector
                        :thumbnail-root thumbnail-root

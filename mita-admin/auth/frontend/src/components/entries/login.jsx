@@ -10,7 +10,7 @@ function App () {
   
   function handleSubmit(evt) {
     evt.preventDefault();
-    apis.authenticate(username, password).then((ok) => {
+    apis.login(username, password).then((ok) => {
       if (ok) {
         location.href = new URLSearchParams(location.search).get('redirect') || '/albums';
       }

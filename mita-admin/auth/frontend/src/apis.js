@@ -1,4 +1,4 @@
-export function authenticate(username, password) {
+export function login(username, password) {
   return fetch('/auth/api/login', {
     method: 'POST',
     headers: {

@@ -15,13 +15,15 @@
 
 
 (defun start (&key (port 5002)
+                   (connector
+                    (mita.db.impl:make-connector))
                    (static-root
                     (system-relative-pathname
                      "../mita-admin/auth/static/"))
                    (session-store *session-store*)
-                   (use-thread t)
-                   (connector
-                    (mita.db.impl:make-connector)))
+                   postgres-dir
+                   account-content-base
+                   (use-thread t))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler* (clack:clackup
@@ -34,7 +36,7 @@
                       (mita.auth.server.ningle:route-auth
                        app connector :top-url "/albums")
                       (mita.admin.server.ningle:route-admin
-                       app connector)
+                       app connector postgres-dir account-content-base)
                       app))
                    :address nil
                    :use-thread use-thread

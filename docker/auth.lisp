@@ -8,10 +8,12 @@
   (declare (ignore argv))
   (mita.auth.server:start
    :port 5002
-   :static-root "/app/static/"
-   :session-store (mita.util.auth.session:make-redis-store :host "redis")
    :connector (mita.util.postgres:make-connector
                :user "postgres"
                :host "postgres"
                :port 5432)
+   :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"
+   :account-content-base "/data/accounts/"
+   :static-root "/app/static/"
+   :session-store (mita.util.auth.session:make-redis-store :host "redis")
    :use-thread nil))

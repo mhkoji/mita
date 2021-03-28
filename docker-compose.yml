@@ -48,6 +48,8 @@ services:
       dockerfile: ./docker/auth.dockerfile
     expose:
       - 5002
+    volumes:
+      - ./data:/data/
 
 networks:
   default:

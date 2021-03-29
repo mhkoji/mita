@@ -18,11 +18,16 @@
                    (connector
                     (mita.db.impl:make-connector))
                    (static-root
-                    (system-relative-pathname
-                     "../mita-admin/auth/static/"))
+                    (cl-fad:directory-exists-p
+                     (system-relative-pathname
+                      "../mita-admin/auth/static/")))
                    (session-store *session-store*)
-                   postgres-dir
-                   account-content-base
+                   (postgres-dir
+                    (cl-fad:directory-exists-p
+                     (system-relative-pathname "../postgres/")))
+                   (account-content-base
+                    (cl-fad:directory-exists-p
+                     (system-relative-pathname "../data/accounts")))
                    (use-thread t))
   (when *handler*
     (clack:stop *handler*))

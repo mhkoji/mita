@@ -34,7 +34,7 @@
 
 (defun account-content-root (account-id account-content-base-dir)
   (concatenate 'string
-               account-content-base-dir
+               (namestring account-content-base-dir)
                (account-id->db-name account-id)
                "/"))
 

@@ -30,9 +30,10 @@
   (:mita-util-postgres
 
    :alexandria
+   :cl-base64
+   :cl-fad
    :local-time
    :uuid
-   :cl-fad
 
    ;; for db-file
    :cl-csv))

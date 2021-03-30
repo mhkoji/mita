@@ -9,6 +9,7 @@
 
   :depends-on
   (:cl-base64
+   :cl-bcrypt
    :cl-redis
    :marshal
    :lack

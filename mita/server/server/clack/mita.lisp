@@ -205,6 +205,7 @@
        (with-safe-json-response
          (mita.server.app:dir-add-albums spec req (q req "path"))
          (json-response (jsown:new-js))))))))
+   
 
 (defun connect-image (mapper spec)
   (connect-all mapper
@@ -218,13 +219,13 @@
           :on-not-found (lambda ()
                           nil))))))))
 
-(defun connect-album (mapper connector)
+(defun connect-album (mapper spec)
   (connect-all mapper
    (("/albums"
      (lambda (params req)
        (declare (ignore params))
        (with-safe-html-response
-         (with-db (db connector req)
+         (mita.server.app:with-db-spec (db spec req)
            (let ((offset (ensure-integer (q req "offset") 0))
                  (limit (ensure-integer (q req "limit") 50)))
              (let* ((albums (mita.album:load-albums db offset (1+ limit)))
@@ -237,10 +238,21 @@
                    (format nil format-str (max (- offset limit) 0) limit))
                  (when full-loaded-p
                    (format nil format-str (+ offset limit) limit))))))))))
+    (("/albums" :method :post)
+     (lambda (params req)
+       (declare (ignore params))
+       (let ((files (mapcar (lambda (item)
+                              (destructuring-bind
+                                  (name stream path content-type) item
+                                (declare (ignore name content-type))
+                                (list path stream)))
+                            (lack.request:request-body-parameters req))))
+         (mita.server.app:album-upload spec req files))
+       `(200 (:content-type "text/plain") ("OK"))))
     ("/albums/:album-id"
      (lambda (params req)
        (with-safe-html-response
-         (with-db (db connector req)
+         (mita.server.app:with-db-spec (db spec req)
            (let ((album-id (ensure-uuid-short (getf params :album-id))))
              (when-let ((album (mita.album:load-album-by-id db album-id)))
                (html-response (mita.server.html:album db album)))))))))))
@@ -334,7 +346,7 @@
 
 (defun make-middleware (connector spec &key serve-image-p)
   (let ((mapper (myway:make-mapper)))
-    (connect-album mapper connector)
+    (connect-album mapper spec)
     (connect-view mapper connector)
     (connect-page mapper connector)
     (connect-home mapper)

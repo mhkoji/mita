@@ -25,9 +25,12 @@
                    (postgres-dir
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../postgres/")))
-                   (account-content-base
+                   (content-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/accounts")))
+                     (system-relative-pathname "../data/content/")))
+                   (thumbnail-base
+                    (cl-fad:directory-exists-p
+                     (system-relative-pathname "../data/thumbnail/")))
                    (use-thread t))
   (when *handler*
     (clack:stop *handler*))
@@ -41,7 +44,9 @@
                       (mita.auth.server.ningle:route-auth
                        app connector :top-url "/albums")
                       (mita.admin.server.ningle:route-admin
-                       app connector postgres-dir account-content-base)
+                       app connector postgres-dir
+                       content-base
+                       thumbnail-base)
                       app))
                    :address nil
                    :use-thread use-thread

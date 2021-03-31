@@ -110,6 +110,14 @@
                ("next" (or next-url :null))))))))))
      (:div :id "app")
      (:div :id "app-modal")
+     (:div
+      (:form :method "POST"
+             :enctype "multipart/form-data"
+             (:input :type "file"
+                     :name "upload-albums"
+                     :webkitdirectory "webkitdirectory"
+                     :mozdirectory "mozdirectory")
+             (:input :type "submit")))
      (:script
       :type "text/javascript"
       :src "/static/gen/albums.bundle.js"))))

@@ -1,7 +1,8 @@
 (defpackage :mita.account
   (:use :cl)
   (:export :with-db
-           :account-content-root
+           :account-root
+           :account-thumbnail-root
            :create-account
            :delete-account))
 (in-package :mita.account)
@@ -32,24 +33,24 @@
       (postmodern:query
        (format nil "DROP DATABASE IF EXISTS ~A" db-name)))))
 
-(defun account-content-root (account-id account-content-base-dir)
-  (concatenate 'string
-               (namestring account-content-base-dir)
-               (account-id->db-name account-id)
-               "/"))
+(defun account-root (base account-id)
+  (concatenate 'string base "/" (account-id->db-name account-id) "/"))
 
 (defun create-account (account-id
                        connector
                        postgres-dir
-                       account-content-base-dir)
+                       content-base
+                       thumbnail-base)
   (create-account-database postgres-dir account-id connector)
-  (ensure-directories-exist (account-content-root
-                             account-id
-                             account-content-base-dir)))
+  (ensure-directories-exist (account-root content-base account-id))
+  (ensure-directories-exist (account-root thumbnail-base account-id)))
 
-(defun delete-account (account-id connector account-content-base-dir)
+
+(defun delete-account (account-id
+                       connector
+                       content-base
+                       thumbnail-base)
   (drop-account-database account-id connector)
-  (cl-fad:delete-directory-and-files (account-content-root
-                                      account-id
-                                      account-content-base-dir)
-                                     :if-does-not-exist :ignore))
+  (dolist (p (list (account-root content-base account-id)
+                   (account-root thumbnail-base account-id)))
+    (cl-fad:delete-directory-and-files p :if-does-not-exist :ignore)))

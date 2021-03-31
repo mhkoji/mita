@@ -20,8 +20,8 @@
   (mita.server.clack:start
    :port 5001
    :static-root "/app/static/"
-   :thumbnail-root "/data/thumbnails/"
-   :account-content-base "/data/accounts/"
+   :content-base "/data/content/"
+   :thumbnail-base "/data/thumbnail/"
    :session-store *sesson-store*
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
    ;; Thus we use aserve instead.
@@ -32,8 +32,8 @@
 (defun aserve ()
   (mita.server.aserve:start
    :port 5003
-   :account-content-base "/data/accounts/"
-   :thumbnail-root "/data/thumbnails/"
+   :content-base "/data/content/"
+   :thumbnail-base "/data/thumbnail/"
    :session-store *sesson-store*
    :connector *connector*)
   (loop do (sleep 1000)))
@@ -42,8 +42,9 @@
   (mita.admin:init
    *connector*
    "/root/quicklisp/local-projects/mita/postgres/"
-   "/data/accounts/"
-   nil))
+   "/data/content/"
+   "/data/thumbnail/"))
+
 
 #+sbcl
 (defun main ()

@@ -16,6 +16,7 @@
    :mita-auth-server
    :mita
 
+   :hunchentoot
    :myway
    :clack
    :jsown

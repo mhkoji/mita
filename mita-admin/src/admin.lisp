@@ -20,7 +20,8 @@
 (defun create-account (username password
                        connector
                        postgres-dir
-                       account-content-base-dir)
+                       content-base
+                       thumbnail-base)
   (let ((account
          (with-admin-db (db connector)
            (mita.admin.account:create-account db username password))))
@@ -29,14 +30,16 @@
       (mita.account:create-account id-string
                                    connector
                                    postgres-dir
-                                   account-content-base-dir))
+                                   content-base
+                                   thumbnail-base))
     account))
 
-(defun delete-account (account-id connector account-content-base-dir)
+(defun delete-account (account-id connector content-base thumbnail-base)
   (let ((id-string (mita.id:to-string account-id)))
     (mita.account:delete-account id-string
                                  connector
-                                 account-content-base-dir))
+                                 content-base
+                                 thumbnail-base))
   (with-admin-db (db connector)
     (mita.admin.account:delete-account db account-id)))
 
@@ -46,17 +49,9 @@
 
 ;;;
 
-(defun init (connector postgres-dir account-content-base-dir drop-p)
-  (when drop-p
-    (with-admin-db (db connector)
-      (declare (ignore db))
-      (mapc (lambda (q)
-              (postmodern:execute q))
-            (list "DROP SCHEMA public CASCADE;"
-                  "CREATE SCHEMA public;"
-                  "GRANT ALL ON SCHEMA public TO postgres;"
-                  "GRANT ALL ON SCHEMA public TO public;"))))
+(defun init (connector postgres-dir content-base thumbnail-base)
   (create-admin-database postgres-dir connector)
   (create-account "mita" "mita"
                   connector postgres-dir
-                  account-content-base-dir))
+                  content-base
+                  thumbnail-base))

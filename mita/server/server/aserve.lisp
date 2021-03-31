@@ -35,8 +35,8 @@
   (req-account-id req))
 
 (defun start (&key (port 5003)
-                   account-content-base
-                   thumbnail-root
+                   content-base
+                   thumbnail-base
                    (session-store mita.auth.server:*session-store*)
                    connector)
   (net.aserve:start :port port
@@ -49,8 +49,8 @@
        (mita.server.app:image-serve
         (make-instance 'mita.server.app:spec
                        :connector connector
-                       :thumbnail-root thumbnail-root
-                       :account-content-base account-content-base)
+                       :content-base content-base
+                       :thumbnail-base thumbnail-base)
         (make-req :account-id account-id)
         ;; (length "/images/")
         (subseq (puri:uri-path (net.aserve:request-uri req)) 8)

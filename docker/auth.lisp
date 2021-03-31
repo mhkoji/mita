@@ -13,7 +13,8 @@
                :host "postgres"
                :port 5432)
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"
-   :account-content-base "/data/accounts/"
    :static-root "/app/static/"
+   :content-base "/data/content/"
+   :thumbnail-base "/data/thumbnail/"
    :session-store (mita.util.auth.session:make-redis-store :host "redis")
    :use-thread nil))

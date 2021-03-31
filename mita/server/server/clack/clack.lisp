@@ -17,13 +17,13 @@
                     (system-relative-pathname "./static/"))
                    (use-thread t)
                    (serve-image t)
-                   (thumbnail-root
-                    ;; Call directory-exists-p to resolve symlink beforehand
+                   ;; Call directory-exists-p to resolve symlink beforehand
+                   (content-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/thumbnails/")))
-                   (account-content-base
+                     (system-relative-pathname "../data/content/")))
+                   (thumbnail-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/accounts/")))
+                     (system-relative-pathname "../data/thumbnail/")))
                    (session-store mita.auth.server:*session-store*)
                    (connector *connector*))
   (when *handler*
@@ -49,8 +49,8 @@
            connector
            (make-instance 'mita.server.app:spec
                           :connector connector
-                          :account-content-base account-content-base
-                          :thumbnail-root thumbnail-root)
+                          :content-base content-base
+                          :thumbnail-base thumbnail-base)
            :serve-image-p serve-image)
 
           (lambda (env)

@@ -14,11 +14,13 @@
    (:file "tag")
    (:file "tag-content")
 
-   (:file "dir")
-   (:file "thumbnail")
+   (:file "fs/fs")
 
    (:file "album-with-images")
    (:file "add-albums")
+
+   (:file "thumbnail")
+   (:file "fs/dir")
 
    (:file "db-postgres")
    (:file "db-file")

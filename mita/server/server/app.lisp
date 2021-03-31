@@ -50,7 +50,7 @@
                      (concatenate 'string content-root "/" path))))
     (when (not (cl-fad:file-exists-p full-path))
       (return-from dir-serve (funcall on-not-found)))
-    (funcall on-found (mita.dir:as-file content-root full-path))))
+    (funcall on-found (mita.fs.dir:as-file content-root full-path))))
 
 (defun dir-add-albums (spec req path)
   (let* ((content-root (account-content-root spec req))
@@ -58,9 +58,11 @@
                      (concatenate 'string content-root "/" path))))
     (when (not (cl-fad:file-exists-p full-path))
       (return-from dir-add-albums))
-    (let ((dirs (mita.dir:list-dirs content-root full-path)))
+    (let ((dirs (mita.fs.dir:list-dirs content-root full-path)))
       (with-db-spec (db spec req)
-        (mita.add-albums:run db dirs (spec-thumbnail-root spec))))))
+        (mita.add-albums:run db dirs (mita.fs.dir:as-file
+                                      (spec-thumbnail-root spec)
+                                      (spec-thumbnail-root spec)))))))
 
 ;;;
 

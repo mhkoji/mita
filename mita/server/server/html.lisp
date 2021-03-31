@@ -186,8 +186,8 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("path" (mita.dir:file-path file-dir))
-            ("files" (mita.dir:file-dir-list file-dir))))))))
+            ("path" (mita.fs:file-path file-dir))
+            ("files" (mita.fs:dir-list-children file-dir))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"

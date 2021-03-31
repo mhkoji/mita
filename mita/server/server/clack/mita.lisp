@@ -193,10 +193,10 @@
           spec req (car (getf params :splat))
           :on-found
           (lambda (file)
-            (let ((full-path (mita.dir:file-full-path file)))
-              (if (cl-fad:directory-pathname-p full-path)
-                  (html-response (mita.server.html:dir file))
-                  `(200 () ,full-path))))
+            (if (mita.fs:dir-p file)
+                (html-response (mita.server.html:dir file))
+                `(200 () ,(parse-namestring
+                           (mita.fs.dir:file-full-path file)))))
           :on-not-found
           (lambda ())))))
     (("/api/dir/add-albums" :method :post)

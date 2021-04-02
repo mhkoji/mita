@@ -56,6 +56,7 @@ RUN sbcl --noinform \
          --no-sysinit \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
+         --load "/root/quicklisp/local-projects/mita/docker/config.lisp" \
          --load "/root/quicklisp/local-projects/mita/docker/auth.lisp" \
          --eval "(sb-ext:save-lisp-and-die \
                   \"/app/auth.bin\" \

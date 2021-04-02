@@ -1,5 +1,5 @@
 (defpackage :mita.docker.auth
-  (:use :cl)
+  (:use :cl :mita.docker.config)
   (:export :main))
 (in-package :mita.docker.auth)
 (ql:quickload :mita-auth-server :silent t)
@@ -8,13 +8,10 @@
   (declare (ignore argv))
   (mita.auth.server:start
    :port 5002
-   :connector (mita.util.postgres:make-connector
-               :user "postgres"
-               :host "postgres"
-               :port 5432)
+   :connector *connector*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"
-   :static-root "/app/static/"
-   :content-base "/data/content/"
-   :thumbnail-base "/data/thumbnail/"
-   :session-store (mita.util.auth.session:make-redis-store :host "redis")
+   :static-root *static-root*
+   :content-base *content-base*
+   :thumbnail-base *thumbnail-base*
+   :session-store *session-store*
    :use-thread nil))

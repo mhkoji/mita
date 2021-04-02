@@ -1,28 +1,17 @@
 (defpackage :mita.docker.web
-  (:use :cl)
+  (:use :cl :mita.docker.config)
   (:export :main))
 (in-package :mita.docker.web)
 (ql:quickload '(:mita-server
                 :mita-server-aserve))
 
-(defvar *connector*
-  (mita.util.postgres:make-connector
-   :user "postgres"
-   :host "postgres"
-   :port 5432))
-
-(defvar *sesson-store*
-  (mita.util.auth.session:make-redis-store
-   :host "redis"))
-
-
 (defun clack ()
   (mita.server.clack:start
    :port 5001
-   :static-root "/app/static/"
-   :content-base "/data/content/"
-   :thumbnail-base "/data/thumbnail/"
-   :session-store *sesson-store*
+   :static-root *static-root*
+   :content-base *content-base*
+   :thumbnail-base *thumbnail-base*
+   :session-store *session-store*
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
    ;; Thus we use aserve instead.
    :serve-image nil
@@ -32,9 +21,9 @@
 (defun aserve ()
   (mita.server.aserve:start
    :port 5003
-   :content-base "/data/content/"
-   :thumbnail-base "/data/thumbnail/"
-   :session-store *sesson-store*
+   :content-base *content-base*
+   :thumbnail-base *thumbnail-base*
+   :session-store *session-store*
    :connector *connector*)
   (loop do (sleep 1000)))
 
@@ -42,8 +31,8 @@
   (mita.admin:init
    *connector*
    "/root/quicklisp/local-projects/mita/postgres/"
-   "/data/content/"
-   "/data/thumbnail/"))
+   *content-base*
+   *thumbnail-base*))
 
 
 #+sbcl

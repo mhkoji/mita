@@ -49,8 +49,8 @@
        (mita.server.app:image-serve
         (make-instance 'mita.server.app:spec
                        :connector connector
-                       :content-base content-base
-                       :thumbnail-base thumbnail-base)
+                       :content-base (namestring content-base)
+                       :thumbnail-base (namestring thumbnail-base))
         (make-req :account-id account-id)
         ;; (length "/images/")
         (subseq (puri:uri-path (net.aserve:request-uri req)) 8)

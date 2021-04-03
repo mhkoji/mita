@@ -30,7 +30,7 @@
 (defun init ()
   (mita.admin:init
    *connector*
-   "/root/quicklisp/local-projects/mita/postgres/"
+   "/root/quicklisp/local-projects/mita/mysql/"
    *content-base*
    *thumbnail-base*))
 

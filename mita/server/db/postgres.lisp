@@ -1,6 +1,7 @@
 (defpackage :mita.db.postgres
   (:use :cl)
   (:export :with-db
+           :create-admin-database
            :create-database
            :drop-database
            :postgres))
@@ -15,6 +16,14 @@
     `(mita.util.postgres:with-db (,g ,db-name ,connector)
        (let ((,db (change-class ,g 'postgres)))
          ,@body))))
+
+;;;
+
+(defun create-admin-database (postgres-dir db-name connector)
+  (with-db (db db-name connector)
+    (declare (ignore db))
+    (postmodern:execute-file
+     (merge-pathnames postgres-dir "./admin-ddl.sql"))))
 
 ;;;
 

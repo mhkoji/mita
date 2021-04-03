@@ -7,9 +7,15 @@
            :*thumbnail-base*))
 (in-package :mita.docker.config)
 (ql:quickload '(:mita-util-postgres
+                :mita-util-mysql
                 :mita-util-auth))
 
 (defvar *connector*
+  (mita.util.mysql:make-connector
+   :user "root"
+   :host "mysql"
+   :port 3306)
+  #+nil
   (mita.util.postgres:make-connector
    :user "postgres"
    :host "postgres"

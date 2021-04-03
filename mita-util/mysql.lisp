@@ -27,13 +27,16 @@
               (cl-dbi:do-sql ,conn
                 "SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE")
               (cl-dbi:do-sql ,conn "START TRANSACTION")
-              (handler-case
-                  (prog1
+              (handler-bind ((error
+                              (lambda (c)
+                                (declare (ignore c))
+                                #+sbcl
+                                (sb-debug:print-backtrace)
+                                (cl-dbi:do-sql ,conn "ROLLBACK"))))
+                (prog1
                     (let ((,db (make-instance 'mysql :conn ,conn)))
                       ,@body)
-                    (cl-dbi:do-sql ,conn "COMMIT"))
-                (error ()
-                  (cl-dbi:do-sql ,conn "ROLLBACK"))))
+                  (cl-dbi:do-sql ,conn "COMMIT"))))
          (cl-dbi:disconnect ,conn)))))
 
 (defun execute (db query-string args)

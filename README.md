@@ -10,5 +10,5 @@ docker-compose build
 docker-compose up
 
 ## Init
-docker run --network=mita_default --entrypoint "" -it mita_web /app/web init
+docker run -v $PWD/data:/data --network=mita_default --entrypoint "" -it mita_web /app/web init
 ```

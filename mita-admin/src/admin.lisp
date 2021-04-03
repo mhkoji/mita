@@ -11,12 +11,6 @@
   `(mita.db.impl:with-db (,db "admin" ,connector)
      ,@body))
 
-(defun create-admin-database (postgres-dir connector)
-  (with-admin-db (db connector)
-    (declare (ignore db))
-    (postmodern:execute-file
-     (merge-pathnames postgres-dir "./admin-ddl.sql"))))
-
 (defun create-account (username password
                        connector
                        postgres-dir
@@ -50,7 +44,7 @@
 ;;;
 
 (defun init (connector postgres-dir content-base thumbnail-base)
-  (create-admin-database postgres-dir connector)
+  (mita.db.impl:create-admin-database postgres-dir "admin" connector)
   (create-account "mita" "mita"
                   connector postgres-dir
                   content-base

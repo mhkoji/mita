@@ -16,6 +16,7 @@ RUN apt update && apt install -y \
     wget \
     sbcl \
     imagemagick \
+    libmysqlclient-dev \
     ### for locale-gen
     locales && \
     ##

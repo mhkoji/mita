@@ -27,6 +27,7 @@
     :components
     ((:file "relational")
      (:file "postgres")
+     (:file "mysql")
      (:file "file")
      (:file "impl")))
 
@@ -34,6 +35,7 @@
 
   :depends-on
   (:mita-util-postgres
+   :mita-util-mysql
 
    :alexandria
    :cl-base64

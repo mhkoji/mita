@@ -9,6 +9,8 @@
                 :delete-from
                 :single)
   (:export :with-db
+           :create-database
+           :drop-database
            :postgres))
 (in-package :mita.db.postgres)
 
@@ -19,6 +21,24 @@
     `(mita.util.postgres:with-db (,g ,db-name ,connector)
        (let ((,db (change-class ,g 'postgres)))
          ,@body))))
+
+;;;
+
+(defun create-database (postgres-dir admin-db-name db-name connector)
+  (postmodern:with-connection
+      (mita.util.postgres::connector->spec admin-db-name connector)
+    (postmodern:query
+     (format nil "CREATE DATABASE ~A" db-name)))
+  (postmodern:with-connection
+      (mita.util.postgres::connector->spec db-name connector)
+    (postmodern:execute-file
+     (merge-pathnames postgres-dir "./mita-ddl.sql"))))
+
+(defun drop-database (admin-db-name db-name connector)
+  (postmodern:with-connection
+      (mita.util.postgres::connector->spec admin-db-name connector)
+    (postmodern:query
+     (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
 
 ;;;
 

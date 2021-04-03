@@ -6,7 +6,7 @@
   ((:file "timezone")
 
    (:file "id")
-   (:file "db")
+   (:file "db/db")
    (:file "image")
    (:file "page")
    (:file "album")
@@ -22,9 +22,12 @@
    (:file "thumbnail")
    (:file "fs/dir")
 
-   (:file "db-postgres")
-   (:file "db-file")
-   (:file "db-impl")
+   (:module :db
+    :pathname "db"
+    :components
+    ((:file "postgres")
+     (:file "file")
+     (:file "impl")))
 
    (:file "account"))
 

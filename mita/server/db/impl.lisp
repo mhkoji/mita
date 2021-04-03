@@ -15,7 +15,9 @@
      :port 5432))
 
   (reexport '(make-connector
-              mita.db.postgres:with-db)))
+              mita.db.postgres:with-db
+              mita.db.postgres:create-database
+              mita.db.postgres:drop-database)))
 
 #+nil
 (progn

@@ -9,29 +9,21 @@
 
 (defun account-id->db-name (id-string)
   (format nil "account_~A"
-          (string-downcase (cl-ppcre:regex-replace-all "-" id-string "_"))))
+          (string-downcase
+           (cl-ppcre:regex-replace-all "-" id-string "_"))))
 
 (defmacro with-db ((db account-id connector) &body body)
   `(mita.db.impl:with-db (,db (account-id->db-name ,account-id) ,connector)
      ,@body))
 
-(defun create-account-database (postgres-dir account-id connector)
+(defun create-account-database (db-dir account-id connector)
   (let ((db-name (account-id->db-name account-id)))
-    (postmodern:with-connection
-        (mita.util.postgres::connector->spec "admin" connector)
-      (postmodern:query
-       (format nil "CREATE DATABASE ~A" db-name)))
-    (postmodern:with-connection
-        (mita.util.postgres::connector->spec db-name connector)
-      (postmodern:execute-file
-       (merge-pathnames postgres-dir "./mita-ddl.sql")))))
+    (mita.db.impl:create-database db-dir "admin" db-name connector)))
 
 (defun drop-account-database (account-id connector)
   (let ((db-name (account-id->db-name account-id)))
-    (postmodern:with-connection
-        (mita.util.postgres::connector->spec "admin" connector)
-      (postmodern:query
-       (format nil "DROP DATABASE IF EXISTS ~A" db-name)))))
+    (mita.db.impl:drop-database "admin" db-name connector)))
+
 
 (defun account-root (base account-id)
   (concatenate 'string base "/" (account-id->db-name account-id) "/"))

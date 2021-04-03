@@ -95,6 +95,14 @@
 
 (defun update-content-tags (db content tag-ids)
   (mita.db:tag-content-delete-by-content db (content-id content))
-  (when tag-ids
-    (mita.db:tag-content-insert-by-tags db tag-ids (content->row content)))
+  ;; TODO: should not load all tags.
+  (let ((tags (load-tags db)))
+    (setq tag-ids (remove-if-not (lambda (tag-id)
+                                   (member tag-id tags
+                                           :key #'tag-id
+                                           :test #'mita.id:id=))
+                                 tag-ids))
+    (when tag-ids
+      (let ((row (content->row content)))
+        (mita.db:tag-content-insert-by-tags db tag-ids row))))
   (values))

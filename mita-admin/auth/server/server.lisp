@@ -45,8 +45,8 @@
                        app connector :top-url "/albums")
                       (mita.admin.server.ningle:route-admin
                        app connector postgres-dir
-                       content-base
-                       thumbnail-base)
+                       (namestring content-base)
+                       (namestring thumbnail-base))
                       app))
                    :address nil
                    :use-thread use-thread

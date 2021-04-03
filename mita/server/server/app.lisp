@@ -52,7 +52,9 @@
         (ensure-directories-exist full-path)
         (with-open-file (out full-path
                              :direction :output
-                             :element-type '(unsigned-byte 8))
+                             :element-type '(unsigned-byte 8)
+                             :if-does-not-exist :create
+                             :if-exists :overwrite)
           (alexandria:copy-stream stream out))
         (push full-path full-paths)))
     (let ((dir-paths (remove-duplicates

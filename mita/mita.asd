@@ -25,7 +25,8 @@
    (:module :db
     :pathname "db"
     :components
-    ((:file "postgres")
+    ((:file "relational")
+     (:file "postgres")
      (:file "file")
      (:file "impl")))
 

@@ -17,6 +17,13 @@
 (defun single (row-parser select-result)
   (car (mapcar row-parser select-result)))
 
+(defun to-sql-timestamp-string (timestamp)
+  (local-time:format-timestring nil timestamp
+   :format '((:year 4) #\- (:month 2) #\- (:day 2) #\space
+             (:hour 2) #\: (:min 2) #\: (:sec 2) #\. (:nsec 9))))
+
+;;;
+
 (defclass page (mita.page:page)
   ((id
     :initarg :id
@@ -44,7 +51,7 @@
   (let ((now (local-time:now)))
     (insert-into db "pages" '("page_id" "created_on")
                  (list (list (mita.id:to-string page-id)
-                             (local-time:to-rfc3339-timestring now))))))
+                             (to-sql-timestamp-string now))))))
 
 (defmethod mita.db:page-select-by-id ((db rdb)
                                       (page-id mita.id:id))
@@ -151,7 +158,7 @@
                 (lambda (album)
                   (list (mita.id:to-string (mita.db:album-id album))
                         (mita.db:album-name album)
-                        (local-time:to-rfc3339-timestring
+                        (to-sql-timestamp-string
                          (mita.db:album-created-on album))))
                 albums)))
 
@@ -250,8 +257,7 @@
                (list
                 (list (mita.id:to-string (mita.tag:tag-id tag))
                       (mita.tag:tag-name tag)
-                      (local-time:to-rfc3339-timestring
-                       (local-time:now))))))
+                      (to-sql-timestamp-string (local-time:now))))))
 
 (defmethod mita.db:tag-content-delete ((db rdb)
                                        (tag-id mita.id:id))
@@ -288,7 +294,7 @@
 (defmethod mita.db:tag-content-insert ((db rdb)
                                        (tag-id mita.id:id)
                                        (contents list))
-  (let ((added-on (local-time:to-rfc3339-timestring (local-time:now))))
+  (let ((added-on (to-sql-timestamp-string (local-time:now))))
     (insert-into db "tag_content"
                  '("tag_id" "content_type" "content_id" "added_on")
                  (mapcar
@@ -302,7 +308,7 @@
 (defmethod mita.db:tag-content-insert-by-tags ((db rdb)
                                                (tag-id-list list)
                                                (content mita.db:content))
-  (let ((added-on (local-time:to-rfc3339-timestring (local-time:now))))
+  (let ((added-on-string (to-sql-timestamp-string (local-time:now))))
     (insert-into db "tag_content"
                  '("tag_id" "content_type" "content_id" "added_on")
                  (mapcar
@@ -310,5 +316,5 @@
                     (list (mita.id:to-string tag-id)
                           (string (mita.db:content-type content))
                           (mita.id:to-string (mita.db:content-id content))
-                          added-on))
+                          added-on-string))
                   tag-id-list))))

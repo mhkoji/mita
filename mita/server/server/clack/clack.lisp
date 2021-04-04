@@ -5,7 +5,7 @@
 
 (setq *read-eval* nil)
 
-(defvar *connector* (mita.db.impl:make-connector))
+(defvar *locator* (mita.db.impl:make-locator))
 
 (defvar *handler* nil)
 
@@ -25,7 +25,7 @@
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/thumbnail/")))
                    (session-store mita.auth.server:*session-store*)
-                   (connector *connector*))
+                   (locator *locator*))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler*
@@ -46,9 +46,9 @@
            (list mita.server.externs:*login-url*))
 
           (mita.server.clack.mita:make-middleware
-           connector
+           locator
            (make-instance 'mita.server.app:spec
-                          :connector connector
+                          :locator locator
                           :content-base (namestring content-base)
                           :thumbnail-base (namestring thumbnail-base))
            :serve-image-p serve-image)

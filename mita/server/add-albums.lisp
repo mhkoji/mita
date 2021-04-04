@@ -29,14 +29,14 @@
      (let ((thumbnail-file (mita.fs:make-thumbnail thumbnail-dir file)))
        (make-image mita.image:+source-thumbnail+ thumbnail-file)))))
 
-(defun run (db dirs thumbnail-dir)
+(defun run (conn dirs thumbnail-dir)
   (setq dirs (remove-if (lambda (dir)
                           (null (dir-list-contents-only dir)))
                         dirs))
   (when-let ((sources (mapcar (lambda (d)
                                 (create-source thumbnail-dir d))
                               dirs)))
-    (let ((albums (mita.album:create-with-images db sources)))
+    (let ((albums (mita.album:create-with-images conn sources)))
       ;; Update images
       (loop for dir in dirs
             for album in albums
@@ -45,7 +45,7 @@
                                 (make-image mita.image:+source-content+ p))
                               (dir-list-contents-only dir))))
                  (mita.image:delete-images
-                  db (mapcar #'mita.image:image-id images))
-                 (mita.image:save-images db images)
-                 (mita.album:update-album-images db album images)))))
+                  conn (mapcar #'mita.image:image-id images))
+                 (mita.image:save-images conn images)
+                 (mita.album:update-album-images conn album images)))))
   (values))

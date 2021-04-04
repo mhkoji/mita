@@ -9,35 +9,46 @@
 
 #+nil
 (progn
-  (defun make-connector ()
-    (mita.util.postgres:make-connector
+  (defun make-locator ()
+    (mita.db.postgres:make-locator
      :user "postgres"
      :host "localhost"
      :port 5432))
 
-  (reexport '(make-connector
-              mita.db.postgres:with-db
+  (defun make-db (db-name locator)
+    (make-instance 'mita.db.postgres:postgres
+                   :db-name db-name
+                   :locator locator))
+
+  (reexport '(make-locator
+              make-db
               mita.db.postgres:create-admin-database
               mita.db.postgres:create-database
               mita.db.postgres:drop-database)))
 
 (progn
-  (defun make-connector ()
-    (mita.util.mysql:make-connector
+  (defun make-locator ()
+    (mita.db.mysql:make-locator
      :user "root"
      :host "127.0.0.1"
      :port 3306))
 
-  (reexport '(make-connector
-              mita.db.mysql::with-db
+  (defun make-db (db-name locator)
+    (make-instance 'mita.db.mysql:mysql
+                   :db-name db-name
+                   :locator locator))
+
+
+  (reexport '(make-locator
+              make-db
               mita.db.mysql:create-admin-database
               mita.db.mysql:create-database
               mita.db.mysql:drop-database)))
 
 #+nil
 (progn
-  (defun make-connector ()
-    (mita.db.file:make-connector :dir "./db-file/"))
+  (defun make-locator ()
+    (mita.db.file:make-locator :dir "./db-file/"))
 
-  (reexport '(make-connector
+  (reexport '(make-locator
               mita.db.file:with-db)))

@@ -15,7 +15,7 @@
    ;; This server halts by broken pippes errors occurred when there is a number of accesses for images.
    ;; Thus we use aserve instead.
    :serve-image nil
-   :connector *connector*
+   :locator *locator*
    :use-thread nil))
 
 (defun aserve ()
@@ -24,12 +24,12 @@
    :content-base *content-base*
    :thumbnail-base *thumbnail-base*
    :session-store *session-store*
-   :connector *connector*)
+   :locator *locator*)
   (loop do (sleep 1000)))
 
 (defun init ()
   (mita.admin:init
-   *connector*
+   *locator*
    "/root/quicklisp/local-projects/mita/mysql/"
    *content-base*
    *thumbnail-base*))

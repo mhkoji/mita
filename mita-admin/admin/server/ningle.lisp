@@ -48,13 +48,13 @@
       :type "text/javascript"
       :src "/auth/static/gen/admin.bundle.js"))))
 
-(defun route-admin (app connector postgres-dir
+(defun route-admin (app locator postgres-dir
                     content-base
                     thumbnail-base)
   (setf (ningle:route app "/admin")
         (lambda (params)
           (declare (ignore params))
-          (admin-page (mita.admin:list-accounts connector))))
+          (admin-page (mita.admin:list-accounts locator))))
   (setf (ningle:route app "/admin/api/account" :method :post)
         (lambda (params)
           (declare (ignore params))
@@ -64,7 +64,7 @@
               (mita.admin:create-account
                (cdr (assoc "username" body :test #'string=))
                (cdr (assoc "password" body :test #'string=))
-               connector
+               locator
                postgres-dir
                content-base
                thumbnail-base))
@@ -74,7 +74,7 @@
           (with-safe-json-response
             (mita.admin:delete-account
              (mita.id:parse (cdr (assoc :id params)))
-             connector
+             locator
              content-base
              thumbnail-base)
             t))))

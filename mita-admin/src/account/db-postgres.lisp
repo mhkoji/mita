@@ -8,9 +8,9 @@
                      :string (third row))))
 
 (defmethod mita.admin.account.db:account-insert
-    ((db rdb)
+    ((conn connection)
      (account mita.admin.account.db:account))
-  (insert-into db "accounts" '("account_id" "username" "password_hashed")
+  (insert-into conn "accounts" '("account_id" "username" "password_hashed")
                (list
                 (list (mita.id:to-string
                        (mita.admin.account.db:account-id account))
@@ -20,29 +20,29 @@
                        (mita.admin.account.db:account-hashed-password
                         account))))))
 
-(defmethod mita.admin.account.db:account-select ((db rdb)
+(defmethod mita.admin.account.db:account-select ((conn connection)
                                                  (username string))
   (single #'parse-account
           (select-from
-           db "account_id, username, password_hashed" "accounts"
+           conn "account_id, username, password_hashed" "accounts"
            :where `(:= "username" (:p ,username)))))
 
-(defmethod mita.admin.account.db:account-select-by-id ((db rdb)
+(defmethod mita.admin.account.db:account-select-by-id ((conn connection)
                                                        (id mita.id:id))
   (single #'parse-account
           (select-from
-           db "account_id, username, password_hashed" "accounts"
+           conn "account_id, username, password_hashed" "accounts"
            :where `(:= "account_id" (:p ,(mita.id:to-string id))))))
 
 (defmethod mita.admin.account.db:account-select-all
-    ((db mita.db.postgres:postgres))
+    ((conn mita.db.postgres:connection))
   (mapcar #'parse-account
-          (mita.util.postgres:execute
-           db
+          (mita.db.postgres::execute
+           conn
            "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
            (list 0 50))))
 
-(defmethod mita.admin.account.db:account-delete ((db rdb)
+(defmethod mita.admin.account.db:account-delete ((conn connection)
                                                  (id mita.id:id))
-  (delete-from db "accounts"
+  (delete-from conn "accounts"
    :where `(:= "account_id" (:p ,(mita.id:to-string id)))))

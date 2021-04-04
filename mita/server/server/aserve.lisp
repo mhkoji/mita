@@ -38,7 +38,7 @@
                    content-base
                    thumbnail-base
                    (session-store mita.auth.server:*session-store*)
-                   connector)
+                   locator)
   (net.aserve:start :port port
                     :host "0.0.0.0")
   (net.aserve:publish-prefix
@@ -48,7 +48,7 @@
      (ensure-authenticated (account-id req :session-store session-store)
        (mita.server.app:image-serve
         (make-instance 'mita.server.app:spec
-                       :connector connector
+                       :locator locator
                        :content-base (namestring content-base)
                        :thumbnail-base (namestring thumbnail-base))
         (make-req :account-id account-id)

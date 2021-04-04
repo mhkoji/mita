@@ -38,28 +38,28 @@
    :id (content-id content)
    :type (content-type content)))
 
-(defun create-tag (db name)
+(defun create-tag (conn name)
   (let ((tag (make-tag :id (mita.id:gen) :name name)))
-    (mita.db:tag-insert db tag)
+    (mita.db:tag-insert conn tag)
     tag))
 
-(defun delete-tag (db tag-id)
-  (mita.db:tag-content-delete db tag-id)
-  (mita.db:tag-delete db (list tag-id))
+(defun delete-tag (conn tag-id)
+  (mita.db:tag-content-delete conn tag-id)
+  (mita.db:tag-delete conn (list tag-id))
   (values))
 
-(defun load-tags (db)
-  (mita.db:tag-select db))
+(defun load-tags (conn)
+  (mita.db:tag-select conn))
 
-(defun load-tag-by-id (db tag-id)
+(defun load-tag-by-id (conn tag-id)
   ;; TODO: should not select all the tags
-  (find tag-id (load-tags db)
+  (find tag-id (load-tags conn)
         :key #'tag-id
         :test #'mita.id:id=))
 
-(defun tag-contents (db tag)
+(defun tag-contents (conn tag)
   (let ((content-rows
-         (mita.db:tag-content-select db (tag-id tag)))
+         (mita.db:tag-content-select conn (tag-id tag)))
         (type->content-id-list
          (make-hash-table :test #'equal)))
     (loop for row in content-rows
@@ -70,7 +70,7 @@
     (let ((id->content (make-hash-table :test #'equal)))
       (maphash (lambda (type content-id-list)
                  (dolist (content
-                           (load-contents db type content-id-list))
+                           (load-contents conn type content-id-list))
                    (let ((key (mita.id:to-string (content-id content))))
                      (setf (gethash key id->content) content))))
                type->content-id-list)
@@ -80,23 +80,23 @@
                               (gethash key id->content)))
                           content-rows)))))
 
-(defun update-tag-contents (db tag contents)
-  (mita.db:tag-content-delete db (tag-id tag))
-  (mita.db:tag-content-insert db (tag-id tag)
+(defun update-tag-contents (conn tag contents)
+  (mita.db:tag-content-delete conn (tag-id tag))
+  (mita.db:tag-content-insert conn (tag-id tag)
                               (mapcar #'content->row contents))
   (values))
 
-(defun update-tag-name (db tag name)
-  (mita.db:tag-update db (tag-id tag) name)
+(defun update-tag-name (conn tag name)
+  (mita.db:tag-update conn (tag-id tag) name)
   (values))
 
-(defun content-tags (db content)
-  (mita.db:tag-content-select-tags db (content-id content)))
+(defun content-tags (conn content)
+  (mita.db:tag-content-select-tags conn (content-id content)))
 
-(defun update-content-tags (db content tag-ids)
-  (mita.db:tag-content-delete-by-content db (content-id content))
+(defun update-content-tags (conn content tag-ids)
+  (mita.db:tag-content-delete-by-content conn (content-id content))
   ;; TODO: should not load all tags.
-  (let ((tags (load-tags db)))
+  (let ((tags (load-tags conn)))
     (setq tag-ids (remove-if-not (lambda (tag-id)
                                    (member tag-id tags
                                            :key #'tag-id
@@ -104,5 +104,5 @@
                                  tag-ids))
     (when tag-ids
       (let ((row (content->row content)))
-        (mita.db:tag-content-insert-by-tags db tag-ids row))))
+        (mita.db:tag-content-insert-by-tags conn tag-ids row))))
   (values))

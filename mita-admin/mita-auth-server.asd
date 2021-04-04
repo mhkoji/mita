@@ -25,8 +25,7 @@
      (:file "server"))))
 
   :depends-on
-  (:mita-util-postgres
-   :mita-util-password
+  (:mita-util-password
    :mita-util-auth
    :mita
 

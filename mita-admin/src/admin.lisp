@@ -1,51 +1,51 @@
 (defpackage :mita.admin
   (:use :cl)
-  (:export :with-admin-db
+  (:export :make-admin-db
            :create-account
            :delete-account
            :list-accounts
            :init))
 (in-package :mita.admin)
 
-(defmacro with-admin-db ((db connector) &body body)
-  `(mita.db.impl:with-db (,db "admin" ,connector)
-     ,@body))
+(defun make-admin-db (locator)
+  (mita.db.impl:make-db "admin" locator))
 
 (defun create-account (username password
-                       connector
+                       locator
                        postgres-dir
                        content-base
                        thumbnail-base)
   (let ((account
-         (with-admin-db (db connector)
-           (mita.admin.account:create-account db username password))))
+         (mita.db:with-connection (conn (make-admin-db locator))
+           (mita.db:with-tx (conn)
+             (mita.admin.account:create-account conn username password)))))
     (let ((id-string (mita.id:to-string
                       (mita.admin.account:account-id account))))
       (mita.account:create-account id-string
-                                   connector
+                                   locator
                                    postgres-dir
                                    content-base
                                    thumbnail-base))
     account))
 
-(defun delete-account (account-id connector content-base thumbnail-base)
+(defun delete-account (account-id locator content-base thumbnail-base)
   (let ((id-string (mita.id:to-string account-id)))
     (mita.account:delete-account id-string
-                                 connector
+                                 locator
                                  content-base
                                  thumbnail-base))
-  (with-admin-db (db connector)
-    (mita.admin.account:delete-account db account-id)))
+  (mita.db:with-connection (conn (make-admin-db locator))
+    (mita.admin.account:delete-account conn account-id)))
 
-(defun list-accounts (connector)
-  (with-admin-db (db connector)
-    (mita.admin.account:load-accounts db)))
+(defun list-accounts (locator)
+  (mita.db:with-connection (conn (make-admin-db locator))
+    (mita.admin.account:load-accounts conn)))
 
 ;;;
 
-(defun init (connector postgres-dir content-base thumbnail-base)
-  (mita.db.impl:create-admin-database postgres-dir "admin" connector)
+(defun init (locator postgres-dir content-base thumbnail-base)
+  (mita.db.impl:create-admin-database postgres-dir "admin" locator)
   (create-account "mita" "mita"
-                  connector postgres-dir
+                  locator postgres-dir
                   content-base
                   thumbnail-base))

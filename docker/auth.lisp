@@ -8,7 +8,7 @@
   (declare (ignore argv))
   (mita.auth.server:start
    :port 5002
-   :connector *connector*
+   :locator *locator*
    :postgres-dir "/root/quicklisp/local-projects/mita/postgres/"
    :static-root *static-root*
    :content-base *content-base*

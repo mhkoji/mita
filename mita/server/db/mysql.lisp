@@ -1,11 +1,13 @@
 (defpackage :mita.db.mysql
   (:use :cl)
-  (:export :with-db
+  (:export :make-locator
+           :mysql
            :create-admin-database
            :create-database
-           :drop-database
-           :mysql))
+           :drop-database))
 (in-package :mita.db.mysql)
+
+(defstruct locator user host port)
 
 (progn
   (remhash :timestamp cl-mysql:*type-map*)
@@ -14,71 +16,34 @@
   (remhash :datetime  cl-mysql:*type-map*)
   (remhash :newdate   cl-mysql:*type-map*))
 
-(defclass mysql (mita.db.relational:rdb
-                 mita.util.mysql:mysql)
-  ())
+(defclass mysql (mita.db:db)
+  ((db-name
+    :initarg :db-name
+    :reader mysql-db-name)
+   (locator
+    :initarg :locator
+    :reader mysql-locator)))
 
-(defmacro with-db ((db db-name connector) &body body)
-  (let ((g (gensym)))
-    `(mita.util.mysql:with-db (,g ,db-name ,connector)
-       (let ((,db (change-class ,g 'mysql)))
-         ,@body))))
+(defclass connection (mita.db.relational:connection)
+  ((impl
+    :initarg :impl
+    :reader connection-impl)))
 
-;;;
+(defmethod mita.db:call-with-connection ((db mysql) fn)
+  (let ((locator (mysql-locator db)))
+    (mita.util.mysql:call-with-connection
+     (lambda (conn-impl)
+       (funcall fn (make-instance 'connection :impl conn-impl)))
+     (mysql-db-name db)
+     (locator-user locator)
+     (locator-host locator)
+     (locator-port locator))))
+  
+(defmethod mita.db:call-with-tx ((conn connection) fn)
+  (mita.util.mysql:call-with-tx (connection-impl conn) fn))
 
-(defun create-admin-database (mysql-dir db-name connector)
-  (with-db (db db-name connector)
-    (dolist (sql (cl-ppcre:split
-                  (format nil "~%~%")
-                  (alexandria:read-file-into-string
-                   (merge-pathnames mysql-dir "./admin-ddl.sql"))))
-      (cl-dbi:do-sql (mita.util.mysql::mysql-conn db) sql))))
-
-;;;
-
-(defun create-database (mysql-dir admin-db-name db-name connector)
-  (declare (ignore admin-db-name))
-  (with-db (db nil connector)
-    (cl-dbi:do-sql (mita.util.mysql::mysql-conn db)
-      (format nil "CREATE DATABASE IF NOT EXISTS ~A" db-name)))
-  (with-db (db db-name connector)
-    (dolist (sql (cl-ppcre:split
-                  (format nil "~%~%")
-                  (alexandria:read-file-into-string
-                   (merge-pathnames mysql-dir "./mita-ddl.sql"))))
-      (cl-dbi:do-sql (mita.util.mysql::mysql-conn db) sql))))
-
-(defun drop-database (admin-db-name db-name connector)
-  (declare (ignore admin-db-name))
-  (with-db (db nil connector)
-    (cl-dbi:do-sql (mita.util.mysql::mysql-conn db)
-      (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
-
-;;;
-
-(defmethod mita.db:page-text-update ((db mysql)
-                                     (page-id mita.id:id)
-                                     (text string))
-  (mita.util.mysql:execute db
-   "UPDATE page_text set string = ? where page_id = ?"
-   (list text (mita.id:to-string page-id))))
-
-(defmethod mita.db:album-select-album-ids ((db mysql) offset limit)
-  (mapcar (lambda (plist)
-            (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
-              (mita.id:parse (car row))))
-          (mita.util.mysql:execute db
-           (concatenate 'string
-            "SELECT album_id FROM albums"
-            " ORDER BY created_on DESC LIMIT ?, ?")
-           (list offset limit))))
-
-(defmethod mita.db:tag-update ((db mysql)
-                               (tag-id mita.id:id)
-                               (name string))
-  (mita.util.mysql:execute db
-   "UPDATE tags SET name = ? where tag_id = ?"
-   (list name (mita.id:to-string tag-id))))
+(defun execute (conn query-string args)
+  (mita.util.mysql:execute (connection-impl conn) query-string args))
 
 ;;;
 
@@ -90,18 +55,19 @@
 (defun parse-sql-timestamp-string (string)
   (local-time:parse-timestring string :date-time-separator #\Space))
 
-(defmethod mita.db.relational:timestamp-to-string ((db mysql)
+(defmethod mita.db.relational:timestamp-to-string ((conn connection)
                                                    (ts local-time:timestamp))
   (to-sql-timestamp-string ts))
 
-(defmethod mita.db.relational:parse-timestamp ((db mysql) (s string))
+(defmethod mita.db.relational:parse-timestamp ((conn connection)
+                                               (s string))
   (parse-sql-timestamp-string s))
 
-(defmethod mita.db.relational:insert-into ((db mysql)
+(defmethod mita.db.relational:insert-into ((conn connection)
                                            table-name
                                            column-name-list
                                            values-list)
-  (mita.util.mysql:execute db
+  (execute conn
    (with-output-to-string (s)
      (format s "INSERT INTO ~A" table-name)
      (format s " (~{~A~^,~})" column-name-list)
@@ -154,7 +120,8 @@
                         acc-values))))))))
     (rec clause #'list)))
 
-(defmethod mita.db.relational:delete-from ((db mysql) table-name
+(defmethod mita.db.relational:delete-from ((conn connection)
+                                           table-name
                                            &key where)
   (let ((args nil))
     (let ((query-string
@@ -165,9 +132,9 @@
                    (parse-clause (list :where where))
                  (format s " ~A" cond-string)
                  (alexandria:appendf args values))))))
-      (mita.util.mysql:execute db query-string args))))
+      (execute conn query-string args))))
 
-(defmethod mita.db.relational:select-from ((db mysql)
+(defmethod mita.db.relational:select-from ((conn connection)
                                            column-names
                                            table-name
                                            &key where
@@ -185,4 +152,68 @@
                (format s " ORDER BY ~A" order-by)))))
       (mapcar (lambda (plist)
                 (mapcar #'cdr (alexandria:plist-alist plist)))
-              (mita.util.mysql:execute db query-string args)))))
+              (execute conn query-string args)))))
+
+;;;
+
+(defun create-admin-database (mysql-dir db-name locator)
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name db-name
+                                  :locator locator))
+    (dolist (sql (cl-ppcre:split
+                  (format nil "~%~%")
+                  (alexandria:read-file-into-string
+                   (merge-pathnames mysql-dir "./admin-ddl.sql"))))
+      (cl-dbi:do-sql (connection-impl conn) sql))))
+
+;;;
+
+(defun create-database (mysql-dir admin-db-name db-name locator)
+  (declare (ignore admin-db-name))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name nil
+                                  :locator locator))
+    (cl-dbi:do-sql (connection-impl conn)
+      (format nil "CREATE DATABASE IF NOT EXISTS ~A" db-name)))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name db-name
+                                  :locator locator))
+    (dolist (sql (cl-ppcre:split
+                  (format nil "~%~%")
+                  (alexandria:read-file-into-string
+                   (merge-pathnames mysql-dir "./mita-ddl.sql"))))
+      (cl-dbi:do-sql (connection-impl conn) sql))))
+
+(defun drop-database (admin-db-name db-name locator)
+  (declare (ignore admin-db-name))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name nil
+                                  :locator locator))
+    (cl-dbi:do-sql (connection-impl conn)
+      (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
+
+;;;
+
+(defmethod mita.db:page-text-update ((conn connection)
+                                     (page-id mita.id:id)
+                                     (text string))
+  (execute conn
+   "UPDATE page_text set string = ? where page_id = ?"
+   (list text (mita.id:to-string page-id))))
+
+(defmethod mita.db:album-select-album-ids ((conn connection) offset limit)
+  (mapcar (lambda (plist)
+            (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
+              (mita.id:parse (car row))))
+          (execute conn
+           (concatenate 'string
+            "SELECT album_id FROM albums"
+            " ORDER BY created_on DESC LIMIT ?, ?")
+           (list offset limit))))
+
+(defmethod mita.db:tag-update ((conn connection)
+                               (tag-id mita.id:id)
+                               (name string))
+  (execute conn
+   "UPDATE tags SET name = ? where tag_id = ?"
+   (list name (mita.id:to-string tag-id))))

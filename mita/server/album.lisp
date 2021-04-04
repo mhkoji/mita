@@ -41,8 +41,8 @@
 (defmethod album-name ((album album))
   (mita.db:album-name (album-album-row album)))
 
-(defun load-albums-in (db album-id-list)
-  (when-let ((album-rows (mita.db:album-select db album-id-list)))
+(defun load-albums-in (conn album-id-list)
+  (when-let ((album-rows (mita.db:album-select conn album-id-list)))
     (let ((id->args (make-hash-table :test #'equal)))
       (dolist (album-row album-rows)
         (let ((album-id (mita.db:album-id album-row)))
@@ -51,9 +51,9 @@
       (let ((id->image
              (make-hash-table :test #'equal))
             (album-thumbnail-image-row-list
-             (mita.db:album-thumbnail-image-select db album-id-list)))
+             (mita.db:album-thumbnail-image-select conn album-id-list)))
         (dolist (image (mita.image:load-images-by-ids
-                        db
+                        conn
                         (mapcar #'mita.db:album-thumbnail-image-image-id
                                 album-thumbnail-image-row-list)))
           (setf (gethash (mita.id:to-string
@@ -79,43 +79,43 @@
                    (apply #'make-instance 'album args)))
                album-id-list)))))
 
-(defun load-albums (db offset limit)
-  (let ((ids (mita.db:album-select-album-ids db offset limit)))
-    (load-albums-in db ids)))
+(defun load-albums (conn offset limit)
+  (let ((ids (mita.db:album-select-album-ids conn offset limit)))
+    (load-albums-in conn ids)))
 
-(defun load-album-by-id (db album-id)
-  (car (load-albums-in db (list album-id))))
+(defun load-album-by-id (conn album-id)
+  (car (load-albums-in conn (list album-id))))
 
 
-(defun delete-albums (db album-id-list)
-  (mita.db:album-thumbnail-image-delete db album-id-list)
-  (mita.db:album-image-delete db album-id-list)
-  (mita.db:album-delete db album-id-list))
+(defun delete-albums (conn album-id-list)
+  (mita.db:album-thumbnail-image-delete conn album-id-list)
+  (mita.db:album-image-delete conn album-id-list)
+  (mita.db:album-delete conn album-id-list))
 
 (defstruct album-source id name created-on thumbnail)
 
-(defun create-albums (db sources)
-  (mita.db:album-insert db
+(defun create-albums (conn sources)
+  (mita.db:album-insert conn
    (mapcar (lambda (s)
              (mita.db:make-album
               :id (album-source-id s)
               :name (album-source-name s)
               :created-on (album-source-created-on s)))
            sources))
-  (mita.db:album-thumbnail-image-insert db
+  (mita.db:album-thumbnail-image-insert conn
    (mapcar (lambda (s)
              (mita.db:make-album-thumbnail-image
               :album-id (album-source-id s)
               :image-id (mita.image:image-id
                          (album-source-thumbnail s))))
            (remove-if-not #'album-source-thumbnail sources)))
-  (load-albums-in db (mapcar #'album-source-id sources)))
+  (load-albums-in conn (mapcar #'album-source-id sources)))
 
 
-(defun album-images (db album)
-  (mita.db:album-image-select db (album-id album)))
+(defun album-images (conn album)
+  (mita.db:album-image-select conn (album-id album)))
 
-(defun update-album-images (db album images)
-  (mita.db:album-image-delete db (list (album-id album)))
-  (mita.db:album-image-insert db (album-id album) images)
+(defun update-album-images (conn album images)
+  (mita.db:album-image-delete conn (list (album-id album)))
+  (mita.db:album-image-insert conn (album-id album) images)
   (values))

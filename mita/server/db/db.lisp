@@ -1,6 +1,12 @@
 (defpackage :mita.db
   (:use :cl)
   (:export :db
+           :connection
+           :call-with-connection
+           :call-with-tx
+           :with-connection
+           :with-tx
+
            :page-delete
            :page-insert
            :page-select-by-id
@@ -50,82 +56,95 @@
 
 (defclass db () ())
 
-(defgeneric page-delete (db page-id-list))
+(defclass connection () ())
 
-(defgeneric page-select-by-id (db page-id))
+(defgeneric call-with-connection (db fn))
 
-(defgeneric page-select (db))
+(defgeneric call-with-tx (conn fn))
 
-(defgeneric page-insert (db page-id))
+(defmacro with-connection ((conn db) &body body)
+  `(call-with-connection ,db (lambda (,conn) ,@body)))
 
-
-(defgeneric page-text-delete (db page-id-list))
-
-(defgeneric page-text-select (db page-id))
-
-(defgeneric page-text-update (db page-id text))
-
-(defgeneric page-text-insert (db page-id text))
+(defmacro with-tx ((conn) &body body)
+  `(call-with-tx ,conn (lambda () ,@body)))
 
 
-(defgeneric page-image-delete (db page-id))
+(defgeneric page-delete (conn page-id-list))
 
-(defgeneric page-image-select (db page-id))
+(defgeneric page-select-by-id (conn page-id))
 
-(defgeneric page-image-insert (db page-id images))
+(defgeneric page-select (conn))
+
+(defgeneric page-insert (conn page-id))
 
 
-(defgeneric image-select-by-ids (db image-id-list))
+(defgeneric page-text-delete (conn page-id-list))
 
-(defgeneric image-insert (db images))
+(defgeneric page-text-select (conn page-id))
+
+(defgeneric page-text-update (conn page-id text))
+
+(defgeneric page-text-insert (conn page-id text))
+
+
+(defgeneric page-image-delete (conn page-id))
+
+(defgeneric page-image-select (conn page-id))
+
+(defgeneric page-image-insert (conn page-id images))
+
+
+(defgeneric image-select-by-ids (conn image-id-list))
+
+(defgeneric image-insert (conn images))
 
 
 (defstruct album id name created-on)
 
-(defgeneric album-delete (db album-id-list))
+(defgeneric album-delete (conn album-id-list))
 
-(defgeneric album-select (db album-id-list))
+(defgeneric album-select (conn album-id-list))
 
-(defgeneric album-select-album-ids (db offset limit))
+(defgeneric album-select-album-ids (conn offset limit))
 
-(defgeneric album-insert (db albums))
+(defgeneric album-insert (conn albums))
 
 
 (defstruct album-thumbnail-image album-id image-id)
 
-(defgeneric album-thumbnail-image-delete (db album-id-list))
+(defgeneric album-thumbnail-image-delete (conn album-id-list))
 
-(defgeneric album-thumbnail-image-select (db album-id-list))
+(defgeneric album-thumbnail-image-select (conn album-id-list))
 
-(defgeneric album-thumbnail-image-insert (db album-thumbnail-image-list))
-
-
-(defgeneric album-image-delete (db album-id-list))
-
-(defgeneric album-image-select (db album-id))
-
-(defgeneric album-image-insert (db album-id images))
+(defgeneric album-thumbnail-image-insert (conn album-thumbnail-image-list))
 
 
-(defgeneric tag-delete (db tag-id-list))
+(defgeneric album-image-delete (conn album-id-list))
 
-(defgeneric tag-select (db))
+(defgeneric album-image-select (conn album-id))
 
-(defgeneric tag-insert (db tag))
+(defgeneric album-image-insert (conn album-id images))
 
-(defgeneric tag-update (db tag-id name))
+
+(defgeneric tag-delete (conn tag-id-list))
+
+(defgeneric tag-select (conn))
+
+(defgeneric tag-insert (conn tag))
+
+(defgeneric tag-update (conn tag-id name))
 
 
 (defstruct content id type)
 
-(defgeneric tag-content-delete (db tag-id))
+(defgeneric tag-content-delete (conn tag-id))
 
-(defgeneric tag-content-delete-by-content (db content))
+(defgeneric tag-content-delete-by-content (conn content))
 
-(defgeneric tag-content-select (db tag-id))
+(defgeneric tag-content-select (conn tag-id))
 
-(defgeneric tag-content-select-tags (db content-id))
+(defgeneric tag-content-select-tags (conn content-id))
 
-(defgeneric tag-content-insert (db tag-id contents))
+(defgeneric tag-content-insert (conn tag-id contents))
 
-(defgeneric tag-content-insert-by-tags (db tag-id-list content))
+(defgeneric tag-content-insert-by-tags (conn tag-id-list content))

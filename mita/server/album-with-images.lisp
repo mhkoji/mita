@@ -1,24 +1,24 @@
 (in-package :mita.album)
 
-(defun delete-with-images (db sources)
+(defun delete-with-images (conn sources)
   (let ((existing-albums
          (mita.album:load-albums-in
-          db (mapcar #'album-source-id sources))))
+          conn (mapcar #'album-source-id sources))))
     (let ((album-images
-           (alexandria:mappend (lambda (a) (album-images db a))
+           (alexandria:mappend (lambda (a) (album-images conn a))
                                existing-albums))
           (album-thumbnails
            (remove nil (mapcar #'album-thumbnail existing-albums))))
       (delete-albums
-       db (mapcar #'album-id existing-albums))
+       conn (mapcar #'album-id existing-albums))
       (mita.image:delete-images
-       db (mapcar #'mita.image:image-id album-thumbnails))
+       conn (mapcar #'mita.image:image-id album-thumbnails))
       (mita.image:delete-images
-       db (mapcar #'mita.image:image-id album-images))))
+       conn (mapcar #'mita.image:image-id album-images))))
   (values))
 
-(defun create-with-images (db sources)
-  (delete-with-images db sources)
+(defun create-with-images (conn sources)
+  (delete-with-images conn sources)
   (mita.image:save-images
-   db (remove nil (mapcar #'album-source-thumbnail sources)))
-  (create-albums db sources))
+   conn (remove nil (mapcar #'album-source-thumbnail sources)))
+  (create-albums conn sources))

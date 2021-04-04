@@ -1,12 +1,10 @@
 (defpackage :mita.auth.server.ningle
   (:use :cl)
-  (:import-from :mita.admin
-                :with-admin-db)
   (:export :route-auth))
 (in-package :mita.auth.server.ningle)
 
 (defclass account-repository ()
-  ((connector :initarg :connector)))
+  ((locator :initarg :locator)))
 
 (defmethod mita.util.auth:account-identity
     ((account mita.admin.account:account))
@@ -16,9 +14,10 @@
                                         username
                                         password)
   (when (and username password)
-    (with-admin-db (db (slot-value repos 'connector))
+    (mita.db:with-connection (conn (mita.admin:make-admin-db
+                                    (slot-value repos 'locator)))
       (mita.admin.account:find-account-with-password-checked
-       db username password))))
+       conn username password))))
 
 ;;;
 
@@ -52,7 +51,7 @@
           (jsown:new-js
             ("success" :f)))))))
 
-(defun route-auth (app connector &key top-url)
+(defun route-auth (app locator &key top-url)
   (setf (ningle:route app "/auth/login")
         (lambda (params)
           (declare (ignore params))
@@ -85,7 +84,7 @@
                    (make-instance 'mita.util.auth.lack:lack-session-holder
                                   :env env)
                    (make-instance 'account-repository
-                                  :connector connector)
+                                  :locator locator)
                    (cdr (assoc "username" body :test #'string=))
                    (cdr (assoc "password" body :test #'string=)))
                   t

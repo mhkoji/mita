@@ -1,22 +1,21 @@
 (defpackage :mita.docker.config
   (:use :cl)
-  (:export :*connector*
+  (:export :*locator*
            :*session-store*
            :*static-root*
            :*content-base*
            :*thumbnail-base*))
 (in-package :mita.docker.config)
-(ql:quickload '(:mita-util-postgres
-                :mita-util-mysql
+(ql:quickload '(:mita
                 :mita-util-auth))
 
-(defvar *connector*
-  (mita.util.mysql:make-connector
+(defvar *locator*
+  (mita.db.mysql:make-locator
    :user "root"
    :host "mysql"
    :port 3306)
   #+nil
-  (mita.util.postgres:make-connector
+  (mita.db.postgres:make-locator
    :user "postgres"
    :host "postgres"
    :port 5432))

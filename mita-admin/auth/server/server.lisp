@@ -15,8 +15,8 @@
 
 
 (defun start (&key (port 5002)
-                   (connector
-                    (mita.db.impl:make-connector))
+                   (locator
+                    (mita.db.impl:make-locator))
                    (static-root
                     (cl-fad:directory-exists-p
                      (system-relative-pathname
@@ -42,9 +42,9 @@
 
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.auth.server.ningle:route-auth
-                       app connector :top-url "/albums")
+                       app locator :top-url "/albums")
                       (mita.admin.server.ningle:route-admin
-                       app connector postgres-dir
+                       app locator postgres-dir
                        (namestring content-base)
                        (namestring thumbnail-base))
                       app))

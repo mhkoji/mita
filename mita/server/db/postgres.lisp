@@ -1,87 +1,112 @@
 (defpackage :mita.db.postgres
   (:use :cl)
-  (:export :with-db
+  (:export :make-locator
+           :postgres
+           :connection
            :create-admin-database
            :create-database
-           :drop-database
-           :postgres))
+           :drop-database))
 (in-package :mita.db.postgres)
 
-(defclass postgres (mita.db.relational:rdb
-                    mita.util.postgres:postgres)
-  ())
+(defstruct locator user host port)
 
-(defmacro with-db ((db db-name connector) &body body)
-  (let ((g (gensym)))
-    `(mita.util.postgres:with-db (,g ,db-name ,connector)
-       (let ((,db (change-class ,g 'postgres)))
-         ,@body))))
+(defun make-spec (db-name locator)
+  (list db-name
+        (locator-user locator)
+        "" ;; password
+        (locator-host locator)
+        :port (locator-port locator)
+        :pooled-p t))
+
+(defclass postgres (mita.db:db)
+  ((db-name
+    :initarg :db-name
+    :reader postgres-db-name)
+   (locator
+    :initarg :locator
+    :reader postgres-locator)))
+
+(defclass connection (mita.db.relational:connection)
+  ((impl
+    :initarg :impl
+    :reader connection-impl)))
+
+(defmethod mita.db:call-with-connection ((db postgres) fn)
+  (postmodern:with-connection (make-spec (postgres-db-name db)
+                                         (postgres-locator db))
+    (let ((conn (make-instance 'connection :impl postmodern:*database*)))
+      (funcall fn conn))))
+  
+(defmethod mita.db:call-with-tx ((conn connection) fn)
+  (postmodern:with-transaction (nil :serializable)
+    (funcall fn)))
+
+(defun execute (conn query-string args)
+  (let ((conn-impl (connection-impl conn)))
+    (cl-postgres:prepare-query
+     conn-impl "" query-string)
+    (cl-postgres:exec-prepared
+     conn-impl "" args #'cl-postgres:list-row-reader)))
 
 ;;;
 
-(defun create-admin-database (postgres-dir db-name connector)
-  (with-db (db db-name connector)
-    (declare (ignore db))
+(defun create-admin-database (postgres-dir db-name locator)
+  (postmodern:with-connection (make-spec db-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./admin-ddl.sql"))))
 
 ;;;
 
-(defun create-database (postgres-dir admin-db-name db-name connector)
-  (postmodern:with-connection
-      (mita.util.postgres::connector->spec admin-db-name connector)
-    (postmodern:query
-     (format nil "CREATE DATABASE ~A" db-name)))
-  (postmodern:with-connection
-      (mita.util.postgres::connector->spec db-name connector)
+(defun create-database (postgres-dir admin-db-name db-name locator)
+  (postmodern:with-connection (make-spec admin-db-name locator)
+    (postmodern:query (format nil "CREATE DATABASE ~A" db-name)))
+  (postmodern:with-connection (make-spec db-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./mita-ddl.sql"))))
 
-(defun drop-database (admin-db-name db-name connector)
-  (postmodern:with-connection
-      (mita.util.postgres::connector->spec admin-db-name connector)
-    (postmodern:query
-     (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
+(defun drop-database (admin-db-name db-name locator)
+  (postmodern:with-connection (make-spec admin-db-name locator)
+    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
 
 ;;;
 
-(defmethod mita.db:page-text-update ((db postgres)
+(defmethod mita.db:page-text-update ((conn connection)
                                      (page-id mita.id:id)
                                      (text string))
-  (mita.util.postgres:execute db
+  (execute conn
    "UPDATE page_text set string = $1 where page_id = $2"
    (list text (mita.id:to-string page-id))))
 
-(defmethod mita.db:album-select-album-ids ((db postgres) offset limit)
+(defmethod mita.db:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
-          (mita.util.postgres:execute db
+          (execute conn
            (concatenate 'string
             "SELECT album_id FROM albums"
             " ORDER BY created_on DESC OFFSET $1 LIMIT $2")
            (list offset limit))))
 
-(defmethod mita.db:tag-update ((db postgres)
+(defmethod mita.db:tag-update ((conn connection)
                                (tag-id mita.id:id)
                                (name string))
-  (mita.util.postgres:execute db
+  (execute conn
    "UPDATE tags SET name = $1 where tag_id = $2"
    (list name (mita.id:to-string tag-id))))
 
 ;;;
 
-(defmethod mita.db.relational:timestamp-to-string ((db postgres)
+(defmethod mita.db.relational:timestamp-to-string ((conn connection)
                                                    (ts local-time:timestamp))
   (local-time:to-rfc3339-timestring ts))
 
-(defmethod mita.db.relational:parse-timestamp ((db postgres) val)
+(defmethod mita.db.relational:parse-timestamp ((conn connection) val)
   (local-time:universal-to-timestamp val))
 
-(defmethod mita.db.relational:insert-into ((db postgres)
+(defmethod mita.db.relational:insert-into ((conn connection)
                                            table-name
                                            column-name-list
                                            values-list)
-  (mita.util.postgres:execute db
+  (execute conn
    (with-output-to-string (s)
      (format s "INSERT INTO ~A" table-name)
      (format s " (~{~A~^,~})" column-name-list)
@@ -138,7 +163,7 @@
                           acc-values))))))))
       (rec clause #'list))))
 
-(defmethod mita.db.relational:delete-from ((db postgres) table-name
+(defmethod mita.db.relational:delete-from ((conn connection) table-name
                                            &key where)
   (let ((args nil))
     (let ((query-string
@@ -149,9 +174,9 @@
                    (parse-clause (list :where where))
                  (format s " ~A" cond-string)
                  (alexandria:appendf args values))))))
-      (mita.util.postgres:execute db query-string args))))
+      (execute conn query-string args))))
 
-(defmethod mita.db.relational:select-from ((db postgres)
+(defmethod mita.db.relational:select-from ((conn connection)
                                            column-names
                                            table-name
                                            &key where
@@ -167,4 +192,4 @@
                  (alexandria:appendf args vals)))
              (when order-by
                (format s " ORDER BY ~A" order-by)))))
-      (mita.util.postgres:execute db query-string args))))
+      (execute conn query-string args))))

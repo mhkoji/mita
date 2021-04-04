@@ -34,13 +34,13 @@
    (:file "account"))
 
   :depends-on
-  (:mita-util-postgres
-   :mita-util-mysql
+  (:mita-util-mysql
 
    :alexandria
    :cl-base64
    :cl-fad
    :local-time
+   :postmodern
    :uuid
 
    ;; for db-file

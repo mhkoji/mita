@@ -22,6 +22,9 @@
    :format '((:year 4) #\- (:month 2) #\- (:day 2) #\space
              (:hour 2) #\: (:min 2) #\: (:sec 2) #\. (:nsec 9))))
 
+(defun parse-sql-timestamp-string (string)
+  (local-time:parse-timestring string :date-time-separator #\Space))
+
 ;;;
 
 (defclass page (mita.page:page)
@@ -37,7 +40,7 @@
 (defun parse-page (row)
   (make-instance 'page
    :id (mita.id:parse (first row))
-   :created-on (local-time:universal-to-timestamp (second row))))
+   :created-on (parse-sql-timestamp-string (second row))))
 
 (defmethod mita.db:page-delete ((db rdb)
                                 (page-id-list list))
@@ -169,7 +172,7 @@
               (mita.db:make-album
                :id (mita.id:parse (first row))
                :name (second row)
-               :created-on (local-time:universal-to-timestamp (third row))))
+               :created-on (parse-sql-timestamp-string (third row))))
             (select-from db "*" "albums"
              :where `(:in "album_id" (:p ,(mapcar #'mita.id:to-string
                                                   album-id-list)))))))

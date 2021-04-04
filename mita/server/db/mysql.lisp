@@ -7,6 +7,13 @@
            :mysql))
 (in-package :mita.db.mysql)
 
+(progn
+  (remhash :timestamp cl-mysql:*type-map*)
+  (remhash :date      cl-mysql:*type-map*)
+  (remhash :time      cl-mysql:*type-map*)
+  (remhash :datetime  cl-mysql:*type-map*)
+  (remhash :newdate   cl-mysql:*type-map*))
+
 (defclass mysql (mita.db.relational:rdb
                  mita.util.mysql:mysql)
   ())

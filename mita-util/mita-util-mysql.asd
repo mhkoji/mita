@@ -3,4 +3,5 @@
   :components
   ((:file "mysql"))
   :depends-on
-  (:cl-dbi))
+  (:cl-dbi
+   :cl-mysql))

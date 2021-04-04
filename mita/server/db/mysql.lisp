@@ -82,6 +82,21 @@
 
 ;;;
 
+(defun to-sql-timestamp-string (timestamp)
+  (local-time:format-timestring nil timestamp
+   :format '((:year 4) #\- (:month 2) #\- (:day 2) #\space
+             (:hour 2) #\: (:min 2) #\: (:sec 2) #\. (:nsec 9))))
+
+(defun parse-sql-timestamp-string (string)
+  (local-time:parse-timestring string :date-time-separator #\Space))
+
+(defmethod mita.db.relational:timestamp-to-string ((db mysql)
+                                                   (ts local-time:timestamp))
+  (to-sql-timestamp-string ts))
+
+(defmethod mita.db.relational:parse-timestamp ((db mysql) (s string))
+  (parse-sql-timestamp-string s))
+
 (defmethod mita.db.relational:insert-into ((db mysql)
                                            table-name
                                            column-name-list

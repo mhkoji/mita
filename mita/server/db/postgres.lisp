@@ -70,6 +70,13 @@
 
 ;;;
 
+(defmethod mita.db.relational:timestamp-to-string ((db postgres)
+                                                   (ts local-time:timestamp))
+  (local-time:to-rfc3339-timestring ts))
+
+(defmethod mita.db.relational:parse-timestamp ((db postgres) val)
+  (local-time:universal-to-timestamp val))
+
 (defmethod mita.db.relational:insert-into ((db postgres)
                                            table-name
                                            column-name-list

@@ -3,4 +3,5 @@
 (in-package :mita.timezone)
 
 (local-time:reread-timezone-repository)
-(local-time:find-timezone-by-location-name "Asia/Tokyo")
+(setq local-time:*default-timezone*
+      (local-time:find-timezone-by-location-name "Asia/Tokyo"))

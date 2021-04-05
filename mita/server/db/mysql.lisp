@@ -88,15 +88,24 @@
                       (format nil "~A" clause))
                   nil)
                  (ecase (car clause)
-                   (:and
-                    (destructuring-bind (left right) (cdr clause)
-                      (rec left
-                       (lambda (l-cond l-acc-values)
-                         (rec right
-                          (lambda (r-cond r-acc-values)
-                            (funcall k
-                             (format nil "~A AND ~A" l-cond r-cond)
-                             (append l-acc-values r-acc-values))))))))
+                   ((:and :or)
+                    (let ((op (car clause)))
+                      (destructuring-bind (left right) (cdr clause)
+                        (rec left
+                         (lambda (l-cond l-acc-values)
+                           (rec right
+                            (lambda (r-cond r-acc-values)
+                              (funcall k
+                               (format nil "~A ~A ~A" l-cond op r-cond)
+                               (append l-acc-values r-acc-values)))))))))
+                   ((:fn)
+                    (let ((name (second clause))
+                          (arg (third clause)))
+                      (rec arg
+                        (lambda (cond acc-values)
+                          (funcall k
+                            (format nil "~A(~A)" name cond)
+                            acc-values)))))
                    ((:in :=)
                     (let ((op (car clause))
                           (column-name (second clause)))
@@ -134,11 +143,7 @@
                  (alexandria:appendf args values))))))
       (execute conn query-string args))))
 
-(defmethod mita.db.relational:select-from ((conn connection)
-                                           column-names
-                                           table-name
-                                           &key where
-                                                order-by)
+(defun convert-select-query (column-names table-name where order-by)
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)
@@ -150,9 +155,19 @@
                  (alexandria:appendf args vals)))
              (when order-by
                (format s " ORDER BY ~A" order-by)))))
+      (list query-string args))))
+
+(defmethod mita.db.relational:select-from ((conn connection)
+                                           column-names
+                                           table-name
+                                           &key where
+                                                order-by)
+  (destructuring-bind (query-string args)
+      (convert-select-query column-names table-name where order-by)
+    (let ((plists (execute conn query-string args)))
       (mapcar (lambda (plist)
                 (mapcar #'cdr (alexandria:plist-alist plist)))
-              (execute conn query-string args)))))
+              plists))))
 
 ;;;
 

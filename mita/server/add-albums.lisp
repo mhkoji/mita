@@ -14,36 +14,36 @@
    :id (mita.id:gen-from-name (mita.fs:file-path file))
    :path (mita.fs:file-path file)))
 
-(defun dir-list-contents-only (dir)
-  (let ((children (remove-if #'mita.fs:dir-p
-                             (mita.fs:dir-list-children dir))))
+(defun folder-list-contents-only (folder)
+  (let ((children (remove-if #'mita.fs:folder-p
+                             (mita.fs:folder-list-children folder))))
     (funcall *sort-fn* children)))
 
-(defun create-source (thumbnail-dir file)
+(defun create-source (thumbnail-folder folder)
   (mita.album:make-album-source
-   :id (mita.id:gen-from-name (mita.fs:file-path file))
-   :name (mita.fs:file-path file)
-   :created-on (mita.fs:file-created-on file)
+   :id (mita.id:gen-from-name (mita.fs:file-path folder))
+   :name (mita.fs:file-path folder)
+   :created-on (mita.fs:file-created-on folder)
    :thumbnail
-   (let ((file (car (dir-list-contents-only file))))
-     (let ((thumbnail-file (mita.fs:make-thumbnail thumbnail-dir file)))
+   (let ((file (car (folder-list-contents-only folder))))
+     (let ((thumbnail-file (mita.fs:make-thumbnail thumbnail-folder file)))
        (make-image mita.image:+source-thumbnail+ thumbnail-file)))))
 
-(defun run (conn dirs thumbnail-dir)
-  (setq dirs (remove-if (lambda (dir)
-                          (null (dir-list-contents-only dir)))
-                        dirs))
-  (when-let ((sources (mapcar (lambda (d)
-                                (create-source thumbnail-dir d))
-                              dirs)))
+(defun run (conn folders thumbnail-folder)
+  (setq folders (remove-if (lambda (folder)
+                          (null (folder-list-contents-only folder)))
+                        folders))
+  (when-let ((sources (mapcar (lambda (folder)
+                                (create-source thumbnail-folder folder))
+                              folders)))
     (let ((albums (mita.album:create-with-images conn sources)))
       ;; Update images
-      (loop for dir in dirs
+      (loop for folder in folders
             for album in albums
             do (let ((images
                       (mapcar (lambda (p)
                                 (make-image mita.image:+source-content+ p))
-                              (dir-list-contents-only dir))))
+                              (folder-list-contents-only folder))))
                  (mita.image:delete-images
                   conn (mapcar #'mita.image:image-id images))
                  (mita.image:save-images conn images)

@@ -197,7 +197,7 @@
           spec req (car (getf params :splat))
           :on-found
           (lambda (file)
-            (if (mita.fs:dir-p file)
+            (if (mita.fs:folder-p file)
                 (html-response (mita.server.html:dir file))
                 `(200 () ,(parse-namestring
                            (mita.fs.dir:file-full-path file)))))

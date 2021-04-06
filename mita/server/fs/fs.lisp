@@ -5,8 +5,8 @@
            :file-path
            :file-created-on
            :file-size
-           :dir-p
-           :dir-list-children
+           :folder-p
+           :folder-list-children
            :make-thumbnail))
 (in-package :mita.fs)
 
@@ -18,8 +18,8 @@
 
 (defgeneric file-created-on (file))
 
-(defgeneric dir-p (file))
+(defgeneric folder-p (file))
 
-(defgeneric dir-list-children (file))
+(defgeneric folder-list-children (file))
 
 (defgeneric make-thumbnail (dir source-file))

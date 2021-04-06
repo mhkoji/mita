@@ -40,7 +40,7 @@
    (jsown:new-js
      ("url" (url-for obj))
      ("name" (mita.fs:file-name obj))
-     ("isDirectory" (mita.fs:dir-p obj))
+     ("isDirectory" (mita.fs:folder-p obj))
      ("size" (mita.fs:file-size obj)))))
 
 (defun as-content (c)

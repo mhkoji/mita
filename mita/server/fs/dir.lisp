@@ -3,10 +3,10 @@
   (:shadow :file)
   (:export :file-full-path
            :as-file
-           :list-dirs))
+           :list-folders))
 (in-package :mita.fs.dir)
 
-(defstruct file-impl root full-path dir-p)
+(defstruct file-impl root full-path folder-p)
 
 ;; /home/xxx/
 ;;          + a/
@@ -17,10 +17,10 @@
 ;; -> path:                /a/b/
 
 (defun mk-file-impl (root path)
-  (let ((dir-p (and (cl-fad:directory-pathname-p path) t)))
+  (let ((folder-p (and (cl-fad:directory-pathname-p path) t)))
     (make-file-impl :root (namestring root)
                     :full-path (namestring path)
-                    :dir-p dir-p)))
+                    :folder-p folder-p)))
 
 (defun subtract-pathname (root path)
   (if (and (< (length root) (length path))
@@ -39,7 +39,7 @@
 (defmethod file-name ((file file))
   (let ((impl (impl file)))
     (let ((p (cl-fad:pathname-as-file (file-impl-full-path impl))))
-      (if (file-impl-dir-p impl)
+      (if (file-impl-folder-p impl)
           (pathname-name p)
           (format nil "~A.~A"
                   (pathname-name p)
@@ -51,25 +51,25 @@
      (namestring (cl-fad:pathname-as-file (file-impl-root impl)))
      (file-impl-full-path impl))))
 
-(defmethod dir-p ((file file))
-  (file-impl-dir-p (impl file)))
+(defmethod folder-p ((file file))
+  (file-impl-folder-p (impl file)))
 
-(defmethod dir-list-children ((file file))
+(defmethod folder-list-children ((file file))
   (let ((impl (impl file)))
-    (when (file-impl-dir-p impl)
+    (when (file-impl-folder-p impl)
       (let ((child-files
              (mapcar (lambda (p)
                        (as-file (file-impl-root impl) p))
                      (cl-fad:list-directory (file-impl-full-path impl)))))
         child-files))))
 
-(defun list-dirs (root path)
+(defun list-folders (root path)
   (when (cl-fad:directory-pathname-p path)
-    (let ((sub-dirs (remove-if-not #'cl-fad:directory-pathname-p
+    (let ((sub-folders (remove-if-not #'cl-fad:directory-pathname-p
                                    (cl-fad:list-directory path))))
       (cons (as-file root path)
-            (alexandria:mappend (lambda (p) (list-dirs root p))
-                                sub-dirs)))))
+            (alexandria:mappend (lambda (p) (list-folders root p))
+                                sub-folders)))))
 
 (defmethod file-created-on ((file file))
   (local-time:universal-to-timestamp
@@ -83,11 +83,11 @@
 (defun file-full-path (file)
   (file-impl-full-path (impl file)))
 
-(defmethod mita.fs:make-thumbnail ((dir file) (source-image-file file))
-  (assert (dir-p dir))
+(defmethod mita.fs:make-thumbnail ((folder file) (source-image-file file))
+  (assert (folder-p folder))
   (let ((thumbnail-full-path
          (concatenate 'string
-          (file-impl-full-path (impl dir))
+          (file-impl-full-path (impl folder))
           "/"
           (cl-ppcre:regex-replace-all
            "/"
@@ -96,4 +96,4 @@
         (source-image-full-path
          (file-impl-full-path (impl source-image-file))))
     (mita.thumbnail:create thumbnail-full-path source-image-full-path)
-    (as-file (file-impl-full-path (impl dir)) thumbnail-full-path)))
+    (as-file (file-impl-full-path (impl folder)) thumbnail-full-path)))

@@ -55,21 +55,21 @@
                              :if-exists :overwrite)
           (alexandria:copy-stream stream out))
         (push full-path full-paths)))
-    (let ((dir-paths (remove-duplicates
-                      (mapcar (lambda (p)
-                                (namestring
-                                 (cl-fad:pathname-directory-pathname p)))
-                              full-paths)
-                      :test #'string=)))
-      (let ((dirs (mapcar (lambda (dp)
+    (let ((folder-paths (remove-duplicates
+                         (mapcar (lambda (p)
+                                   (namestring
+                                    (cl-fad:pathname-directory-pathname p)))
+                                 full-paths)
+                         :test #'string=)))
+      (let ((folders (mapcar (lambda (dp)
                             (mita.fs.dir:as-file content-root dp))
-                          dir-paths))
-            (thumbnail-dir (mita.fs.dir:as-file
-                            (account-thumbnail-root spec req)
-                            (account-thumbnail-root spec req))))
+                          folder-paths))
+            (thumbnail-folder (mita.fs.dir:as-file
+                               (account-thumbnail-root spec req)
+                               (account-thumbnail-root spec req))))
         (mita.db:with-connection (conn (make-db-from-spec req spec))
           (mita.db:with-tx (conn)
-            (mita.add-albums:run conn dirs thumbnail-dir)))))))
+            (mita.add-albums:run conn folders thumbnail-folder)))))))
 
 ;;;
 
@@ -89,13 +89,13 @@
                      (concatenate 'string content-root "/" path))))
     (when (not (cl-fad:file-exists-p full-path))
       (return-from dir-add-albums))
-    (let ((dirs (mita.fs.dir:list-dirs content-root full-path))
-          (thumbnail-dir (mita.fs.dir:as-file
+    (let ((folders (mita.fs.dir:list-folders content-root full-path))
+          (thumbnail-folder (mita.fs.dir:as-file
                           (account-thumbnail-root spec req)
                           (account-thumbnail-root spec req))))
       (mita.db:with-connection (conn (make-db-from-spec req spec))
         (mita.db:with-tx (conn)
-          (mita.add-albums:run conn dirs thumbnail-dir))))))
+          (mita.add-albums:run conn folders thumbnail-folder))))))
 
 ;;;
 

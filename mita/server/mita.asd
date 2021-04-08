@@ -1,6 +1,5 @@
 (asdf:defsystem :mita
   :serial t
-  :pathname "server/"
 
   :components
   ((:file "timezone")

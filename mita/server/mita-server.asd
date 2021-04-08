@@ -1,6 +1,6 @@
 (asdf:defsystem :mita-server
   :serial t
-  :pathname "server/server/"
+  :pathname "server"
 
   :components
   ((:file "externs")

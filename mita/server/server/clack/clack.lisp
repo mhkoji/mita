@@ -14,16 +14,16 @@
 
 (defun start (&key (port 5001)
                    (static-root
-                    (system-relative-pathname "./static/"))
+                    (system-relative-pathname "../static/"))
                    (use-thread t)
                    (serve-image t)
                    ;; Call directory-exists-p to resolve symlink beforehand
                    (content-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/content/")))
+                     (system-relative-pathname "../../data/content/")))
                    (thumbnail-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/thumbnail/")))
+                     (system-relative-pathname "../../data/thumbnail/")))
                    (session-store mita.auth.server:*session-store*)
                    (locator *locator*))
   (when *handler*

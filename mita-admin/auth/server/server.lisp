@@ -20,17 +20,17 @@
                    (static-root
                     (cl-fad:directory-exists-p
                      (system-relative-pathname
-                      "../mita-admin/auth/static/")))
+                      "../../mita-admin/auth/static/")))
                    (session-store *session-store*)
                    (postgres-dir
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../postgres/")))
+                     (system-relative-pathname "../../postgres/")))
                    (content-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/content/")))
+                     (system-relative-pathname "../../data/content/")))
                    (thumbnail-base
                     (cl-fad:directory-exists-p
-                     (system-relative-pathname "../data/thumbnail/")))
+                     (system-relative-pathname "../../data/thumbnail/")))
                    (use-thread t))
   (when *handler*
     (clack:stop *handler*))

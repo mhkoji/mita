@@ -10,10 +10,6 @@
   (format nil "/albums/~A"
           (mita.id:to-string-short (mita.album:album-id c))))
 
-(defmethod url-for ((c mita.page:page))
-  (format nil "/pages/~A"
-          (mita.id:to-string-short (mita.page:page-id c))))
-
 (defmethod url-for ((c mita.fs:file))
   (format nil "/dir~A" (mita.fs:file-path c)))
 

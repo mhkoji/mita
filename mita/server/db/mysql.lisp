@@ -209,13 +209,6 @@
 
 ;;;
 
-(defmethod mita.db:page-text-update ((conn connection)
-                                     (page-id mita.id:id)
-                                     (text string))
-  (execute conn
-   "UPDATE page_text set string = ? where page_id = ?"
-   (list text (mita.id:to-string page-id))))
-
 (defmethod mita.db:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (plist)
             (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))

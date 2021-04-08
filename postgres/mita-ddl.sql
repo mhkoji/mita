@@ -1,25 +1,7 @@
-CREATE TABLE pages (
-  page_id char(36) NOT NULL PRIMARY KEY,
-  created_on timestamp with time zone NOT NULL
-);
-
-CREATE TABLE page_text (
-  page_id char(36) NOT NULL PRIMARY KEY,
-  string text NOT NULL,
-  FOREIGN KEY (page_id) REFERENCES pages(page_id)
-);
-
 CREATE TABLE images (
   image_id char(36) NOT NULL PRIMARY KEY,
   source varchar(64) NOT NULL,
   path varchar(256) NOT NULL
-);
-
-CREATE TABLE page_image (
-  page_id char(36) NOT NULL,
-  image_id char(36) NOT NULL,
-  FOREIGN KEY (page_id) REFERENCES pages(page_id),
-  FOREIGN KEY (image_id) REFERENCES images(image_id)
 );
 
 CREATE TABLE albums (

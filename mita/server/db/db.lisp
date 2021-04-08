@@ -7,17 +7,6 @@
            :with-connection
            :with-tx
 
-           :page-delete
-           :page-insert
-           :page-select-by-id
-           :page-select
-           :page-text-delete
-           :page-text-insert
-           :page-text-select
-           :page-text-update
-           :page-image-insert
-           :page-image-select
-           :page-image-delete
            :image-insert
            :image-select-by-ids
            :image-delete
@@ -67,31 +56,6 @@
 
 (defmacro with-tx ((conn) &body body)
   `(call-with-tx ,conn (lambda () ,@body)))
-
-
-(defgeneric page-delete (conn page-id-list))
-
-(defgeneric page-select-by-id (conn page-id))
-
-(defgeneric page-select (conn))
-
-(defgeneric page-insert (conn page-id))
-
-
-(defgeneric page-text-delete (conn page-id-list))
-
-(defgeneric page-text-select (conn page-id))
-
-(defgeneric page-text-update (conn page-id text))
-
-(defgeneric page-text-insert (conn page-id text))
-
-
-(defgeneric page-image-delete (conn page-id))
-
-(defgeneric page-image-select (conn page-id))
-
-(defgeneric page-image-insert (conn page-id images))
 
 
 (defgeneric image-select-by-ids (conn image-id-list))

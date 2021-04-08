@@ -25,69 +25,6 @@
 
 ;;;
 
-(defclass page (mita.page:page)
-  ((id
-    :initarg :id
-    :type mita.id:id
-    :reader mita.page:page-id)
-   (created-on
-    :initarg :created-on
-    :type local-time:timestamp
-    :reader mita.page:page-created-on)))
-
-(defun parse-page (conn row)
-  (make-instance 'page
-   :id (mita.id:parse (first row))
-   :created-on (parse-timestamp conn (second row))))
-
-(defmethod mita.db:page-delete ((conn connection)
-                                (page-id-list list))
-  (when page-id-list
-    (delete-from conn "pages"
-     :where `(:in "page_id" (:p ,(mapcar #'mita.id:to-string
-                                         page-id-list))))))
-
-(defmethod mita.db:page-insert ((conn connection)
-                                (page-id mita.id:id))
-  (let ((now (local-time:now)))
-    (insert-into conn "pages" '("page_id" "created_on")
-                 (list (list (mita.id:to-string page-id)
-                             (timestamp-to-string conn now))))))
-
-(defmethod mita.db:page-select-by-id ((conn connection)
-                                      (page-id mita.id:id))
-  (single (lambda (row)
-            (parse-page conn row))
-          (select-from conn "*" "pages"
-           :where `(:= "page_id" (:p ,(mita.id:to-string page-id))))))
-                       
-
-(defmethod mita.db:page-select ((conn connection))
-  (mapcar (lambda (row)
-            (parse-page conn row))
-          (select-from conn "*" "pages")))
-
-
-(defmethod mita.db:page-text-delete ((conn connection)
-                                     (page-id-list list))
-  (when page-id-list
-    (delete-from conn "page_text"
-     :where `(:in "page_id" (:p ,(mapcar #'mita.id:to-string
-                                         page-id-list))))))
-                       
-
-(defmethod mita.db:page-text-insert ((conn connection)
-                                     (page-id mita.id:id)
-                                     (text string))
-  (insert-into conn "page_text" '("page_id" "string")
-               (list (list (mita.id:to-string page-id) text))))
-
-(defmethod mita.db:page-text-select ((conn connection)
-                                     (page-id mita.id:id))
-  (single #'first
-          (select-from conn "string" "page_text"
-           :where `(:= "page_id" (:p ,(mita.id:to-string page-id))))))
-
 (defun parse-image (row)
   (mita.image:make-image
    :id (mita.id:parse (first row))
@@ -118,35 +55,6 @@
      :where `(:in "image_id" (:p ,(mapcar #'mita.id:to-string
                                           image-id-list))))))
                        
-
-(defmethod mita.db:page-image-insert ((conn connection)
-                                      (page-id mita.id:id)
-                                      (images list))
-  (insert-into conn "page_image" '("page_id" "image_id")
-               (mapcar
-                (lambda (image)
-                  (list (mita.id:to-string page-id)
-                        (mita.id:to-string (mita.image:image-id image))))
-                images)))
-
-(defmethod mita.db:page-image-delete ((conn connection)
-                                      (page-id mita.id:id))
-  (delete-from conn "page_image"
-               :where `(:= "page_id" (:p ,(mita.id:to-string page-id)))))
-               
-
-(defmethod mita.db:page-image-select ((conn connection)
-                                      (page-id mita.id:id))
-  (mapcar #'parse-image
-          (select-from conn
-                       "i.image_id, i.path"
-                       "images AS i
-                          INNER JOIN page_image
-                          ON
-                            i.image_id = page_image.image_id"
-           :where `(:= "page_image.page_id"
-                       (:p ,(mita.id:to-string page-id))))))
-
 
 (defmethod mita.db:album-delete ((conn connection)
                                  (album-id-list list))

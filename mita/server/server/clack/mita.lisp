@@ -139,55 +139,6 @@
                 (funcall handler request))))
           (funcall app env)))))
 
-(defun connect-page (mapper locator)
-  (connect-all mapper
-   (("/pages"
-     (lambda (params req)
-       (declare (ignore params))
-       (with-safe-html-response
-         (with-connection (conn req locator)
-           (let ((pages (mita.page:load-pages conn)))
-             (html-response
-              (mita.server.html:pages pages)))))))
-    ("/pages/:page-id"
-     (lambda (params req)
-       (with-safe-html-response
-         (with-connection (conn req locator)
-           (when-let*
-               ((page-id
-                 (mita.id:parse-short-or-nil
-                  (getf params :page-id)))
-                (page
-                 (mita.page:load-page-by-id conn page-id)))
-             (html-response
-              (mita.server.html:page conn page)))))))
-    (("/api/pages/:page-id/text" :method :put)
-     (lambda (params req)
-       (with-safe-json-response
-         (with-connection (conn locator req)
-           (when-let*
-               ((page-id
-                 (mita.id:parse-short-or-nil
-                  (getf params :page-id)))
-                (page
-                 (mita.page:load-page-by-id conn page-id))
-                (text
-                 (cdr (assoc "text"
-                             (lack.request:request-body-parameters req)
-                             :test #'string=))))
-             (json-response
-              (mita.page:update-page-text conn page text)))))))
-    (("/api/pages/_create" :method :post)
-     (lambda (params req)
-       (declare (ignore params))
-       (with-safe-json-response
-         (with-connection (conn locator req)
-           (let ((page (mita.page:create-page conn)))
-             (json-response
-              (jsown:new-js
-                ("redirect"
-                 (mita.server.jsown:url-for page))))))))))))
-
 (defun connect-dir (mapper spec)
   (connect-all mapper
    (("/dir/*"
@@ -359,7 +310,6 @@
   (let ((mapper (myway:make-mapper)))
     (connect-album mapper spec)
     (connect-view mapper locator)
-    (connect-page mapper locator)
     (connect-home mapper)
     (connect-tag mapper locator)
     (connect-dir mapper spec)

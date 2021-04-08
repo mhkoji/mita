@@ -8,7 +8,6 @@
    (:file "id")
    (:file "db/db")
    (:file "image")
-   (:file "page")
    (:file "album")
 
    (:file "tag")

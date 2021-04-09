@@ -1,4 +1,4 @@
-(defpackage :mita.db.postgres
+(defpackage :mita.rdb.postgres
   (:use :cl)
   (:export :make-locator
            :postgres
@@ -6,38 +6,38 @@
            :create-admin-database
            :create-database
            :drop-database))
-(in-package :mita.db.postgres)
+(in-package :mita.rdb.postgres)
 
 (defstruct locator user host port)
 
-(defun make-spec (db-name locator)
-  (list db-name
+(defun make-spec (rdb-name locator)
+  (list rdb-name
         (locator-user locator)
         "" ;; password
         (locator-host locator)
         :port (locator-port locator)
         :pooled-p t))
 
-(defclass postgres (mita.db:db)
-  ((db-name
-    :initarg :db-name
-    :reader postgres-db-name)
+(defclass postgres (mita.rdb:rdb)
+  ((rdb-name
+    :initarg :rdb-name
+    :reader postgres-rdb-name)
    (locator
     :initarg :locator
     :reader postgres-locator)))
 
-(defclass connection (mita.db.relational:connection)
+(defclass connection (mita.rdb:connection)
   ((impl
     :initarg :impl
     :reader connection-impl)))
 
-(defmethod mita.db:call-with-connection ((db postgres) fn)
-  (postmodern:with-connection (make-spec (postgres-db-name db)
-                                         (postgres-locator db))
+(defmethod mita.rdb:call-with-connection ((rdb postgres) fn)
+  (postmodern:with-connection (make-spec (postgres-rdb-name rdb)
+                                         (postgres-locator rdb))
     (let ((conn (make-instance 'connection :impl postmodern:*database*)))
       (funcall fn conn))))
   
-(defmethod mita.db:call-with-tx ((conn connection) fn)
+(defmethod mita.rdb:call-with-tx ((conn connection) fn)
   (postmodern:with-transaction (nil :serializable)
     (funcall fn)))
 
@@ -50,27 +50,27 @@
 
 ;;;
 
-(defun create-admin-database (postgres-dir db-name locator)
-  (postmodern:with-connection (make-spec db-name locator)
+(defun create-admin-database (postgres-dir rdb-name locator)
+  (postmodern:with-connection (make-spec rdb-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./admin-ddl.sql"))))
 
 ;;;
 
-(defun create-database (postgres-dir admin-db-name db-name locator)
-  (postmodern:with-connection (make-spec admin-db-name locator)
-    (postmodern:query (format nil "CREATE DATABASE ~A" db-name)))
-  (postmodern:with-connection (make-spec db-name locator)
+(defun create-database (postgres-dir admin-rdb-name rdb-name locator)
+  (postmodern:with-connection (make-spec admin-rdb-name locator)
+    (postmodern:query (format nil "CREATE DATABASE ~A" rdb-name)))
+  (postmodern:with-connection (make-spec rdb-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./mita-ddl.sql"))))
 
-(defun drop-database (admin-db-name db-name locator)
-  (postmodern:with-connection (make-spec admin-db-name locator)
-    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
+(defun drop-database (admin-rdb-name rdb-name locator)
+  (postmodern:with-connection (make-spec admin-rdb-name locator)
+    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" rdb-name))))
 
 ;;;
 
-(defmethod mita.db:album-select-album-ids ((conn connection) offset limit)
+(defmethod mita.rdb:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
           (execute conn
@@ -79,26 +79,26 @@
             " ORDER BY created_on DESC OFFSET $1 LIMIT $2")
            (list offset limit))))
 
-(defmethod mita.db:tag-update ((conn connection)
-                               (tag-id mita.id:id)
-                               (name string))
+(defmethod mita.rdb:tag-update ((conn connection)
+                                (tag-id mita.id:id)
+                                (name string))
   (execute conn
    "UPDATE tags SET name = $1 where tag_id = $2"
    (list name (mita.id:to-string tag-id))))
 
 ;;;
 
-(defmethod mita.db.relational:timestamp-to-string ((conn connection)
-                                                   (ts local-time:timestamp))
+(defmethod mita.rdb.common:timestamp-to-string ((conn connection)
+                                                (ts local-time:timestamp))
   (local-time:to-rfc3339-timestring ts))
 
-(defmethod mita.db.relational:parse-timestamp ((conn connection) val)
+(defmethod mita.rdb.common:parse-timestamp ((conn connection) val)
   (local-time:universal-to-timestamp val))
 
-(defmethod mita.db.relational:insert-into ((conn connection)
-                                           table-name
-                                           column-name-list
-                                           values-list)
+(defmethod mita.rdb.common:insert-into ((conn connection)
+                                        table-name
+                                        column-name-list
+                                        values-list)
   (execute conn
    (with-output-to-string (s)
      (format s "INSERT INTO ~A" table-name)
@@ -156,8 +156,8 @@
                           acc-values))))))))
       (rec clause #'list))))
 
-(defmethod mita.db.relational:delete-from ((conn connection) table-name
-                                           &key where)
+(defmethod mita.rdb.common:delete-from ((conn connection) table-name
+                                        &key where)
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)
@@ -169,11 +169,11 @@
                  (alexandria:appendf args values))))))
       (execute conn query-string args))))
 
-(defmethod mita.db.relational:select-from ((conn connection)
-                                           column-names
-                                           table-name
-                                           &key where
-                                                order-by)
+(defmethod mita.rdb.common:select-from ((conn connection)
+                                        column-names
+                                        table-name
+                                        &key where
+                                             order-by)
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)

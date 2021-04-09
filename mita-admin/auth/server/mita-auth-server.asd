@@ -7,10 +7,10 @@
     :components
     ((:module :account
       :pathname "account"
-      :components ((:file "db")
-                   (:file "account")
-                   (:file "db-postgres")
-                   (:file "db-file")))
+      :components ((:file "account")
+                   (:file "rdb")
+                   (:file "rdb-account")
+                   (:file "rdb-postgres")))
      (:file "admin")
 
      (:file "ningle")))

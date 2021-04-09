@@ -9,13 +9,15 @@
 (ql:quickload '(:mita
                 :mita-util-auth))
 
+(setq *read-eval* nil)
+
 (defvar *locator*
-  (mita.db.mysql:make-locator
+  (mita.rdb.mysql:make-locator
    :user "root"
    :host "mysql"
    :port 3306)
   #+nil
-  (mita.db.postgres:make-locator
+  (mita.rdb.postgres:make-locator
    :user "postgres"
    :host "postgres"
    :port 5432))

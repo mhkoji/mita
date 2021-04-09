@@ -1,32 +1,32 @@
 (defpackage :mita.account
   (:use :cl)
-  (:export :make-db
+  (:export :make-rdb
            :account-root
            :account-thumbnail-root
            :create-account
            :delete-account))
 (in-package :mita.account)
 
-(defun account-id->db-name (id-string)
+(defun account-id->rdb-name (id-string)
   (format nil "account_~A"
           (string-downcase
            (cl-ppcre:regex-replace-all "-" id-string "_"))))
 
-(defun make-db (account-id locator)
-  (mita.db.impl:make-db (account-id->db-name account-id)
-                        locator))
+(defun make-rdb (account-id locator)
+  (mita.rdb.impl:make-rdb (account-id->rdb-name account-id)
+                          locator))
 
-(defun create-account-database (db-dir account-id locator)
-  (let ((db-name (account-id->db-name account-id)))
-    (mita.db.impl:create-database db-dir "admin" db-name locator)))
+(defun create-account-database (rdb-dir account-id locator)
+  (let ((rdb-name (account-id->rdb-name account-id)))
+    (mita.rdb.impl:create-database rdb-dir "admin" rdb-name locator)))
 
 (defun drop-account-database (account-id locator)
-  (let ((db-name (account-id->db-name account-id)))
-    (mita.db.impl:drop-database "admin" db-name locator)))
+  (let ((rdb-name (account-id->rdb-name account-id)))
+    (mita.rdb.impl:drop-database "admin" rdb-name locator)))
 
 
 (defun account-root (base account-id)
-  (concatenate 'string base "/" (account-id->db-name account-id) "/"))
+  (concatenate 'string base "/" (account-id->rdb-name account-id) "/"))
 
 (defun create-account (account-id
                        locator

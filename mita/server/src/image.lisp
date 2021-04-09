@@ -19,15 +19,12 @@
 
 (defstruct image id source path)
 
-(defun save-images (conn images)
-  (mita.db:image-insert conn images)
-  (values))
 
-(defun load-images-by-ids (conn image-ids)
-  (mita.db:image-select-by-ids conn image-ids))
+(defgeneric save-images (conn images))
+
+(defgeneric load-images-by-ids (conn image-ids))
+
+(defgeneric delete-images (conn image-ids))
 
 (defun load-image (conn image-id)
   (car (load-images-by-ids conn (list image-id))))
-
-(defun delete-images (conn image-ids)
-  (mita.db:image-delete conn image-ids))

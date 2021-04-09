@@ -1,34 +1,35 @@
 (asdf:defsystem :mita
   :serial t
+  :pathname "src"
 
   :components
   ((:file "timezone")
 
    (:file "id")
-   (:file "db/db")
    (:file "image")
    (:file "album")
-
+   (:file "album-with-images")
    (:file "tag")
-   (:file "tag-content")
 
    (:file "fs/fs")
-
-   (:file "album-with-images")
    (:file "add-albums")
 
    (:file "thumbnail")
    (:file "fs/dir")
 
-   (:module :db
-    :pathname "db"
+   (:module :rdb
+    :pathname "rdb"
     :components
-    ((:file "relational")
+    ((:file "rdb")
+     (:file "common")
      (:file "postgres")
      (:file "mysql")
-     (:file "file")
-     (:file "impl")))
+     (:file "impl")
+     (:file "image")
+     (:file "album")
+     (:file "tag")))
 
+   (:file "tag-content")
    (:file "account"))
 
   :depends-on

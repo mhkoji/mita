@@ -1,12 +1,13 @@
 (asdf:defsystem :mita-server
   :serial t
-  :pathname "server"
+  :pathname "src/server"
 
   :components
   ((:file "externs")
    (:file "jsown")
    (:file "html")
    (:file "app")
+   (:file "clack/util")
    (:file "clack/mita")
    (:file "clack/clack"))
 

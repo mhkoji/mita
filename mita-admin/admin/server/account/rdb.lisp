@@ -1,4 +1,4 @@
-(defpackage :mita.admin.account.db
+(defpackage :mita.admin.account.rdb
   (:use :cl)
   (:export :make-account
            :account
@@ -9,8 +9,10 @@
            :account-select-all
            :account-select-by-id
            :account-insert
-           :account-delete))
-(in-package :mita.admin.account.db)
+           :account-delete)
+  (:import-from :alexandria
+                :when-let))
+(in-package :mita.admin.account.rdb)
 
 ;; Use defclass instead of defstruct so that the hashed password of an object is not printed accidentally.
 (defclass account ()
@@ -25,7 +27,7 @@
     :reader account-hashed-password)))
 
 (defun make-account (&key id username hashed-password)
-  (make-instance 'mita.admin.account.db:account
+  (make-instance 'account
                  :id id
                  :username username
                  :hashed-password hashed-password))
@@ -36,5 +38,7 @@
 (defgeneric account-select (db username))
 
 (defgeneric account-select-all (db))
+
+(defgeneric account-select-by-id (db account-id))
 
 (defgeneric account-delete (db account-id))

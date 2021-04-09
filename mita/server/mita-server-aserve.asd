@@ -1,6 +1,6 @@
 (asdf:defsystem :mita-server-aserve
   :serial t
-  :pathname "server"
+  :pathname "src/server"
 
   :components
   ((:file "app")

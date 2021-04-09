@@ -3,6 +3,7 @@
   (:export :account
            :account-id
            :account-username
+           :construct-account
            :find-account-with-password-checked
            :find-account
            :find-account-by-id
@@ -13,44 +14,18 @@
                 :when-let))
 (in-package :mita.admin.account)
 
-(defclass account ()
-  ((row :initarg :row)))
+(defstruct account id username)
 
-(defun account-id (account)
-  (mita.admin.account.db:account-id (slot-value account 'row)))
+(defun construct-account (&key id username)
+  (make-account :id id :username username))
 
-(defun account-username (account)
-  (mita.admin.account.db:account-username (slot-value account 'row)))
 
-(defun find-account-with-password-checked (conn username password)
-  (when-let ((row (mita.admin.account.db:account-select conn username)))
-    (when (mita.util.password:hashed-password-matches-p
-           (mita.admin.account.db:account-hashed-password row)
-           password)
-      (make-instance 'account :row row))))
+(defgeneric find-account-with-password-checked (conn username password))
 
-(defun find-account (conn username)
-  (when-let ((row (mita.admin.account.db:account-select conn username)))
-    (make-instance 'account :row row)))
+(defgeneric find-account (conn username))
 
-(defun find-account-by-id (conn account-id)
-  (when-let ((row (mita.admin.account.db:account-select-by-id
-                   conn account-id)))
-    (make-instance 'account :row row)))
+(defgeneric create-account (conn username password))
 
-(defun create-account (conn username password)
-  (let ((account (mita.admin.account.db:make-account
-                  :id (mita.id:gen)
-                  :username username
-                  :hashed-password
-                  (mita.util.password:hash password))))
-    (mita.admin.account.db:account-insert conn account))
-  (find-account conn username))
+(defgeneric delete-account (conn account-id))
 
-(defun delete-account (conn account-id)
-  (mita.admin.account.db:account-delete conn account-id))
-
-(defun load-accounts (conn)
-  (mapcar (lambda (row)
-            (make-instance 'account :row row))
-          (mita.admin.account.db:account-select-all conn)))
+(defgeneric load-accounts (conn))

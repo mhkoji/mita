@@ -2,7 +2,7 @@
 
 (defun delete-with-images (conn sources)
   (let ((existing-albums
-         (mita.album:load-albums-in
+         (load-albums-in
           conn (mapcar #'album-source-id sources))))
     (let ((album-images
            (alexandria:mappend (lambda (a) (album-images conn a))

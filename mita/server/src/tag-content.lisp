@@ -12,7 +12,7 @@
 (defmethod content-name ((album mita.album:album))
   (mita.album:album-name album))
 
-(defmethod load-contents ((loader mita.db:connection)
+(defmethod load-contents ((loader mita.rdb:connection)
                           (type (eql :album))
                           (content-id-list list))
-  (mita.album::load-albums-in loader content-id-list))
+  (mita.album:load-albums-in loader content-id-list))

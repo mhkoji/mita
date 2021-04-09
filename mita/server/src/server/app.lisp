@@ -2,8 +2,8 @@
   (:use :cl)
   (:export :request-account-id
            :spec
-           :make-db
-           :make-db-from-spec
+           :make-rdb
+           :make-rdb-from-spec
            :image-serve
            :album-upload
            :dir-serve
@@ -14,9 +14,9 @@
 
 (defgeneric request-account-id (request))
 
-(defun make-db (request locator)
-  (mita.account:make-db (request-account-id request)
-                        locator))
+(defun make-rdb (request locator)
+  (mita.account:make-rdb (request-account-id request)
+                         locator))
 
 ;;;;;
   
@@ -31,8 +31,8 @@
     :initarg :thumbnail-base
     :reader spec-thumbnail-base)))
 
-(defun make-db-from-spec (request spec)
-  (make-db request (spec-locator spec)))
+(defun make-rdb-from-spec (request spec)
+  (make-rdb request (spec-locator spec)))
 
 (defun account-content-root (spec req)
   (mita.account:account-root (spec-content-base spec)
@@ -67,8 +67,8 @@
             (thumbnail-folder (mita.fs.dir:as-file
                                (account-thumbnail-root spec req)
                                (account-thumbnail-root spec req))))
-        (mita.db:with-connection (conn (make-db-from-spec req spec))
-          (mita.db:with-tx (conn)
+        (mita.rdb:with-connection (conn (make-rdb-from-spec req spec))
+          (mita.rdb:with-tx (conn)
             (mita.add-albums:run conn folders thumbnail-folder)))))))
 
 ;;;
@@ -93,8 +93,8 @@
           (thumbnail-folder (mita.fs.dir:as-file
                           (account-thumbnail-root spec req)
                           (account-thumbnail-root spec req))))
-      (mita.db:with-connection (conn (make-db-from-spec req spec))
-        (mita.db:with-tx (conn)
+      (mita.rdb:with-connection (conn (make-rdb-from-spec req spec))
+        (mita.rdb:with-tx (conn)
           (mita.add-albums:run conn folders thumbnail-folder))))))
 
 ;;;
@@ -102,7 +102,7 @@
 (defun image-serve (spec req image-id-string
                     &key on-found
                          on-not-found)
-  (mita.db:with-connection (conn (make-db-from-spec req spec))
+  (mita.rdb:with-connection (conn (make-rdb-from-spec req spec))
     (let ((image-id (mita.id:parse-short-or-nil image-id-string)))
       (unless image-id
         (return-from image-serve (funcall on-not-found)))

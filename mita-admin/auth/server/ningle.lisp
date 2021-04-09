@@ -14,7 +14,7 @@
                                         username
                                         password)
   (when (and username password)
-    (mita.db:with-connection (conn (mita.admin:make-admin-db
+    (mita.rdb:with-connection (conn (mita.admin:make-admin-rdb
                                     (slot-value repos 'locator)))
       (mita.admin.account:find-account-with-password-checked
        conn username password))))

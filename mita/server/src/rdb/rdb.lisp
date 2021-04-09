@@ -1,6 +1,6 @@
-(defpackage :mita.db
+(defpackage :mita.rdb
   (:use :cl)
-  (:export :db
+  (:export :rdb
            :connection
            :call-with-connection
            :call-with-tx
@@ -40,19 +40,21 @@
            :tag-content-select
            :tag-content-select-tags
            :tag-content-insert
-           :tag-content-insert-by-tags))
-(in-package :mita.db)
+           :tag-content-insert-by-tags)
+  (:import-from :alexandria
+                :when-let))
+  (in-package :mita.rdb)
 
-(defclass db () ())
+(defclass rdb () ())
 
 (defclass connection () ())
 
-(defgeneric call-with-connection (db fn))
+(defgeneric call-with-connection (rdb fn))
 
 (defgeneric call-with-tx (conn fn))
 
-(defmacro with-connection ((conn db) &body body)
-  `(call-with-connection ,db (lambda (,conn) ,@body)))
+(defmacro with-connection ((conn rdb) &body body)
+  `(call-with-connection ,rdb (lambda (,conn) ,@body)))
 
 (defmacro with-tx ((conn) &body body)
   `(call-with-tx ,conn (lambda () ,@body)))
@@ -61,6 +63,8 @@
 (defgeneric image-select-by-ids (conn image-id-list))
 
 (defgeneric image-insert (conn images))
+
+(defgeneric image-delete (conn image-ids))
 
 
 (defstruct album id name created-on)

@@ -16,7 +16,7 @@
 
 (defun start (&key (port 5002)
                    (locator
-                    (mita.rdb.impl:make-locator))
+                    (mita.db.impl:make-locator))
                    (static-root
                     (cl-fad:directory-exists-p
                      (system-relative-pathname

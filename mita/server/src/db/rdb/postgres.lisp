@@ -1,4 +1,4 @@
-(defpackage :mita.rdb.postgres
+(defpackage :mita.db.rdb.postgres
   (:use :cl)
   (:export :make-locator
            :postgres
@@ -6,7 +6,7 @@
            :create-admin-database
            :create-database
            :drop-database))
-(in-package :mita.rdb.postgres)
+(in-package :mita.db.rdb.postgres)
 
 (defstruct locator user host port)
 
@@ -18,7 +18,7 @@
         :port (locator-port locator)
         :pooled-p t))
 
-(defclass postgres (mita.rdb:rdb)
+(defclass postgres (mita.db:db)
   ((rdb-name
     :initarg :rdb-name
     :reader postgres-rdb-name)
@@ -26,18 +26,18 @@
     :initarg :locator
     :reader postgres-locator)))
 
-(defclass connection (mita.rdb:connection)
+(defclass connection (mita.db.rdb:connection)
   ((impl
     :initarg :impl
     :reader connection-impl)))
 
-(defmethod mita.rdb:call-with-connection ((rdb postgres) fn)
+(defmethod mita.db:call-with-connection ((rdb postgres) fn)
   (postmodern:with-connection (make-spec (postgres-rdb-name rdb)
                                          (postgres-locator rdb))
     (let ((conn (make-instance 'connection :impl postmodern:*database*)))
       (funcall fn conn))))
   
-(defmethod mita.rdb:call-with-tx ((conn connection) fn)
+(defmethod mita.db:call-with-tx ((conn connection) fn)
   (postmodern:with-transaction (nil :serializable)
     (funcall fn)))
 
@@ -70,7 +70,7 @@
 
 ;;;
 
-(defmethod mita.rdb:album-select-album-ids ((conn connection) offset limit)
+(defmethod mita.db.rdb:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
           (execute conn
@@ -79,7 +79,7 @@
             " ORDER BY created_on DESC OFFSET $1 LIMIT $2")
            (list offset limit))))
 
-(defmethod mita.rdb:tag-update ((conn connection)
+(defmethod mita.db.rdb:tag-update ((conn connection)
                                 (tag-id mita.id:id)
                                 (name string))
   (execute conn
@@ -88,14 +88,14 @@
 
 ;;;
 
-(defmethod mita.rdb.common:timestamp-to-string ((conn connection)
+(defmethod mita.db.rdb.common:timestamp-to-string ((conn connection)
                                                 (ts local-time:timestamp))
   (local-time:to-rfc3339-timestring ts))
 
-(defmethod mita.rdb.common:parse-timestamp ((conn connection) val)
+(defmethod mita.db.rdb.common:parse-timestamp ((conn connection) val)
   (local-time:universal-to-timestamp val))
 
-(defmethod mita.rdb.common:insert-into ((conn connection)
+(defmethod mita.db.rdb.common:insert-into ((conn connection)
                                         table-name
                                         column-name-list
                                         values-list)
@@ -156,7 +156,7 @@
                           acc-values))))))))
       (rec clause #'list))))
 
-(defmethod mita.rdb.common:delete-from ((conn connection) table-name
+(defmethod mita.db.rdb.common:delete-from ((conn connection) table-name
                                         &key where)
   (let ((args nil))
     (let ((query-string
@@ -169,7 +169,7 @@
                  (alexandria:appendf args values))))))
       (execute conn query-string args))))
 
-(defmethod mita.rdb.common:select-from ((conn connection)
+(defmethod mita.db.rdb.common:select-from ((conn connection)
                                         column-names
                                         table-name
                                         &key where

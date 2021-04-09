@@ -5,7 +5,7 @@
 
 (setq *read-eval* nil)
 
-(defvar *locator* (mita.rdb.impl:make-locator))
+(defvar *locator* (mita.db.impl:make-locator))
 
 (defvar *handler* nil)
 

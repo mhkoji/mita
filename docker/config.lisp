@@ -12,12 +12,12 @@
 (setq *read-eval* nil)
 
 (defvar *locator*
-  (mita.rdb.mysql:make-locator
+  (mita.db.rdb.mysql:make-locator
    :user "root"
    :host "mysql"
    :port 3306)
   #+nil
-  (mita.rdb.postgres:make-locator
+  (mita.db.rdb.postgres:make-locator
    :user "postgres"
    :host "postgres"
    :port 5432))

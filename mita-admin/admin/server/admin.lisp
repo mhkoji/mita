@@ -1,14 +1,14 @@
 (defpackage :mita.admin
   (:use :cl)
-  (:export :make-admin-rdb
+  (:export :make-admin-db
            :create-account
            :delete-account
            :list-accounts
            :init))
 (in-package :mita.admin)
 
-(defun make-admin-rdb (locator)
-  (mita.rdb.impl:make-rdb "admin" locator))
+(defun make-admin-db (locator)
+  (mita.db.impl:make-db "admin" locator))
 
 (defun create-account (username password
                        locator
@@ -16,8 +16,8 @@
                        content-base
                        thumbnail-base)
   (let ((account
-         (mita.rdb:with-connection (conn (make-admin-rdb locator))
-           (mita.rdb:with-tx (conn)
+         (mita.db:with-connection (conn (make-admin-db locator))
+           (mita.db:with-tx (conn)
              (mita.admin.account:create-account conn username password)))))
     (let ((id-string (mita.id:to-string
                       (mita.admin.account:account-id account))))
@@ -34,17 +34,17 @@
                                  locator
                                  content-base
                                  thumbnail-base))
-  (mita.rdb:with-connection (conn (make-admin-rdb locator))
+  (mita.db:with-connection (conn (make-admin-db locator))
     (mita.admin.account:delete-account conn account-id)))
 
 (defun list-accounts (locator)
-  (mita.rdb:with-connection (conn (make-admin-rdb locator))
+  (mita.db:with-connection (conn (make-admin-db locator))
     (mita.admin.account:load-accounts conn)))
 
 ;;;
 
 (defun init (locator postgres-dir content-base thumbnail-base)
-  (mita.rdb.impl:create-admin-database postgres-dir "admin" locator)
+  (mita.db.impl:create-admin-database postgres-dir "admin" locator)
   (create-account "mita" "mita"
                   locator postgres-dir
                   content-base

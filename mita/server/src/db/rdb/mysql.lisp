@@ -1,11 +1,11 @@
-(defpackage :mita.rdb.mysql
+(defpackage :mita.db.rdb.mysql
   (:use :cl)
   (:export :make-locator
            :mysql
            :create-admin-database
            :create-database
            :drop-database))
-(in-package :mita.rdb.mysql)
+(in-package :mita.db.rdb.mysql)
 
 (defstruct locator user host port)
 
@@ -16,7 +16,7 @@
   (remhash :datetime  cl-mysql:*type-map*)
   (remhash :newdate   cl-mysql:*type-map*))
 
-(defclass mysql (mita.rdb:rdb)
+(defclass mysql (mita.db:db)
   ((rdb-name
     :initarg :rdb-name
     :reader mysql-rdb-name)
@@ -24,12 +24,12 @@
     :initarg :locator
     :reader mysql-locator)))
 
-(defclass connection (mita.rdb:connection)
+(defclass connection (mita.db.rdb:connection)
   ((impl
     :initarg :impl
     :reader connection-impl)))
 
-(defmethod mita.rdb:call-with-connection ((rdb mysql) fn)
+(defmethod mita.db:call-with-connection ((rdb mysql) fn)
   (let ((locator (mysql-locator rdb)))
     (mita.util.mysql:call-with-connection
      (lambda (conn-impl)
@@ -39,7 +39,7 @@
      (locator-host locator)
      (locator-port locator))))
   
-(defmethod mita.rdb:call-with-tx ((conn connection) fn)
+(defmethod mita.db:call-with-tx ((conn connection) fn)
   (mita.util.mysql:call-with-tx (connection-impl conn) fn))
 
 (defun execute (conn query-string args)
@@ -55,18 +55,18 @@
 (defun parse-mysql-timestamp-string (string)
   (local-time:parse-timestring string :date-time-separator #\Space))
 
-(defmethod mita.rdb.common:timestamp-to-string ((conn connection)
-                                                    (ts local-time:timestamp))
+(defmethod mita.db.rdb.common:timestamp-to-string ((conn connection)
+                                                   (ts local-time:timestamp))
   (to-mysql-timestamp-string ts))
 
-(defmethod mita.rdb.common:parse-timestamp ((conn connection)
-                                                (s string))
+(defmethod mita.db.rdb.common:parse-timestamp ((conn connection)
+                                               (s string))
   (parse-mysql-timestamp-string s))
 
-(defmethod mita.rdb.common:insert-into ((conn connection)
-                                            table-name
-                                            column-name-list
-                                            values-list)
+(defmethod mita.db.rdb.common:insert-into ((conn connection)
+                                           table-name
+                                           column-name-list
+                                           values-list)
   (execute conn
    (with-output-to-string (s)
      (format s "INSERT INTO ~A" table-name)
@@ -129,9 +129,9 @@
                         acc-values))))))))
     (rec clause #'list)))
 
-(defmethod mita.rdb.common:delete-from ((conn connection)
-                                            table-name
-                                            &key where)
+(defmethod mita.db.rdb.common:delete-from ((conn connection)
+                                           table-name
+                                           &key where)
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)
@@ -157,11 +157,11 @@
                (format s " ORDER BY ~A" order-by)))))
       (list query-string args))))
 
-(defmethod mita.rdb.common:select-from ((conn connection)
-                                        column-names
-                                        table-name
-                                        &key where
-                                             order-by)
+(defmethod mita.db.rdb.common:select-from ((conn connection)
+                                           column-names
+                                           table-name
+                                           &key where
+                                                order-by)
   (destructuring-bind (query-string args)
       (convert-select-query column-names table-name where order-by)
     (let ((plists (execute conn query-string args)))
@@ -172,9 +172,9 @@
 ;;;
 
 (defun create-admin-database (mysql-dir rdb-name locator)
-  (mita.rdb:with-connection (conn (make-instance 'mysql
-                                   :rdb-name rdb-name
-                                   :locator locator))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :rdb-name rdb-name
+                                  :locator locator))
     (dolist (sql (cl-ppcre:split
                   (format nil "~%~%")
                   (alexandria:read-file-into-string
@@ -185,14 +185,14 @@
 
 (defun create-database (mysql-dir admin-rdb-name rdb-name locator)
   (declare (ignore admin-rdb-name))
-  (mita.rdb:with-connection (conn (make-instance 'mysql
-                                   :rdb-name nil
-                                   :locator locator))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :rdb-name nil
+                                  :locator locator))
     (cl-dbi:do-sql (connection-impl conn)
       (format nil "CREATE DATABASE IF NOT EXISTS ~A" rdb-name)))
-  (mita.rdb:with-connection (conn (make-instance 'mysql
-                                   :rdb-name rdb-name
-                                   :locator locator))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :rdb-name rdb-name
+                                  :locator locator))
     (dolist (sql (cl-ppcre:split
                   (format nil "~%~%")
                   (alexandria:read-file-into-string
@@ -201,15 +201,15 @@
 
 (defun drop-database (admin-rdb-name rdb-name locator)
   (declare (ignore admin-rdb-name))
-  (mita.rdb:with-connection (conn (make-instance 'mysql
-                                   :rdb-name nil
-                                   :locator locator))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :rdb-name nil
+                                  :locator locator))
     (cl-dbi:do-sql (connection-impl conn)
       (format nil "DROP DATABASE IF EXISTS ~A" rdb-name))))
 
 ;;;
 
-(defmethod mita.rdb:album-select-album-ids ((conn connection) offset limit)
+(defmethod mita.db.rdb:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (plist)
             (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
               (mita.id:parse (car row))))
@@ -219,9 +219,9 @@
             " ORDER BY created_on DESC LIMIT ?, ?")
            (list offset limit))))
 
-(defmethod mita.rdb:tag-update ((conn connection)
-                                (tag-id mita.id:id)
-                                (name string))
+(defmethod mita.db.rdb:tag-update ((conn connection)
+                                   (tag-id mita.id:id)
+                                   (name string))
   (execute conn
    "UPDATE tags SET name = ? where tag_id = ?"
    (list name (mita.id:to-string tag-id))))

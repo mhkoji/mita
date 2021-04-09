@@ -33,12 +33,12 @@
                  :hashed-password hashed-password))
 
 
-(defgeneric account-insert (db account))
+(defgeneric account-insert (conn account))
 
-(defgeneric account-select (db username))
+(defgeneric account-select (conn username))
 
-(defgeneric account-select-all (db))
+(defgeneric account-select-all (conn))
 
-(defgeneric account-select-by-id (db account-id))
+(defgeneric account-select-by-id (conn account-id))
 
-(defgeneric account-delete (db account-id))
+(defgeneric account-delete (conn account-id))

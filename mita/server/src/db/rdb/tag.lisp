@@ -1,33 +1,33 @@
-(in-package :mita.rdb)
+(in-package :mita.db.rdb)
 
 (defun content->row (content)
   (make-content
    :id (mita.tag:content-id content)
    :type (mita.tag:content-type content)))
 
-(defmethod mita.tag:create-tag ((conn mita.rdb:connection)
+(defmethod mita.tag:create-tag ((conn connection)
                                 (name string))
   (let ((id (mita.id:gen)))
     (tag-insert conn (mita.tag:construct-tag :id id :name name))
     (mita.tag:load-tag-by-id conn id)))
 
-(defmethod mita.tag:delete-tag ((conn mita.rdb:connection)
+(defmethod mita.tag:delete-tag ((conn connection)
                                 (tag-id mita.id:id))
   (tag-content-delete conn tag-id)
   (tag-delete conn (list tag-id))
   (values))
 
-(defmethod mita.tag:load-tags ((conn mita.rdb:connection))
+(defmethod mita.tag:load-tags ((conn connection))
   (tag-select conn))
 
-(defmethod mita.tag:load-tag-by-id ((conn mita.rdb:connection)
+(defmethod mita.tag:load-tag-by-id ((conn connection)
                                     (tag-id mita.id:id))
   ;; TODO: should not select all the tags
   (find tag-id (mita.tag:load-tags conn)
         :key #'mita.tag:tag-id
         :test #'mita.id:id=))
 
-(defmethod mita.tag:tag-contents ((conn mita.rdb:connection)
+(defmethod mita.tag:tag-contents ((conn connection)
                                   (tag mita.tag:tag))
   (let ((content-rows
          (tag-content-select conn (mita.tag:tag-id tag)))
@@ -53,7 +53,7 @@
                               (gethash key id->content)))
                           content-rows)))))
 
-(defmethod mita.tag:update-tag-contents ((conn mita.rdb:connection)
+(defmethod mita.tag:update-tag-contents ((conn connection)
                                          (tag mita.tag:tag)
                                          (contents list))
   (let ((tag-id (mita.tag:tag-id tag)))
@@ -61,16 +61,16 @@
     (tag-content-insert conn tag-id (mapcar #'content->row contents)))
   (values))
 
-(defmethod mita.tag:update-tag-name ((conn mita.rdb:connection)
+(defmethod mita.tag:update-tag-name ((conn connection)
                                      (tag mita.tag:tag)
                                      (name string))
   (tag-update conn (mita.tag:tag-id tag) name)
   (values))
 
-(defmethod mita.tag:content-tags ((conn mita.rdb:connection) content)
+(defmethod mita.tag:content-tags ((conn connection) content)
   (tag-content-select-tags conn (mita.tag:content-id content)))
 
-(defmethod mita.tag:update-content-tags ((conn mita.rdb:connection)
+(defmethod mita.tag:update-content-tags ((conn connection)
                                          (content t)
                                          (tag-ids list))
   (tag-content-delete-by-content conn (mita.tag:content-id content))

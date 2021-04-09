@@ -1,11 +1,6 @@
-(defpackage :mita.rdb
+(defpackage :mita.db.rdb
   (:use :cl)
-  (:export :rdb
-           :connection
-           :call-with-connection
-           :call-with-tx
-           :with-connection
-           :with-tx
+  (:export :connection
 
            :image-insert
            :image-select-by-ids
@@ -43,21 +38,9 @@
            :tag-content-insert-by-tags)
   (:import-from :alexandria
                 :when-let))
-  (in-package :mita.rdb)
+(in-package :mita.db.rdb)
 
-(defclass rdb () ())
-
-(defclass connection () ())
-
-(defgeneric call-with-connection (rdb fn))
-
-(defgeneric call-with-tx (conn fn))
-
-(defmacro with-connection ((conn rdb) &body body)
-  `(call-with-connection ,rdb (lambda (,conn) ,@body)))
-
-(defmacro with-tx ((conn) &body body)
-  `(call-with-tx ,conn (lambda () ,@body)))
+(defclass connection (mita.db:connection) ())
 
 
 (defgeneric image-select-by-ids (conn image-id-list))

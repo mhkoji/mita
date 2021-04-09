@@ -11,11 +11,11 @@
   (getf (lack.request:request-env req) :mita.util.auth.identity))
 
 (defmacro with-connection ((conn req locator) &body body)
-  `(mita.rdb:with-connection (,conn (mita.server.app:make-rdb ,req ,locator))
+  `(mita.db:with-connection (,conn (mita.server.app:make-db ,req ,locator))
      ,@body))
 
 (defmacro with-connection/spec ((conn req spec) &body body)
-  `(mita.rdb:with-connection (,conn (mita.server.app:make-rdb-from-spec
+  `(mita.db:with-connection (,conn (mita.server.app:make-db-from-spec
                                     ,req ,spec))
      ,@body))
 

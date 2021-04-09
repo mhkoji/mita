@@ -1,4 +1,4 @@
-(in-package :mita.rdb)
+(in-package :mita.db.rdb)
 
 (defmethod mita.album:load-albums-in ((conn connection)
                                       (album-id-list list))

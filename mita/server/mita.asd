@@ -17,17 +17,23 @@
    (:file "thumbnail")
    (:file "fs/dir")
 
-   (:module :rdb
-    :pathname "rdb"
+   (:module :db
+    :pathname "db"
     :components
-    ((:file "rdb")
-     (:file "common")
-     (:file "postgres")
-     (:file "mysql")
-     (:file "impl")
-     (:file "image")
-     (:file "album")
-     (:file "tag")))
+    ((:file "db")
+
+     (:module :rdb
+      :pathname "rdb"
+      :components
+      ((:file "rdb")
+       (:file "common")
+       (:file "postgres")
+       (:file "mysql")
+       (:file "image")
+       (:file "album")
+       (:file "tag")))
+
+     (:file "impl")))
 
    (:file "tag-content")
    (:file "account"))

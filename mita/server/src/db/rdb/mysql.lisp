@@ -17,9 +17,9 @@
   (remhash :newdate   cl-mysql:*type-map*))
 
 (defclass mysql (mita.db:db)
-  ((rdb-name
-    :initarg :rdb-name
-    :reader mysql-rdb-name)
+  ((db-name
+    :initarg :db-name
+    :reader mysql-db-name)
    (locator
     :initarg :locator
     :reader mysql-locator)))
@@ -29,12 +29,12 @@
     :initarg :impl
     :reader connection-impl)))
 
-(defmethod mita.db:call-with-connection ((rdb mysql) fn)
-  (let ((locator (mysql-locator rdb)))
+(defmethod mita.db:call-with-connection ((db mysql) fn)
+  (let ((locator (mysql-locator db)))
     (mita.util.mysql:call-with-connection
      (lambda (conn-impl)
        (funcall fn (make-instance 'connection :impl conn-impl)))
-     (mysql-rdb-name rdb)
+     (mysql-db-name db)
      (locator-user locator)
      (locator-host locator)
      (locator-port locator))))
@@ -171,9 +171,9 @@
 
 ;;;
 
-(defun create-admin-database (mysql-dir rdb-name locator)
+(defun create-admin-database (mysql-dir db-name locator)
   (mita.db:with-connection (conn (make-instance 'mysql
-                                  :rdb-name rdb-name
+                                  :db-name db-name
                                   :locator locator))
     (dolist (sql (cl-ppcre:split
                   (format nil "~%~%")
@@ -183,15 +183,15 @@
 
 ;;;
 
-(defun create-database (mysql-dir admin-rdb-name rdb-name locator)
-  (declare (ignore admin-rdb-name))
+(defun create-database (mysql-dir admin-db-name db-name locator)
+  (declare (ignore admin-db-name))
   (mita.db:with-connection (conn (make-instance 'mysql
-                                  :rdb-name nil
+                                  :db-name nil
                                   :locator locator))
     (cl-dbi:do-sql (connection-impl conn)
-      (format nil "CREATE DATABASE IF NOT EXISTS ~A" rdb-name)))
+      (format nil "CREATE DATABASE IF NOT EXISTS ~A" db-name)))
   (mita.db:with-connection (conn (make-instance 'mysql
-                                  :rdb-name rdb-name
+                                  :db-name db-name
                                   :locator locator))
     (dolist (sql (cl-ppcre:split
                   (format nil "~%~%")
@@ -199,13 +199,13 @@
                    (merge-pathnames mysql-dir "./mita-ddl.sql"))))
       (cl-dbi:do-sql (connection-impl conn) sql))))
 
-(defun drop-database (admin-rdb-name rdb-name locator)
-  (declare (ignore admin-rdb-name))
+(defun drop-database (admin-db-name db-name locator)
+  (declare (ignore admin-db-name))
   (mita.db:with-connection (conn (make-instance 'mysql
-                                  :rdb-name nil
+                                  :db-name nil
                                   :locator locator))
     (cl-dbi:do-sql (connection-impl conn)
-      (format nil "DROP DATABASE IF EXISTS ~A" rdb-name))))
+      (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
 
 ;;;
 

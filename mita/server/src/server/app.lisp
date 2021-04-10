@@ -91,8 +91,8 @@
       (return-from dir-add-albums))
     (let ((folders (mita.fs.dir:list-folders content-root full-path))
           (thumbnail-folder (mita.fs.dir:as-file
-                          (account-thumbnail-root spec req)
-                          (account-thumbnail-root spec req))))
+                             (account-thumbnail-root spec req)
+                             (account-thumbnail-root spec req))))
       (mita.db:with-connection (conn (make-db-from-spec req spec))
         (mita.db:with-tx (conn)
           (mita.add-albums:run conn folders thumbnail-folder))))))

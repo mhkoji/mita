@@ -15,9 +15,9 @@
      :host "localhost"
      :port 5432))
 
-  (defun make-db (rdb-name locator)
+  (defun make-db (db-name locator)
     (make-instance 'mita.db.rdb.postgres:postgres
-                   :rdb-name rdb-name
+                   :db-name db-name
                    :locator locator))
 
   (reexport '(make-locator
@@ -33,9 +33,9 @@
      :host "127.0.0.1"
      :port 3306))
 
-  (defun make-db (rdb-name locator)
+  (defun make-db (db-name locator)
     (make-instance 'mita.db.rdb.mysql:mysql
-                   :rdb-name rdb-name
+                   :db-name db-name
                    :locator locator))
 
 

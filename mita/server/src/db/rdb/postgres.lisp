@@ -10,8 +10,8 @@
 
 (defstruct locator user host port)
 
-(defun make-spec (rdb-name locator)
-  (list rdb-name
+(defun make-spec (db-name locator)
+  (list db-name
         (locator-user locator)
         "" ;; password
         (locator-host locator)
@@ -19,9 +19,9 @@
         :pooled-p t))
 
 (defclass postgres (mita.db:db)
-  ((rdb-name
-    :initarg :rdb-name
-    :reader postgres-rdb-name)
+  ((db-name
+    :initarg :db-name
+    :reader postgres-db-name)
    (locator
     :initarg :locator
     :reader postgres-locator)))
@@ -32,7 +32,7 @@
     :reader connection-impl)))
 
 (defmethod mita.db:call-with-connection ((rdb postgres) fn)
-  (postmodern:with-connection (make-spec (postgres-rdb-name rdb)
+  (postmodern:with-connection (make-spec (postgres-db-name rdb)
                                          (postgres-locator rdb))
     (let ((conn (make-instance 'connection :impl postmodern:*database*)))
       (funcall fn conn))))
@@ -50,23 +50,23 @@
 
 ;;;
 
-(defun create-admin-database (postgres-dir rdb-name locator)
-  (postmodern:with-connection (make-spec rdb-name locator)
+(defun create-admin-database (postgres-dir db-name locator)
+  (postmodern:with-connection (make-spec db-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./admin-ddl.sql"))))
 
 ;;;
 
-(defun create-database (postgres-dir admin-rdb-name rdb-name locator)
-  (postmodern:with-connection (make-spec admin-rdb-name locator)
-    (postmodern:query (format nil "CREATE DATABASE ~A" rdb-name)))
-  (postmodern:with-connection (make-spec rdb-name locator)
+(defun create-database (postgres-dir admin-db-name db-name locator)
+  (postmodern:with-connection (make-spec admin-db-name locator)
+    (postmodern:query (format nil "CREATE DATABASE ~A" db-name)))
+  (postmodern:with-connection (make-spec db-name locator)
     (postmodern:execute-file
      (merge-pathnames postgres-dir "./mita-ddl.sql"))))
 
-(defun drop-database (admin-rdb-name rdb-name locator)
-  (postmodern:with-connection (make-spec admin-rdb-name locator)
-    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" rdb-name))))
+(defun drop-database (admin-db-name db-name locator)
+  (postmodern:with-connection (make-spec admin-db-name locator)
+    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
 
 ;;;
 

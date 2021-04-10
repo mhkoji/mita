@@ -12,6 +12,8 @@
 (setq *read-eval* nil)
 
 (defvar *locator*
+  #+nil
+  (mita.db.impl:make-locator)
   (mita.db.rdb.mysql:make-locator
    :user "root"
    :host "mysql"

@@ -51,10 +51,6 @@
                      (if full-loaded-p (butlast ids) ids))))
         (values albums full-loaded-p)))))
 
-(defmethod mita.album:load-album-by-id ((conn connection)
-                                        (album-id mita.id:id))
-  (car (mita.album:load-albums-in conn (list album-id))))
-
 
 (defmethod mita.album:delete-albums ((conn connection)
                                      (album-id-list list))

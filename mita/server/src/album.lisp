@@ -35,13 +35,14 @@
 
 (defgeneric create-albums (conn album-sources))
 
-(defgeneric load-album-by-id (conn album-id))
-
 (defgeneric load-albums-in (conn album-id-list))
 
 (defgeneric load-albums (conn offset limit))
 
 (defgeneric delete-albums (conn album-ids))
+
+(defun load-album-by-id (conn album-id)
+  (car (load-albums-in conn (list album-id))))
 
 
 (defgeneric album-images (conn album))

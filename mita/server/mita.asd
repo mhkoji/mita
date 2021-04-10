@@ -33,6 +33,8 @@
        (:file "album")
        (:file "tag")))
 
+     (:file "file/file")
+
      (:file "impl")))
 
    (:file "tag-content")
@@ -46,8 +48,4 @@
    :cl-fad
    :local-time
    :postmodern
-   :uuid
-
-   ;; for db-file
-   :cl-csv))
-
+   :uuid))

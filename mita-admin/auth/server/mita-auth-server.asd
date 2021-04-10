@@ -8,6 +8,7 @@
     ((:module :account
       :pathname "account"
       :components ((:file "account")
+                   (:file "db-file")
                    (:file "rdb")
                    (:file "rdb-account")
                    (:file "rdb-postgres")))

@@ -31,8 +31,8 @@
 
 (defun run (conn folders thumbnail-folder)
   (setq folders (remove-if (lambda (folder)
-                          (null (folder-list-contents-only folder)))
-                        folders))
+                             (null (folder-list-contents-only folder)))
+                           folders))
   (when-let ((sources (mapcar (lambda (folder)
                                 (create-source thumbnail-folder folder))
                               folders)))

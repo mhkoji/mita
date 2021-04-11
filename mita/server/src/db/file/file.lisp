@@ -155,8 +155,7 @@
    :name (second r)
    :thumbnail (row->image (third r))))
 
-(defmethod mita.album:create-albums ((conn connection)
-                                     (sources list))
+(defmethod mita.album:save-albums ((conn connection) (sources list))
   (let ((all-rows (append
                    (mapcar (lambda (s)
                              (list (mita.id:to-string
@@ -170,8 +169,7 @@
                    (gethash +album+ (connection-table-hash conn)))))
     (setf (gethash +album+ (connection-table-hash conn))
           (sort all-rows #'< :key #'fourth)))
-  (mita.album:load-albums-in conn (mapcar #'mita.album:album-source-id
-                                          sources)))
+  (values))
 
 (defmethod mita.album:delete-albums ((conn connection)
                                      (album-id-list list))

@@ -58,8 +58,7 @@
   (album-image-delete conn album-id-list)
   (album-delete conn album-id-list))
 
-(defmethod mita.album:create-albums ((conn connection)
-                                     (sources list))
+(defmethod mita.album:save-albums ((conn connection) (sources list))
   (album-insert conn
    (mapcar (lambda (s)
              (make-album
@@ -74,8 +73,8 @@
               :image-id (mita.image:image-id
                          (mita.album:album-source-thumbnail s))))
            (remove-if-not #'mita.album:album-source-thumbnail sources)))
-  (mita.album:load-albums-in conn (mapcar #'mita.album:album-source-id
-                                          sources)))
+  (values))
+
 
 (defmethod mita.album:album-images ((conn connection)
                                     (album mita.album:album))

@@ -3,8 +3,6 @@
   (:export :start))
 (in-package :mita.server.clack)
 
-(setq *read-eval* nil)
-
 (defvar *locator* (mita.db.impl:make-locator))
 
 (defvar *handler* nil)

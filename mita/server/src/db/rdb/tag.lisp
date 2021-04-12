@@ -5,11 +5,9 @@
    :id (mita.tag:content-id content)
    :type (mita.tag:content-type content)))
 
-(defmethod mita.tag:create-tag ((conn connection)
-                                (name string))
-  (let ((id (mita.id:gen)))
-    (tag-insert conn (mita.tag:construct-tag :id id :name name))
-    (mita.tag:load-tag-by-id conn id)))
+(defmethod mita.tag:save-tag ((conn connection) (tag mita.tag:tag))
+  (tag-insert conn tag)
+  (values))
 
 (defmethod mita.tag:delete-tag ((conn connection)
                                 (tag-id mita.id:id))

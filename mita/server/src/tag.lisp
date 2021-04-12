@@ -13,6 +13,7 @@
            :load-tags
            :load-tag-by-id
            :load-contents
+           :save-tag
            :update-tag-name
            :tag-contents
            :update-tag-contents
@@ -37,13 +38,13 @@
 
 (defgeneric load-contents (loader type content-id-list))
 
-(defgeneric create-tag (conn name))
-
-(defgeneric delete-tag (conn tag-id))
+(defgeneric save-tag (conn tag))
 
 (defgeneric load-tags (conn))
 
 (defgeneric load-tag-by-id (conn tag-id))
+
+(defgeneric delete-tag (conn tag-id))
 
 (defgeneric update-tag-name (conn tag name))
 
@@ -55,3 +56,9 @@
 (defgeneric content-tags (conn content))
 
 (defgeneric update-content-tags (conn content tag-ids))
+
+
+(defun create-tag (conn name)
+  (let ((id (mita.id:gen)))
+    (save-tag conn (construct-tag :id id :name name))
+    (load-tag-by-id conn id)))

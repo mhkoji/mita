@@ -2,6 +2,7 @@
   (:use :cl)
   (:export :make-locator
            :mysql
+           :connection
            :create-admin-database
            :create-database
            :drop-database))

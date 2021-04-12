@@ -41,7 +41,7 @@
                                               (account-id mita.id:id))
   (account-delete conn account-id))
 
-(defmethod load-accounts ((conn mita.db.rdb:connection))
+(defmethod mita.admin.account:load-accounts ((conn mita.db.rdb:connection))
   (mapcar (lambda (row)
             (mita.admin.account:construct-account
              :id (account-id row)

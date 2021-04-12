@@ -47,6 +47,17 @@
            "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
            (list 0 50))))
 
+(defmethod mita.admin.account.rdb:account-select-all
+    ((conn mita.db.rdb.mysql:connection))
+  (mapcar
+   (lambda (plist)
+     (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
+       (parse-account row)))
+   (mita.db.rdb.mysql::execute
+    conn
+    "SELECT account_id, username, password_hashed FROM accounts LIMIT ?,?"
+    (list 0 50))))
+
 (defmethod mita.admin.account.rdb:account-delete
     ((conn mita.db.rdb:connection)
      (id mita.id:id))

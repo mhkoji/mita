@@ -17,12 +17,13 @@
    (:file "thumbnail")
    (:file "fs/dir")
 
-   (:module :db
+   (:file "db")
+   (:file "tag-content")
+
+   (:module :db-module
     :pathname "db"
     :components
-    ((:file "db")
-
-     (:module :rdb
+    ((:module :rdb
       :pathname "rdb"
       :components
       ((:file "rdb")
@@ -36,8 +37,6 @@
      (:file "file/file")
 
      (:file "impl")))
-
-   (:file "tag-content")
    (:file "account"))
 
   :depends-on

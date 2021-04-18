@@ -1,4 +1,4 @@
-(defpackage :mita.mysql.cffi
+(defpackage :mita-mysql.cffi
   (:use :cl)
   (:export :mysql-init
            :mysql-close
@@ -6,7 +6,7 @@
            :mysql-errno
            :mysql-query
            :mysql-real-connect))
-(in-package :mita.mysql.cffi)
+(in-package :mita-mysql.cffi)
 
 (cffi:define-foreign-library libmysqlclient
   (:unix "libmysqlclient"))

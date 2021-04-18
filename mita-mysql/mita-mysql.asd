@@ -3,7 +3,8 @@
   :pathname "src"
 
   :components
-  ((:file "cffi"))
+  ((:file "cffi")
+   (:file "mysql"))
 
   :depends-on
   (:cffi))

@@ -48,7 +48,7 @@
                        (namestring content-base)
                        (namestring thumbnail-base))
                       app))
-                   :address nil
+                   :address "0.0.0.0"
                    :use-thread use-thread
 		   :debug nil
                    :port port)))

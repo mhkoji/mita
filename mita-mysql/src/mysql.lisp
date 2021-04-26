@@ -50,25 +50,32 @@
   '(:pointer (:struct mita-mysql.cffi::mysql-field)))
 
 (defmacro field-type (field)
-  `(cffi:foreign-slot-value ,field *ptr-mysql-field-struct* 'type))
+  `(cffi:foreign-slot-value
+    ,field *mysql-field-struct* 'mita-mysql.cffi::type))
 
 (defmacro bind-buffer (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'buffer))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::buffer))
 
 (defmacro bind-buffer-type (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'buffer-type))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::buffer-type))
 
 (defmacro bind-buffer-length (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'buffer-length))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::buffer-length))
 
 (defmacro bind-length (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'length))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::length))
 
 (defmacro bind-is-null (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'is-null))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::is-null))
 
 (defmacro bind-error (bind)
-  `(cffi:foreign-slot-value ,bind *ptr-mysql-bind-struct* 'error))
+  `(cffi:foreign-slot-value
+    ,bind *mysql-bind-struct* 'mita-mysql.cffi::error))
 
 (defun set-param-to-bind (bind p)
   (with-accessors ((value param-value)
@@ -80,6 +87,15 @@
   (setf (bind-length bind)  (cffi:foreign-alloc :int)
         (bind-is-null bind) (cffi:foreign-alloc :char)
         (bind-error bind)   (cffi:foreign-alloc :char)))
+
+(defun make-binds (params)
+  ;; TODO: free memory
+  (let ((binds (cffi:foreign-alloc
+                *mysql-bind-struct* :count (length params))))
+    (loop for i from 0 for p in params do
+      (let ((bind (cffi:mem-aptr binds *mysql-bind-struct* i)))
+        (set-param-to-bind bind p)))
+    binds))
 
 (defmacro with-stmt-result-metadata ((var stmt) &body body)
   `(let ((,var (mita-mysql.cffi::mysql-stmt-result-metadata ,stmt)))
@@ -94,28 +110,36 @@
                    *mysql-bind-struct* :count num-fields)))
       (let ((fields (mita-mysql.cffi::mysql-fetch-fields res)))
         (dotimes (i num-fields)
-          (let ((bind  (cffi:mem-aref binds *mysql-bind-struct* i))
-                (field (cffi:mem-aref fields *mysql-field-struct* i)))
+          (let ((bind  (cffi:mem-aptr binds *mysql-bind-struct* i))
+                (field (cffi:mem-aptr fields *mysql-field-struct* i)))
+            (print (getf (cffi:mem-ref field *mysql-field-struct*)
+                         'mita-mysql.cffi::name))
             ;; TODO: free memory
-            ;; TODO: should not restrict to  only int support
-            (setf (bind-buffer bind)      (cffi:foreign-alloc :int)
-                  (bind-buffer-type bind) (field-type field))
+            ;; TODO: should not restrict to only string support
+            (setf (bind-buffer bind)
+                  (cffi:foreign-alloc :char :count 1024)
+
+                  (bind-buffer-type bind)
+                  (field-type field))
             ;; TODO: free memory
             (setf (bind-length bind)  (cffi:foreign-alloc :int)
                   (bind-is-null bind) (cffi:foreign-alloc :char)
                   (bind-error bind)   (cffi:foreign-alloc :char)))))
-      (loop do
-        (let ((status (mita-mysql.cffi::mysql-stmt-fetch stmt)))
-          (when (= status 1)
-            (return nil))
-          (dolist (i num-fields)
-            (print (cffi:mem-ref
-                    (bind-buffer
-                     (cffi:mem-aref binds *mysql-bind-struct* i))
-                    :int))))
-        (let ((status (mita-mysql.cffi::mysql-stmt-next-result stmt)))
-          (when (/= status 0)
-            (return)))))))
+      (mita-mysql.cffi::mysql-stmt-bind-result stmt binds)
+      (loop
+        for status = (mita-mysql.cffi::mysql-stmt-fetch stmt)
+        while (= status 0)
+        do (progn
+             (dotimes (i num-fields)
+               (let ((bind (cffi:mem-aptr binds *mysql-bind-struct* i)))
+                 (let ((len (cffi:mem-ref (bind-length bind) :int)))
+                   (print
+                    (babel:octets-to-string
+                     (cffi:foreign-array-to-lisp
+                      (bind-buffer bind)
+                      (list :array :uint8 len)
+                      :element-type '(unsigned-byte 8))
+                     :encoding :utf-8))))))))))
 
 (defun execute (conn query params)
   (let ((mysql-stmt (mita-mysql.cffi::mysql-stmt-init
@@ -127,12 +151,7 @@
                                query :encoding :utf-8))))
              (mita-mysql.cffi::mysql-stmt-prepare mysql-stmt query len))
            ;; Bind
-           ;; TODO: free memory
-           (let ((binds (cffi:foreign-alloc
-                         *mysql-bind-struct* :count (length params))))
-             (loop for i from 0 for p in params do
-               (let ((bind (cffi:mem-aref binds *mysql-bind-struct* i)))
-                 (set-param-to-bind bind p)))
+           (let ((binds (make-binds params)))
              (mita-mysql.cffi::mysql-stmt-bind-param mysql-stmt binds))
            ;; Execute
            (mita-mysql.cffi::mysql-stmt-execute mysql-stmt)

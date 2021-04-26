@@ -9,7 +9,9 @@
 (in-package :mita-mysql.cffi)
 
 (cffi:define-foreign-library libmysqlclient
-  (:unix "libmysqlclient"))
+  (:unix "libmysqlclient.so"))
+
+(cffi:use-foreign-library libmysqlclient)
 
 (cffi:defcfun ("mysql_init" mysql-init) :pointer
   (mysql :pointer))

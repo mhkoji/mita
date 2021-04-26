@@ -28,15 +28,6 @@
 
 (defstruct param sql-type value)
 
-(defun convert-to-sql-value (sql-type value)
-  (ecase sql-type
-    ((:long :longlong)
-     value)
-    ((:string :var-string)
-     ;; TODO: free memory
-     (let ((buffer (cffi:foreign-alloc :char :count 1024)))
-       (cffi:lisp-string-to-foreign value buffer 1024)))))
-
 (defvar *mysql-bind-struct*
   '(:struct mita-mysql.cffi::mysql-bind))
 
@@ -80,13 +71,24 @@
 (defun set-param-to-bind (bind p)
   (with-accessors ((value param-value)
                    (sql-type param-sql-type)) p
-    (setf (bind-buffer bind)      (convert-to-sql-value sql-type value)
-          (bind-buffer-type bind) (cffi:foreign-enum-value
-                                   'enum-field-types sql-type)))
-  ;; TODO: free memory
-  (setf (bind-length bind)  (cffi:foreign-alloc :int)
-        (bind-is-null bind) (cffi:foreign-alloc :char)
-        (bind-error bind)   (cffi:foreign-alloc :char)))
+    (setf (bind-buffer-type bind)
+          (cffi:foreign-enum-value 'mita-mysql.cffi::enum-field-types
+                                   sql-type))
+    (ecase sql-type
+      ;; TODO: free memory
+      ((:long :longlong)
+       (let ((buffer (cffi:foreign-alloc :long)))
+         (setf (cffi:mem-ref buffer :long) value)
+         (setf (bind-buffer bind) buffer))
+       (setf (bind-length bind)  (cffi:null-pointer)
+             (bind-is-null bind) (cffi:null-pointer)))
+      ((:string :var-string)
+       ;; TODO: free memory
+       (let ((buffer (cffi:foreign-alloc :char :count 1024)))
+         (cffi:lisp-string-to-foreign value buffer 1024)
+         (setf (bind-buffer bind) buffer))
+       (setf (bind-length bind)  (cffi:foreign-alloc :int)
+             (bind-is-null bind) (cffi:null-pointer))))))
 
 (defun make-binds (params)
   ;; TODO: free memory
@@ -127,7 +129,7 @@
                   (bind-error bind)   (cffi:foreign-alloc :char)))))
       (mita-mysql.cffi::mysql-stmt-bind-result stmt binds)
       (loop
-        for status = (mita-mysql.cffi::mysql-stmt-fetch stmt)
+        for status = (print (mita-mysql.cffi::mysql-stmt-fetch stmt))
         while (= status 0)
         do (progn
              (dotimes (i num-fields)

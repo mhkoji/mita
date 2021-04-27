@@ -69,20 +69,24 @@
     ,bind *mysql-bind-struct* 'mita-mysql.cffi::error))
 
 ;; ref: https://dev.mysql.com/doc/c-api/8.0/en/mysql-bind-param.html
+;; Maybe should split allocations for param and result.
 (defun allocate-bind-fields (bind sql-type &optional value)
-  (setf (bind-buffer-type bind) (cffi:foreign-enum-value
-                                 'mita-mysql.cffi::enum-field-types
-                                 sql-type))
   (ecase sql-type
     ;; TODO: free memory
     ((:long :longlong)
+     (setf (bind-buffer-type bind) (cffi:foreign-enum-value
+                                    'mita-mysql.cffi::enum-field-types
+                                    :long))
      (setf (bind-buffer bind)  (cffi:foreign-alloc :long)
            (bind-is-null bind) (cffi:null-pointer)
            (bind-length bind)  (cffi:null-pointer))
      (when value
        (setf (cffi:mem-ref (bind-buffer bind) :long) value)))
-    ((:string :var-string)
+    ((:blob :string :var-string)
      ;; TODO: free memory
+     (setf (bind-buffer-type bind) (cffi:foreign-enum-value
+                                    'mita-mysql.cffi::enum-field-types
+                                    :string))
      (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count 1024)
            ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
            (bind-buffer-length bind) 1024
@@ -138,6 +142,7 @@
                              'mita-mysql.cffi::enum-field-types
                              (field-type field))))
               (allocate-bind-fields bind sql-type)))))
+      (print (cffi:mem-aref binds *mysql-bind-struct* 1))
       (print (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
       (loop for status = (print (mita-mysql.cffi::mysql-stmt-fetch stmt))
             while (= status 0)

@@ -64,11 +64,11 @@
   (stmt-str :string)
   (length :unsigned-long))
 
-(cffi:defcfun ("mysql_stmt_bind_param" mysql-stmt-bind-param) :boolean
+(cffi:defcfun ("mysql_stmt_bind_param" mysql-stmt-bind-param) :int
   (stmt :pointer)
   (bind :pointer))
 
-(cffi:defcfun ("mysql_stmt_bind_result" mysql-stmt-bind-result) :boolean
+(cffi:defcfun ("mysql_stmt_bind_result" mysql-stmt-bind-result) :int
   (stmt :pointer)
   (bind :pointer))
 
@@ -128,6 +128,7 @@
   (is-null-value :char)
   (extension :pointer))
 
+;; https://dev.mysql.com/doc/dev/mysql-server/latest/field__types_8h.html
 (cffi:defcenum enum-field-types
   :decimal
   :tiny
@@ -146,5 +147,6 @@
   :newdate
   :varchar
   :bit
+  (:blob 252)
   (:var-string 253)
   (:string 254))

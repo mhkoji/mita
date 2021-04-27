@@ -68,6 +68,7 @@
   `(cffi:foreign-slot-value
     ,bind *mysql-bind-struct* 'mita-mysql.cffi::error))
 
+;; ref: https://dev.mysql.com/doc/c-api/8.0/en/mysql-bind-param.html
 (defun allocate-bind-fields (bind sql-type &optional value)
   (setf (bind-buffer-type bind) (cffi:foreign-enum-value
                                  'mita-mysql.cffi::enum-field-types
@@ -75,20 +76,24 @@
   (ecase sql-type
     ;; TODO: free memory
     ((:long :longlong)
-     (let ((buffer (cffi:foreign-alloc :long)))
-       (setf (bind-buffer bind) buffer)
-       (when value
-         (setf (cffi:mem-ref buffer :long) value)))
-     (setf (bind-length bind)  (cffi:null-pointer)
-           (bind-is-null bind) (cffi:null-pointer)))
+     (setf (bind-buffer bind)  (cffi:foreign-alloc :long)
+           (bind-is-null bind) (cffi:null-pointer)
+           (bind-length bind)  (cffi:null-pointer))
+     (when value
+       (setf (cffi:mem-ref (bind-buffer bind) :long) value)))
     ((:string :var-string)
      ;; TODO: free memory
-     (let ((buffer (cffi:foreign-alloc :char :count 1024)))
-       (setf (bind-buffer bind) buffer)
-       (when value
-         (cffi:lisp-string-to-foreign value buffer 1024)))
-     (setf (bind-length bind)  (cffi:foreign-alloc :int)
-           (bind-is-null bind) (cffi:null-pointer)))))
+     (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count 1024)
+           ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
+           (bind-buffer-length bind) 1024
+           (bind-is-null bind)       (cffi:null-pointer)
+           (bind-length bind)        (cffi:foreign-alloc :long))
+     (when value
+       (let ((octets (babel:string-to-octets value :encoding :utf-8)))
+         (let ((len (length octets)))
+           (cffi:lisp-array-to-foreign
+            octets (bind-buffer bind) (list :array :uint8 len))
+           (setf (cffi:mem-ref (bind-length bind) :long) len)))))))
 
 (defun make-binds (params)
   ;; TODO: free memory
@@ -96,9 +101,7 @@
                 *mysql-bind-struct* :count (length params))))
     (loop for i from 0 for p in params do
       (let ((bind (cffi:mem-aptr binds *mysql-bind-struct* i)))
-        (allocate-bind-fields bind
-                              (param-sql-type p)
-                              (param-value p))))
+        (allocate-bind-fields bind (param-sql-type p) (param-value p))))
     binds))
 
 (defmacro with-stmt-result-metadata ((var stmt) &body body)
@@ -106,44 +109,43 @@
      (unwind-protect (progn ,@body)
        (mita-mysql.cffi::mysql-free-result ,var))))
 
+(defun bind->lisp-value (bind)
+  (ecase (cffi:foreign-enum-keyword 'mita-mysql.cffi::enum-field-types
+                                    (bind-buffer-type bind))
+    ((:long :longlong)
+     (cffi:mem-ref (bind-buffer bind) :long))
+    (:string
+     (let ((len (cffi:mem-ref (bind-length bind) :long)))
+       (let ((octets (cffi:foreign-array-to-lisp
+                      (bind-buffer bind)
+                      (list :array :uint8 len)
+                      :element-type '(unsigned-byte 8))))
+         (babel:octets-to-string octets :encoding :utf-8))))))
+
 (defun fetch-result (stmt)
   (with-stmt-result-metadata (res stmt)
     ;; TODO: free memory
+    ;; Fetch num fields to allocate binds
     (let* ((num-fields (mita-mysql.cffi::mysql-num-fields res))
            (binds (cffi:foreign-alloc
                    *mysql-bind-struct* :count num-fields)))
+      ;; Fetch fields to set field types to binds
       (let ((fields (mita-mysql.cffi::mysql-fetch-fields res)))
         (dotimes (i num-fields)
           (let ((bind  (cffi:mem-aptr binds *mysql-bind-struct* i))
                 (field (cffi:mem-aptr fields *mysql-field-struct* i)))
-            (print (cffi:mem-aref fields *mysql-field-struct* i))
-            (allocate-bind-fields
-             bind
-             (cffi:foreign-enum-keyword
-              'mita-mysql.cffi::enum-field-types
-              (field-type field))))))
-      (mita-mysql.cffi::mysql-stmt-bind-result stmt binds)
-      (loop
-        for status = (print (mita-mysql.cffi::mysql-stmt-fetch stmt))
-        while (= status 0)
-        do (progn
-             (dotimes (i num-fields)
-               (let ((bind (cffi:mem-aptr binds *mysql-bind-struct* i)))
-                 (ecase (cffi:foreign-enum-keyword
-                         'mita-mysql.cffi::enum-field-types
-                         (bind-buffer-type bind))
-                   ((:long :longlong)
-                    (print
-                     (cffi:mem-ref (bind-buffer bind) :long)))
-                   (:string
-                    (let ((len (cffi:mem-ref (bind-length bind) :int)))
-                      (print
-                       (babel:octets-to-string
-                        (cffi:foreign-array-to-lisp
-                         (bind-buffer bind)
-                         (list :array :uint8 len)
-                         :element-type '(unsigned-byte 8))
-                        :encoding :utf-8))))))))))))
+            (let ((sql-type (cffi:foreign-enum-keyword
+                             'mita-mysql.cffi::enum-field-types
+                             (field-type field))))
+              (allocate-bind-fields bind sql-type)))))
+      (print (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
+      (loop for status = (print (mita-mysql.cffi::mysql-stmt-fetch stmt))
+            while (= status 0)
+            collect
+            (loop for i from 0 below num-fields
+                  collect
+                  (bind->lisp-value
+                   (cffi:mem-aptr binds *mysql-bind-struct* i)))))))
 
 (defun execute (conn query params)
   (let ((mysql-stmt (mita-mysql.cffi::mysql-stmt-init

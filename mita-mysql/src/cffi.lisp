@@ -39,15 +39,18 @@
   (unix-socket :string)
   (client-flag :unsigned-long))
 
+(cffi:defcfun ("mysql_commit" mysql-commit) :int
+  (mysql :pointer))
+
 (cffi:defcfun ("mysql_free_result" mysql-free-result) :void
   (mysql-res :pointer))
-
 
 (cffi:defcfun ("mysql_num_fields" mysql-num-fields) :unsigned-int
   (mysql-res :pointer))
 
 (cffi:defcfun ("mysql_fetch_fields" mysql-fetch-fields) :pointer
   (mysql-res :pointer))
+
 
 (cffi:defcfun ("mysql_stmt_result_metadata" mysql-stmt-result-metadata)
     :pointer
@@ -70,6 +73,9 @@
   (bind :pointer))
 
 (cffi:defcfun ("mysql_stmt_next_result" mysql-stmt-next-result) :int
+  (stmt :pointer))
+
+(cffi:defcfun ("mysql_stmt_free_result" mysql-stmt-free-result) :int
   (stmt :pointer))
 
 (cffi:defcfun ("mysql_stmt_execute" mysql-stmt-execute) :int

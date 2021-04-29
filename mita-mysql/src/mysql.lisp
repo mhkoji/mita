@@ -41,8 +41,34 @@
 (defun disconnect (conn)
   (mita-mysql.cffi:mysql-close (connection-mysql conn)))
 
+
+(defun mysql-error (mysql)
+  (error 'mysql-error
+         :error (mita-mysql.cffi:mysql-error mysql)
+         :errno (mita-mysql.cffi:mysql-errno mysql)))
+
+(defun maybe-mysql-error (mysql ret)
+  (if (= ret 0)
+      ret
+      (mysql-error mysql)))
+
+(defun stmt-error (stmt)
+  (error 'mysql-error
+         :error (mita-mysql.cffi::mysql-stmt-error stmt)
+         :errno (mita-mysql.cffi::mysql-stmt-errno stmt)))
+
+(defun maybe-stmt-error (stmt ret)
+  (if (= ret 0)
+      ret
+      (stmt-error stmt)))
+
+(defun commit (conn)
+  (let ((mysql (connection-mysql conn)))
+    (maybe-mysql-error mysql (mita-mysql.cffi::mysql-commit mysql))))
+
 (defun query (conn string)
   (mita-mysql.cffi:mysql-query (connection-mysql conn) string))
+
 
 
 (defvar *mysql-bind-struct*
@@ -182,16 +208,6 @@
   `(let ((,var (mita-mysql.cffi::mysql-stmt-result-metadata ,stmt)))
      (unwind-protect (progn ,@body)
        (mita-mysql.cffi::mysql-free-result ,var))))
-
-(defun stmt-error (stmt)
-  (error 'mysql-error
-         :error (mita-mysql.cffi::mysql-stmt-error stmt)
-         :errno (mita-mysql.cffi::mysql-stmt-errno stmt)))
-
-(defun maybe-stmt-error (stmt ret)
-  (if (= ret 0)
-      ret
-      (stmt-error stmt)))
 
 (defun fetch-result (stmt)
   (with-stmt-result-metadata (res stmt)

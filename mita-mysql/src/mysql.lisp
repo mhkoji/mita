@@ -79,22 +79,62 @@
   (babel:octets-to-string octets :encoding :utf-8))
 
 
-(defun datetime->lisp-value (time)
-  (local-time:encode-timestamp 0
-                               (time-second time)
-                               (time-minute time)
-                               (time-hour time)
-                               (time-day time)
-                               (time-month time)
-                               (time-year time)))
+(defun time->sql-string (time)
+  (format nil "~2,'0d:~2,'0d:~2,'0d"
+          (time-hour time)
+          (time-minute time)
+          (time-second time)))
 
-(defun time->lisp-value (time)
-  (make-instance 'local-time:timestamp
-                 :nsec 0
-                 :sec (+ (* (time-hour time) 3600)
-                         (* (time-minute time) 60)
-                         (time-second time))
-                 :day 0))
+(defun date->sql-string (time)
+  (format nil "~2,'0d-~2,'0d-~2,'0d"
+          (time-year time)
+          (time-month time)
+          (time-day time)))
+
+(defun datetime->sql-string (time)
+  (concatenate 'string
+               (date->sql-string time)
+               " "
+               (time->sql-string time)))
+
+
+(defun row-converter-for (sql-type)
+  (ecase sql-type
+    ((:longlong)
+     (lambda (octets)
+       (parse-integer (octets-to-string octets))))
+    ((:string :var-string
+      :datetime :time :date)
+     #'octets-to-string)
+    ((:blob)
+     #'identity)))
+
+(defun parse-row-octets (sql-type octets)
+  (funcall (row-converter-for sql-type) octets))
+
+
+(defun parse-bind-result (bind)
+  (let ((sql-type (cffi:foreign-enum-keyword
+                   'mita-mysql.cffi::enum-field-types
+                   (bind-buffer-type bind))))
+    (ecase sql-type
+      ((:long :longlong)
+       (cffi:mem-ref (bind-buffer bind) :long))
+      ((:date)
+       (date->sql-string (bind-buffer bind)))
+      ((:time)
+       (time->sql-string (bind-buffer bind)))
+      ((:datetime)
+       (datetime->sql-string (bind-buffer bind)))
+      ((:string :blob)
+       (let ((len (cffi:mem-ref (bind-length bind) :long)))
+         (let ((octets (cffi:foreign-array-to-lisp
+                        (bind-buffer bind)
+                        (list :array :uint8 len)
+                        :element-type '(unsigned-byte 8))))
+           (if (eql sql-type :string)
+               (babel:octets-to-string octets :encoding :utf-8)
+               octets)))))))
 
 
 (define-condition mysql-error (error)
@@ -155,18 +195,6 @@
   (let ((mysql (connection-mysql conn)))
     (maybe-mysql-error mysql (mita-mysql.cffi::mysql-commit mysql))))
 
-(labels ((converter-for (sql-type)
-           (ecase sql-type
-             ((:longlong)
-              (lambda (octets)
-                (parse-integer (octets-to-string octets))))
-             ((:string :var-string
-               :datetime :time :date)
-              #'octets-to-string)
-             ((:blob)
-              #'identity))))
-  (defun query-octets->lisp-value (sql-type octets)
-    (funcall (converter-for sql-type) octets)))
 
 (defun fetch-query-result (mysql)
   ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-store-result.html
@@ -203,7 +231,7 @@
                              for type in field-types
                              for i from 0
                              collect
-                             (query-octets->lisp-value
+                             (parse-row-octets
                               type
                               (let ((nth-ptr
                                      (cffi:mem-aref row :pointer i))
@@ -293,27 +321,6 @@
     ((:blob :string :var-string)
      (bind-allocate-string bind sql-type))))
 
-(defun bind->lisp-value (bind)
-  (let ((sql-type (cffi:foreign-enum-keyword
-                   'mita-mysql.cffi::enum-field-types
-                   (bind-buffer-type bind))))
-    (ecase sql-type
-      ((:long :longlong)
-       (cffi:mem-ref (bind-buffer bind) :long))
-      ((:date :datetime)
-       (datetime->lisp-value (bind-buffer bind)))
-      ((:time)
-       (time->lisp-value (bind-buffer bind)))
-      ((:string :blob)
-       (let ((len (cffi:mem-ref (bind-length bind) :long)))
-         (let ((octets (cffi:foreign-array-to-lisp
-                        (bind-buffer bind)
-                        (list :array :uint8 len)
-                        :element-type '(unsigned-byte 8))))
-           (if (eql sql-type :string)
-               (babel:octets-to-string octets :encoding :utf-8)
-               octets)))))))
-
 (defun fetch-execute-result (stmt)
   (let ((res (mita-mysql.cffi::mysql-stmt-result-metadata stmt)))
     (when (cffi:null-pointer-p res)
@@ -350,7 +357,7 @@
                         collect
                         (loop for i from 0 below num-fields
                               collect
-                              (bind->lisp-value
+                              (parse-bind-result
                                (cffi:mem-aptr binds *mysql-bind-struct* i)))))
              (dotimes (i num-fields)
                (bind-release (cffi:mem-aptr binds *mysql-bind-struct* i)))

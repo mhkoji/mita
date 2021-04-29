@@ -293,6 +293,9 @@
 (defun keyword-sql-type->int (sql-type)
   (cffi:foreign-enum-value 'mita-mysql.cffi::enum-field-types sql-type))
 
+(defun int-sql-type->keyword (int)
+  (cffi:foreign-enum-keyword 'mita-mysql.cffi::enum-field-types int))
+
 ;; ref: https://dev.mysql.com/doc/c-api/8.0/en/mysql-bind-param.html
 (defun setup-bind-for-param (bind param)
   (with-accessors ((sql-type param-sql-type)
@@ -354,11 +357,10 @@
                              (cffi:mem-aptr binds *mysql-bind-struct* i))
                             (field
                              (cffi:mem-aptr fields *mysql-field-struct* i)))
-                        (let ((sql-type (cffi:foreign-enum-keyword
-                                         'mita-mysql.cffi::enum-field-types
-                                         (field-type field))))
-                          (setup-bind-for-result bind sql-type)
-                          (push bind binds-for-free)))))
+                        (let ((field-type (int-sql-type->keyword
+                                           (field-type field))))
+                          (setup-bind-for-result bind field-type))
+                        (push bind binds-for-free))))
                   (maybe-stmt-error
                    stmt
                    (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))

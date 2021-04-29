@@ -118,8 +118,10 @@
                    'mita-mysql.cffi::enum-field-types
                    (bind-buffer-type bind))))
     (ecase sql-type
-      ((:long :longlong)
+      ((:long)
        (cffi:mem-ref (bind-buffer bind) :long))
+      ((:longlong)
+       (cffi:mem-ref (bind-buffer bind) :int64))
       ((:date)
        (date->sql-string (bind-buffer bind)))
       ((:time)
@@ -249,13 +251,13 @@
     (fetch-query-result mysql)))
 
 
-(defun bind-allocate-long (bind sql-type)
+(defun bind-allocate-byte (bind sql-type cffi-type)
   (setf (bind-buffer-type bind) (cffi:foreign-enum-value
                                  'mita-mysql.cffi::enum-field-types
                                  sql-type)
 
-        (bind-buffer bind) (cffi:foreign-alloc :long)
-        
+        (bind-buffer bind) (cffi:foreign-alloc cffi-type)
+
         (bind-is-null bind) (cffi:null-pointer)
 
         (bind-length bind) (cffi:null-pointer)))
@@ -301,7 +303,7 @@
                    (value param-value)) param
     (ecase sql-type
       ((:long)
-       (bind-allocate-long bind :long)
+       (bind-allocate-byte bind sql-type :long)
        (setf (cffi:mem-ref (bind-buffer bind) :long) value))
       ((:string)
        (bind-allocate-string bind :string)
@@ -314,8 +316,10 @@
 
 (defun setup-bind-for-result (bind sql-type)
   (ecase sql-type
-    ((:long :longlong)
-     (bind-allocate-long bind sql-type))
+    ((:long)
+     (bind-allocate-byte bind sql-type :long))
+    ((:longlong)
+     (bind-allocate-byte bind sql-type :int64))
     ((:date :time :datetime)
      (bind-allocate-date bind sql-type))
     ((:blob :string :var-string)
@@ -330,7 +334,8 @@
          ;; Fetch num fields to know the required count of binds.
          (let* ((num-fields (mita-mysql.cffi::mysql-num-fields res))
                 (binds (cffi:foreign-alloc *mysql-bind-struct*
-                                           :count num-fields)))
+                                           :count num-fields))
+                (binds-for-free nil))
            (unwind-protect
                 (progn
                   ;; Bind result
@@ -344,7 +349,8 @@
                         (let ((sql-type (cffi:foreign-enum-keyword
                                          'mita-mysql.cffi::enum-field-types
                                          (field-type field))))
-                          (setup-bind-for-result bind sql-type)))))
+                          (setup-bind-for-result bind sql-type)
+                          (push bind binds-for-free)))))
                   (maybe-stmt-error
                    stmt
                    (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
@@ -359,8 +365,7 @@
                               collect
                               (parse-bind-result
                                (cffi:mem-aptr binds *mysql-bind-struct* i)))))
-             (dotimes (i num-fields)
-               (bind-release (cffi:mem-aptr binds *mysql-bind-struct* i)))
+             (mapc #'bind-release binds-for-free)
              (cffi:foreign-free binds)))
       (mita-mysql.cffi::mysql-free-result res))))
 

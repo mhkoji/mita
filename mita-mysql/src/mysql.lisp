@@ -392,7 +392,8 @@
               (mita-mysql.cffi::mysql-stmt-prepare mysql-stmt query len)))
            (let* ((num-params (length params))
                   (binds (cffi:foreign-alloc
-                          *mysql-bind-struct* :count num-params)))
+                          *mysql-bind-struct* :count num-params))
+                  (binds-for-free nil))
              (unwind-protect
                   (progn
                     ;; Bind
@@ -403,7 +404,9 @@
                           for param in params
                           for bind = (cffi:mem-aptr
                                       binds *mysql-bind-struct* i)
-                          do (setup-bind-for-param bind param))
+                          do (progn
+                               (setup-bind-for-param bind param)
+                               (push bind binds-for-free)))
                     (maybe-stmt-error
                      mysql-stmt                     
                      (mita-mysql.cffi::mysql-stmt-bind-param
@@ -420,7 +423,6 @@
                ;; https://dev.mysql.com/doc/c-api/8.0/en/c-api-prepared-statement-data-structures.html
                ;; > When you call mysql_stmt_execute(), MySQL use the value stored in the variable
                ;; > in place of the corresponding parameter marker in the statement
-               (dotimes (i num-params)
-                 (bind-release (cffi:mem-aptr binds *mysql-bind-struct* i)))
+               (mapc #'bind-release binds-for-free)
                (cffi:foreign-free binds))))
       (mita-mysql.cffi::mysql-stmt-close mysql-stmt))))

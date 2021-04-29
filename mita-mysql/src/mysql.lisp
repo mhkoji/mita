@@ -251,42 +251,23 @@
     (fetch-query-result mysql)))
 
 
-(defun bind-allocate-byte (bind sql-type cffi-type)
-  (setf (bind-buffer-type bind) (cffi:foreign-enum-value
-                                 'mita-mysql.cffi::enum-field-types
-                                 sql-type)
-
-        (bind-buffer bind) (cffi:foreign-alloc cffi-type)
-
+(defun bind-allocate-byte (bind cffi-type)
+  (setf (bind-buffer bind)  (cffi:foreign-alloc cffi-type)
         (bind-is-null bind) (cffi:null-pointer)
-
-        (bind-length bind) (cffi:null-pointer)))
+        (bind-length bind)  (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/refman/5.6/ja/c-api-prepared-statement-date-handling.html
-(defun bind-allocate-date (bind sql-type)
-  (setf (bind-buffer-type bind) (cffi:foreign-enum-value
-                                 'mita-mysql.cffi::enum-field-types
-                                 sql-type)
-
-        (bind-buffer bind) (cffi:foreign-alloc
-                            '(:struct mita-mysql.cffi::mysql-time))
-
+(defun bind-allocate-date (bind)
+  (setf (bind-buffer bind)  (cffi:foreign-alloc *mysql-time-struct*)
         (bind-is-null bind) (cffi:null-pointer)
+        (bind-length bind)  (cffi:null-pointer)))
 
-        (bind-length bind) (cffi:null-pointer)))
-
-(defun bind-allocate-string (bind sql-type &optional (length 1024))
-  (setf (bind-buffer-type bind) (cffi:foreign-enum-value
-                                 'mita-mysql.cffi::enum-field-types sql-type)
-
-        (bind-buffer bind) (cffi:foreign-alloc :char :count length)
-
-        ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
+;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
+(defun bind-allocate-string (bind &optional (length 1024))
+  (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
         (bind-buffer-length bind) length
-
-        (bind-is-null bind) (cffi:null-pointer)
-
-        (bind-length bind) (cffi:foreign-alloc :long)))
+        (bind-is-null bind)       (cffi:null-pointer)
+        (bind-length bind)        (cffi:foreign-alloc :long)))
 
 (defun bind-release (bind)
   (ignore-errors
@@ -297,33 +278,38 @@
      (cffi:foreign-free (bind-length bind)))))
 
 
+(defun keyword-sql-type->int (sql-type)
+  (cffi:foreign-enum-value 'mita-mysql.cffi::enum-field-types sql-type))
+
 ;; ref: https://dev.mysql.com/doc/c-api/8.0/en/mysql-bind-param.html
 (defun setup-bind-for-param (bind param)
   (with-accessors ((sql-type param-sql-type)
                    (value param-value)) param
     (ecase sql-type
       ((:long)
-       (bind-allocate-byte bind sql-type :long)
+       (bind-allocate-byte bind :long)
        (setf (cffi:mem-ref (bind-buffer bind) :long) value))
       ((:string)
-       (bind-allocate-string bind :string)
+       (bind-allocate-string bind)
        (let* ((octets (string-to-octets value))
               (len (length octets)))
          (cffi:lisp-array-to-foreign octets
                                      (bind-buffer bind)
                                      (list :array :uint8 len))
-         (setf (cffi:mem-ref (bind-length bind) :long) len))))))
+         (setf (cffi:mem-ref (bind-length bind) :long) len))))
+    (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type))))
 
 (defun setup-bind-for-result (bind sql-type)
   (ecase sql-type
     ((:long)
-     (bind-allocate-byte bind sql-type :long))
+     (bind-allocate-byte bind :long))
     ((:longlong)
-     (bind-allocate-byte bind sql-type :int64))
+     (bind-allocate-byte bind :int64))
     ((:date :time :datetime)
-     (bind-allocate-date bind sql-type))
+     (bind-allocate-date bind))
     ((:blob :string :var-string)
-     (bind-allocate-string bind sql-type))))
+     (bind-allocate-string bind)))
+  (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type)))
 
 (defun parse-row (binds num-fields)
   (loop for i from 0 below num-fields

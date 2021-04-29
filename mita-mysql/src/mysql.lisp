@@ -100,7 +100,7 @@
 
 (defun row-converter-for (sql-type)
   (ecase sql-type
-    ((:longlong)
+    ((:long :longlong)
      (lambda (octets)
        (parse-integer (octets-to-string octets))))
     ((:string :var-string
@@ -128,15 +128,15 @@
        (time->sql-string (bind-buffer bind)))
       ((:datetime)
        (datetime->sql-string (bind-buffer bind)))
-      ((:string :blob)
-       (let ((len (cffi:mem-ref (bind-length bind) :long)))
+      ((:string :var-string :blob)
+       (let ((len (cffi:mem-ref (bind-length bind) :long))
+             (buf (bind-buffer bind)))
          (let ((octets (cffi:foreign-array-to-lisp
-                        (bind-buffer bind)
-                        (list :array :uint8 len)
+                        buf (list :array :uint8 len)
                         :element-type '(unsigned-byte 8))))
-           (if (eql sql-type :string)
-               (babel:octets-to-string octets :encoding :utf-8)
-               octets)))))))
+           (if (eql sql-type :blob)
+               octets
+               (octets-to-string octets))))))))
 
 
 (define-condition mysql-error (error)

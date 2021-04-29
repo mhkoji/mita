@@ -118,9 +118,7 @@
 
 
 (defun parse-row-bind (bind)
-  (let ((sql-type (cffi:foreign-enum-keyword
-                   'mita-mysql.cffi::enum-field-types
-                   (bind-buffer-type bind))))
+  (let ((sql-type (int-sql-type->keyword (bind-buffer-type bind))))
     (ecase sql-type
       ((:null)
        nil)
@@ -204,52 +202,55 @@
     (maybe-mysql-error mysql (mita-mysql.cffi::mysql-commit mysql))))
 
 
+(defun call-with-store-result (mysql res-fn)
+  (let ((res (mita-mysql.cffi::mysql-store-result mysql)))
+    (cond ((not (cffi:null-pointer-p res))
+           (unwind-protect (funcall res-fn res)
+             (mita-mysql.cffi::mysql-free-result res)))
+          ((/= (mita-mysql.cffi:mysql-errno mysql) 0)
+           (mysql-error mysql)))))
+
+(defmacro with-store-result ((res mysql) &body body)
+  `(call-with-store-result ,mysql (lambda (,res) (progn ,@body))))
+
 (defun fetch-query-result (mysql)
   ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-store-result.html
   ;; > it does not do any harm or cause any notable performance degradation if you call mysql_store_result() in all cases.
-  (let ((res (mita-mysql.cffi::mysql-store-result mysql)))
-    (if (cffi:null-pointer-p res)
-        (when (/= (mita-mysql.cffi:mysql-errno mysql) 0)
-          (mysql-error mysql))
-        (unwind-protect
-             (let* ((num-fields (mita-mysql.cffi::mysql-num-fields res))
-                    (fields
-                     (mita-mysql.cffi::mysql-fetch-fields res))
-                    (field-types
-                     (loop repeat num-fields
-                           for i from 0
-                           for field = (cffi:mem-aptr
-                                        fields *mysql-field-struct* i)
-                           collect (cffi:foreign-enum-keyword
-                                    'mita-mysql.cffi::enum-field-types
-                                    (field-type field)))))
-               (loop for row = (mita-mysql.cffi::mysql-fetch-row res)
-
-                     when (and (cffi:null-pointer-p row)
-                               (/= (mita-mysql.cffi:mysql-errno mysql) 0))
-                       do (mysql-error mysql)
-
-                     while (not (cffi:null-pointer-p row))
-
-                     collect
-                     (let ((lens (mita-mysql.cffi::mysql-fetch-lengths res)))
-                       (when (cffi:null-pointer-p lens)
-                         (mysql-error mysql))
-                       (loop repeat num-fields
-                             for type in field-types
-                             for i from 0
-                             collect
-                             (parse-row-octets
-                              type
-                              (let ((nth-ptr
-                                     (cffi:mem-aref row :pointer i))
-                                    (len
-                                     (cffi:mem-aref lens :unsigned-long i)))
-                                (cffi:foreign-array-to-lisp
-                                 nth-ptr
-                                 (list :array :uint8 len)
-                                 :element-type '(unsigned-byte 8))))))))
-          (mita-mysql.cffi::mysql-free-result res)))))
+  (with-store-result (res mysql)
+    (let ((num-fields (mita-mysql.cffi::mysql-num-fields res))
+          (fields (mita-mysql.cffi::mysql-fetch-fields res)))
+      (let ((field-types
+             (loop repeat num-fields
+                   for i from 0
+                   for field = (cffi:mem-aptr fields *mysql-field-struct* i)
+                   collect (int-sql-type->keyword (field-type field))))
+            (parsed-rows nil))
+        (loop for row = (mita-mysql.cffi::mysql-fetch-row res)
+              if (not (cffi:null-pointer-p row))
+                do (let ((lens (mita-mysql.cffi::mysql-fetch-lengths res)))
+                     (when (cffi:null-pointer-p lens)
+                       (mysql-error mysql))
+                     (let ((parsed-row
+                            (loop
+                              for type in field-types
+                              for i from 0
+                              collect
+                              (let* ((nth-ptr
+                                      (cffi:mem-aref row :pointer i))
+                                     (len
+                                      (cffi:mem-aref lens :unsigned-long i))
+                                     (octets
+                                      (cffi:foreign-array-to-lisp
+                                       nth-ptr
+                                       (list :array :uint8 len)
+                                       :element-type '(unsigned-byte 8))))
+                                (parse-row-octets type octets)))))
+                       (push parsed-row parsed-rows)))
+              else if (/= (mita-mysql.cffi:mysql-errno mysql) 0)
+                do (mysql-error mysql)
+              else
+                do (return))
+        (nreverse parsed-rows)))))
 
 (defun query (conn string)
   (let ((mysql (connection-mysql conn)))
@@ -333,98 +334,103 @@
         for bind = (cffi:mem-aptr binds *mysql-bind-struct* i)
         collect (parse-row-bind bind)))
 
-(defun fetch-execute-result (stmt)
+(defun call-with-stmt-result-metadata (stmt res-fn)
   (let ((res (mita-mysql.cffi::mysql-stmt-result-metadata stmt)))
     (when (cffi:null-pointer-p res)
       ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
       (stmt-error stmt))
-    (unwind-protect
-         ;; Fetch num fields to know the required count of binds.
-         (let* ((num-fields (mita-mysql.cffi::mysql-num-fields res))
-                (binds (cffi:foreign-alloc *mysql-bind-struct*
-                                           :count num-fields))
-                (binds-for-free nil))
-           (unwind-protect
-                (progn
-                  (mita-mysql.cffi::memset
-                   binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
-                              num-fields))
-                  ;; Bind result
-                  ;; Fetch fields to set field types to binds
-                  (let ((fields (mita-mysql.cffi::mysql-fetch-fields res)))
-                    (dotimes (i num-fields)
-                      (let ((bind
-                             (cffi:mem-aptr binds *mysql-bind-struct* i))
-                            (field
-                             (cffi:mem-aptr fields *mysql-field-struct* i)))
-                        (let ((field-type (int-sql-type->keyword
-                                           (field-type field))))
-                          (setup-bind-for-result bind field-type))
-                        (push bind binds-for-free))))
-                  (maybe-stmt-error
-                   stmt
-                   (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
-
-                  ;; Fetch rows
-                  (let ((parsed-rows nil))
-                    (loop for ret = (mita-mysql.cffi::mysql-stmt-fetch stmt)
-                          if (= ret 0)
-                            do (push (parse-row binds num-fields)
-                                     parsed-rows)
-                          else if (= ret 1)
-                            do (stmt-error stmt)
-                          else
-                            do (return))
-                    (nreverse parsed-rows)))
-             (mapc #'bind-release binds-for-free)
-             (cffi:foreign-free binds)))
+    (unwind-protect (funcall res-fn res)
       (mita-mysql.cffi::mysql-free-result res))))
 
-(defun execute (conn query params)
+(defmacro with-stmt-result-metadata ((res stmt) &body body)
+  `(call-with-stmt-result-metadata ,stmt
+                                   (lambda (,res) (progn ,@body))))
+
+(defun fetch-execute-result (stmt)
+  (with-stmt-result-metadata (res stmt)
+    ;; Fetch num fields to know the required count of binds.
+    (let* ((num-fields (mita-mysql.cffi::mysql-num-fields res))
+           (binds (cffi:foreign-alloc *mysql-bind-struct* :count num-fields))
+           (binds-for-free nil))
+      (unwind-protect
+           (progn
+             (mita-mysql.cffi::memset
+              binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
+                         num-fields))
+             ;; Bind result
+             ;; Fetch fields to set field types to binds
+             (let ((fields (mita-mysql.cffi::mysql-fetch-fields res)))
+               (dotimes (i num-fields)
+                 (let ((bind (cffi:mem-aptr binds *mysql-bind-struct* i))
+                       (field (cffi:mem-aptr fields *mysql-field-struct* i)))
+                   (let ((field-type
+                          (int-sql-type->keyword (field-type field))))
+                     (setup-bind-for-result bind field-type))
+                   (push bind binds-for-free))))
+             (maybe-stmt-error
+              stmt (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
+
+             ;; Fetch rows
+             (let ((parsed-rows nil))
+               (loop for ret = (mita-mysql.cffi::mysql-stmt-fetch stmt)
+                     if (= ret 0)
+                       do (push (parse-row binds num-fields) parsed-rows)
+                     else if (= ret 1)
+                       do (stmt-error stmt)
+                     else
+                       do (return))
+               (nreverse parsed-rows)))
+        (mapc #'bind-release binds-for-free)
+        (cffi:foreign-free binds)))))
+
+(defun call-with-prepared-statement (conn query stmt-fn)
   (let ((mysql-stmt (mita-mysql.cffi::mysql-stmt-init
                      (connection-mysql conn))))
     (when (cffi:null-pointer-p mysql-stmt)
       (error "Failed to initialize statement"))
     (unwind-protect
+         ;; Prepare
          (progn
-           ;; Prepare
            (let ((len (length (string-to-octets query))))
              (maybe-stmt-error
               mysql-stmt
               (mita-mysql.cffi::mysql-stmt-prepare mysql-stmt query len)))
-           (let* ((num-params (length params))
-                  (binds (cffi:foreign-alloc
-                          *mysql-bind-struct* :count num-params))
-                  (binds-for-free nil))
-             (unwind-protect
-                  (progn
-                    ;; Bind
-                    (mita-mysql.cffi::memset
-                     binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
-                                num-params))
-                    (loop for i from 0
-                          for param in params
-                          for bind = (cffi:mem-aptr
-                                      binds *mysql-bind-struct* i)
-                          do (progn
-                               (setup-bind-for-param bind param)
-                               (push bind binds-for-free)))
-                    (maybe-stmt-error
-                     mysql-stmt                     
-                     (mita-mysql.cffi::mysql-stmt-bind-param
-                      mysql-stmt binds))
-
-                    ;; Execute
-                    (maybe-stmt-error
-                     mysql-stmt
-                     (mita-mysql.cffi::mysql-stmt-execute mysql-stmt))
-
-                    ;; Fetch
-                    (fetch-execute-result mysql-stmt))
-               ;; binds are released after execution because execute seems to use the values in the bindings:
-               ;; https://dev.mysql.com/doc/c-api/8.0/en/c-api-prepared-statement-data-structures.html
-               ;; > When you call mysql_stmt_execute(), MySQL use the value stored in the variable
-               ;; > in place of the corresponding parameter marker in the statement
-               (mapc #'bind-release binds-for-free)
-               (cffi:foreign-free binds))))
+           (funcall stmt-fn mysql-stmt))
       (mita-mysql.cffi::mysql-stmt-close mysql-stmt))))
+
+(defmacro with-prepared-statement ((stmt conn query) &body body)
+  `(call-with-prepared-statement
+    ,conn ,query (lambda (,stmt) (progn ,@body))))
+
+(defun execute (conn query params)
+  (with-prepared-statement (stmt conn query)
+    (let* ((num-params (length params))
+           (binds (cffi:foreign-alloc *mysql-bind-struct* :count num-params))
+           (binds-for-free nil))
+      (unwind-protect
+           (progn
+             ;; Bind
+             (mita-mysql.cffi::memset
+              binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
+                         num-params))
+             (loop for i from 0
+                   for param in params
+                   for bind = (cffi:mem-aptr binds *mysql-bind-struct* i)
+                   do (progn
+                        (setup-bind-for-param bind param)
+                        (push bind binds-for-free)))
+             (maybe-stmt-error
+              stmt (mita-mysql.cffi::mysql-stmt-bind-param stmt binds))
+
+             ;; Execute
+             (maybe-stmt-error
+              stmt (mita-mysql.cffi::mysql-stmt-execute stmt))
+
+             ;; Fetch
+             (fetch-execute-result stmt))
+        ;; binds are released after execution because execute seems to use the values in the bindings:
+        ;; https://dev.mysql.com/doc/c-api/8.0/en/c-api-prepared-statement-data-structures.html
+        ;; > When you call mysql_stmt_execute(), MySQL use the value stored in the variable
+        ;; > in place of the corresponding parameter marker in the statement
+        (mapc #'bind-release binds-for-free)
+        (cffi:foreign-free binds)))))

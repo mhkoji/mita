@@ -13,17 +13,36 @@
 
 (cffi:use-foreign-library libmysqlclient)
 
-(cffi:defcfun ("mysql_init" mysql-init) :pointer
+;; C api functions in alphabetical order.
+(cffi:defcfun ("mysql_close" mysql-close) :pointer
   (mysql :pointer))
 
-(cffi:defcfun ("mysql_close" mysql-close) :pointer
+(cffi:defcfun ("mysql_commit" mysql-commit) :int
+  (mysql :pointer))
+
+(cffi:defcfun ("mysql_errno" mysql-errno) :unsigned-int
   (mysql :pointer))
 
 (cffi:defcfun ("mysql_error" mysql-error) :string
   (mysql :pointer))
 
-(cffi:defcfun ("mysql_errno" mysql-errno) :unsigned-int
+(cffi:defcfun ("mysql_fetch_fields" mysql-fetch-fields) :pointer
+  (mysql-res :pointer))
+
+(cffi:defcfun ("mysql_fetch_row" mysql-fetch-row) :pointer
+  (mysql-res :pointer))
+
+(cffi:defcfun ("mysql_fetch_lengths" mysql-fetch-lengths) :pointer
+  (mysql-res :pointer))
+
+(cffi:defcfun ("mysql_free_result" mysql-free-result) :void
+  (mysql-res :pointer))
+
+(cffi:defcfun ("mysql_init" mysql-init) :pointer
   (mysql :pointer))
+
+(cffi:defcfun ("mysql_num_fields" mysql-num-fields) :unsigned-int
+  (mysql-res :pointer))
 
 (cffi:defcfun ("mysql_query" mysql-query) :int
   (mysql :pointer)
@@ -39,19 +58,11 @@
   (unix-socket :string)
   (client-flag :unsigned-long))
 
-(cffi:defcfun ("mysql_commit" mysql-commit) :int
+(cffi:defcfun ("mysql_store_result" mysql-store-result) :pointer
   (mysql :pointer))
 
-(cffi:defcfun ("mysql_free_result" mysql-free-result) :void
-  (mysql-res :pointer))
 
-(cffi:defcfun ("mysql_num_fields" mysql-num-fields) :unsigned-int
-  (mysql-res :pointer))
-
-(cffi:defcfun ("mysql_fetch_fields" mysql-fetch-fields) :pointer
-  (mysql-res :pointer))
-
-
+;; C api prepared statement functions
 (cffi:defcfun ("mysql_stmt_result_metadata" mysql-stmt-result-metadata)
     :pointer
   (mysql-stmt :pointer))
@@ -92,6 +103,7 @@
 
 (cffi:defcfun ("mysql_stmt_errno" mysql-stmt-errno) :unsigned-int
   (mysql :pointer))
+
 
 (cffi:defcstruct mysql-field
   (name :string)

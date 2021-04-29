@@ -100,6 +100,10 @@
 
 (defun row-converter-for (sql-type)
   (ecase sql-type
+    ((:null)
+     (lambda (octets)
+       (assert (null octets))
+       nil))
     ((:long :longlong)
      (lambda (octets)
        (parse-integer (octets-to-string octets))))
@@ -118,6 +122,8 @@
                    'mita-mysql.cffi::enum-field-types
                    (bind-buffer-type bind))))
     (ecase sql-type
+      ((:null)
+       nil)
       ((:long)
        (cffi:mem-ref (bind-buffer bind) :long))
       ((:longlong)
@@ -251,6 +257,12 @@
     (fetch-query-result mysql)))
 
 
+(defun bind-allocate-null (bind)
+  ;; This seems work well
+  (setf (bind-buffer bind)  (cffi:null-pointer)
+        (bind-is-null bind) (cffi:null-pointer)
+        (bind-length bind)  (cffi:null-pointer)))
+
 (defun bind-allocate-byte (bind cffi-type)
   (setf (bind-buffer bind)  (cffi:foreign-alloc cffi-type)
         (bind-is-null bind) (cffi:null-pointer)
@@ -301,6 +313,8 @@
 
 (defun setup-bind-for-result (bind sql-type)
   (ecase sql-type
+    ((:null)
+     (bind-allocate-null bind))
     ((:long)
      (bind-allocate-byte bind :long))
     ((:longlong)

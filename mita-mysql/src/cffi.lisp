@@ -131,6 +131,27 @@
   (is-null-value :char)
   (extension :pointer))
 
+(cffi:defcenum enum-mysql-timestamp-type
+  (:none -2)
+  (:error -1)
+  (:date 0)
+  (:datetime 1)
+  (:time 2)
+  (:datetime-tz 3))
+
+;; https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html
+(cffi:defcstruct mysql-time
+  (year :unsigned-int)
+  (month :unsigned-int)
+  (day :unsigned-int)
+  (hour :unsigned-int)
+  (minute :unsigned-int)
+  (second :unsigned-int)
+  (second-part :unsigned-int)
+  (meg :boolean)
+  (time-type enum-mysql-timestamp-type)
+  (time-zone-dispacement :int))
+
 ;; https://dev.mysql.com/doc/dev/mysql-server/latest/field__types_8h.html
 (cffi:defcenum enum-field-types
   :decimal

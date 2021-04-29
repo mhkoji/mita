@@ -95,7 +95,19 @@
         (bind-is-null bind) (cffi:null-pointer)
 
         (bind-length bind) (cffi:null-pointer)))
-        
+
+;; https://dev.mysql.com/doc/refman/5.6/ja/c-api-prepared-statement-date-handling.html
+(defun bind-allocate-date (bind sql-type)
+  (setf (bind-buffer-type bind) (cffi:foreign-enum-value
+                                 'mita-mysql.cffi::enum-field-types
+                                 sql-type)
+
+        (bind-buffer bind) (cffi:foreign-alloc
+                            '(:struct mita-mysql.cffi::mysql-time))
+
+        (bind-is-null bind) (cffi:null-pointer)
+
+        (bind-length bind) (cffi:null-pointer)))
 
 (defun bind-allocate-string (bind sql-type &optional (length 1024))
   (setf (bind-buffer-type bind) (cffi:foreign-enum-value
@@ -140,6 +152,8 @@
   (ecase sql-type
     ((:long :longlong)
      (bind-allocate-long bind sql-type))
+    ((:date :time :datetime)
+     (bind-allocate-date bind sql-type))
     ((:blob :string :var-string)
      (bind-allocate-string bind sql-type))))
 
@@ -150,6 +164,9 @@
     (ecase sql-type
       ((:long :longlong)
        (cffi:mem-ref (bind-buffer bind) :long))
+      ((:date :time :datetime)
+       (cffi:mem-ref (bind-buffer bind)
+                     '(:struct mita-mysql.cffi::mysql-time)))
       ((:string :blob)
        (let ((len (cffi:mem-ref (bind-length bind) :long)))
          (let ((octets (cffi:foreign-array-to-lisp

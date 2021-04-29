@@ -2,12 +2,8 @@
   (:use :cl))
 (in-package :mita-mysql)
 
-(defun string-to-octets (string)
-  (babel:string-to-octets string :encoding :utf-8))
-
-(defun octets-to-string (octets)
-  (babel:octets-to-string octets :encoding :utf-8))
-
+(defvar *mysql-time-struct*
+  '(:struct mita-mysql.cffi::mysql-time))
 
 (defvar *mysql-bind-struct*
   '(:struct mita-mysql.cffi::mysql-bind))
@@ -24,6 +20,7 @@
 (defmacro field-type (field)
   `(cffi:foreign-slot-value
     ,field *mysql-field-struct* 'mita-mysql.cffi::type))
+
 
 (defmacro bind-buffer (bind)
   `(cffi:foreign-slot-value
@@ -48,6 +45,56 @@
 (defmacro bind-error (bind)
   `(cffi:foreign-slot-value
     ,bind *mysql-bind-struct* 'mita-mysql.cffi::error))
+
+
+(defmacro time-year (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::year))
+
+(defmacro time-month (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::month))
+
+(defmacro time-day (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::day))
+
+(defmacro time-hour (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::hour))
+
+(defmacro time-minute (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::minute))
+
+(defmacro time-second (time)
+  `(cffi:foreign-slot-value
+    ,time *mysql-time-struct* 'mita-mysql.cffi::second))
+
+
+(defun string-to-octets (string)
+  (babel:string-to-octets string :encoding :utf-8))
+
+(defun octets-to-string (octets)
+  (babel:octets-to-string octets :encoding :utf-8))
+
+
+(defun datetime->lisp-value (time)
+  (local-time:encode-timestamp 0
+                               (time-second time)
+                               (time-minute time)
+                               (time-hour time)
+                               (time-day time)
+                               (time-month time)
+                               (time-year time)))
+
+(defun time->lisp-value (time)
+  (make-instance 'local-time:timestamp
+                 :nsec 0
+                 :sec (+ (* (time-hour time) 3600)
+                         (* (time-minute time) 60)
+                         (time-second time))
+                 :day 0))
 
 
 (define-condition mysql-error (error)
@@ -108,18 +155,18 @@
   (let ((mysql (connection-mysql conn)))
     (maybe-mysql-error mysql (mita-mysql.cffi::mysql-commit mysql))))
 
-(defun query-row->lisp-value (nth-ptr len sql-type)
-  (ecase sql-type
-    ((:longlong)
-     (parse-integer
-      (octets-to-string
-       (cffi:foreign-array-to-lisp nth-ptr
-                                   (list :array :uint8 len)
-                                   :element-type '(unsigned-byte 8)))))
-    ((:blob)
-     (cffi:foreign-array-to-lisp nth-ptr
-                                 (list :array :uint8 len)
-                                 :element-type '(unsigned-byte 8)))))
+(labels ((converter-for (sql-type)
+           (ecase sql-type
+             ((:longlong)
+              (lambda (octets)
+                (parse-integer (octets-to-string octets))))
+             ((:string :var-string
+               :datetime :time :date)
+              #'octets-to-string)
+             ((:blob)
+              #'identity))))
+  (defun query-octets->lisp-value (sql-type octets)
+    (funcall (converter-for sql-type) octets)))
 
 (defun fetch-query-result (mysql)
   ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-store-result.html
@@ -156,10 +203,16 @@
                              for type in field-types
                              for i from 0
                              collect
-                             (query-row->lisp-value
-                              (cffi:mem-aref row :pointer i)
-                              (cffi:mem-aref lens :unsigned-long i)
-                              type)))))
+                             (query-octets->lisp-value
+                              type
+                              (let ((nth-ptr
+                                     (cffi:mem-aref row :pointer i))
+                                    (len
+                                     (cffi:mem-aref lens :unsigned-long i)))
+                                (cffi:foreign-array-to-lisp
+                                 nth-ptr
+                                 (list :array :uint8 len)
+                                 :element-type '(unsigned-byte 8))))))))
           (mita-mysql.cffi::mysql-free-result res)))))
 
 (defun query (conn string)
@@ -247,9 +300,10 @@
     (ecase sql-type
       ((:long :longlong)
        (cffi:mem-ref (bind-buffer bind) :long))
-      ((:date :time :datetime)
-       (cffi:mem-ref (bind-buffer bind)
-                     '(:struct mita-mysql.cffi::mysql-time)))
+      ((:date :datetime)
+       (datetime->lisp-value (bind-buffer bind)))
+      ((:time)
+       (time->lisp-value (bind-buffer bind)))
       ((:string :blob)
        (let ((len (cffi:mem-ref (bind-length bind) :long)))
          (let ((octets (cffi:foreign-array-to-lisp

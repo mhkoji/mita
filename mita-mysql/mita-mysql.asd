@@ -7,4 +7,5 @@
    (:file "mysql"))
 
   :depends-on
-  (:cffi))
+  (:cffi
+   :local-time))

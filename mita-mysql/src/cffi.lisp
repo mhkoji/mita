@@ -57,9 +57,6 @@
   (mysql :pointer))
 
 (cffi:defcfun ("mysql_stmt_prepare" mysql-stmt-prepare) :int
-  (stmt :pointer))
-
-(cffi:defcfun ("mysql_stmt_prepare" mysql-stmt-prepare) :int
   (stmt :pointer)
   (stmt-str :string)
   (length :unsigned-long))
@@ -83,6 +80,12 @@
 
 (cffi:defcfun ("mysql_stmt_close" mysql-stmt-close) :boolean
   (stmt :pointer))
+
+(cffi:defcfun ("mysql_stmt_error" mysql-stmt-error) :string
+  (mysql :pointer))
+
+(cffi:defcfun ("mysql_stmt_errno" mysql-stmt-errno) :unsigned-int
+  (mysql :pointer))
 
 (cffi:defcstruct mysql-field
   (name :string)

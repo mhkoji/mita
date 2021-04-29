@@ -13,6 +13,11 @@
 
 (cffi:use-foreign-library libmysqlclient)
 
+(cffi:defcfun ("memset" memset) :pointer
+  (buf :pointer)
+  (c :int)
+  (n :uint64))
+
 ;; C api functions in alphabetical order.
 (cffi:defcfun ("mysql_close" mysql-close) :pointer
   (mysql :pointer))

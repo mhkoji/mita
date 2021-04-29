@@ -113,7 +113,7 @@
   (funcall (row-converter-for sql-type) octets))
 
 
-(defun parse-bind-result (bind)
+(defun parse-row-bind (bind)
   (let ((sql-type (cffi:foreign-enum-keyword
                    'mita-mysql.cffi::enum-field-types
                    (bind-buffer-type bind))))
@@ -325,6 +325,11 @@
     ((:blob :string :var-string)
      (bind-allocate-string bind sql-type))))
 
+(defun parse-row (binds num-fields)
+  (loop for i from 0 below num-fields
+        for bind = (cffi:mem-aptr binds *mysql-bind-struct* i)
+        collect (parse-row-bind bind)))
+
 (defun fetch-execute-result (stmt)
   (let ((res (mita-mysql.cffi::mysql-stmt-result-metadata stmt)))
     (when (cffi:null-pointer-p res)
@@ -338,6 +343,9 @@
                 (binds-for-free nil))
            (unwind-protect
                 (progn
+                  (mita-mysql.cffi::memset
+                   binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
+                              num-fields))
                   ;; Bind result
                   ;; Fetch fields to set field types to binds
                   (let ((fields (mita-mysql.cffi::mysql-fetch-fields res)))
@@ -356,15 +364,16 @@
                    (mita-mysql.cffi::mysql-stmt-bind-result stmt binds))
 
                   ;; Fetch rows
-                  (loop for ret = (mita-mysql.cffi::mysql-stmt-fetch stmt)
-                        when (= ret 1)
-                          do (stmt-error stmt)
-                        while (= ret 0)
-                        collect
-                        (loop for i from 0 below num-fields
-                              collect
-                              (parse-bind-result
-                               (cffi:mem-aptr binds *mysql-bind-struct* i)))))
+                  (let ((parsed-rows nil))
+                    (loop for ret = (mita-mysql.cffi::mysql-stmt-fetch stmt)
+                          if (= ret 0)
+                            do (push (parse-row binds num-fields)
+                                     parsed-rows)
+                          else if (= ret 1)
+                            do (stmt-error stmt)
+                          else
+                            do (return))
+                    (nreverse parsed-rows)))
              (mapc #'bind-release binds-for-free)
              (cffi:foreign-free binds)))
       (mita-mysql.cffi::mysql-free-result res))))
@@ -387,6 +396,9 @@
              (unwind-protect
                   (progn
                     ;; Bind
+                    (mita-mysql.cffi::memset
+                     binds 0 (* (cffi:foreign-type-size *mysql-bind-struct*)
+                                num-params))
                     (loop for i from 0
                           for param in params
                           for bind = (cffi:mem-aptr

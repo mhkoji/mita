@@ -19,6 +19,7 @@
 (defclass connection ()
   ((mysql
     :initarg :mysql
+    :documentation "holds a pointer to an instance of MYSQL"
     :reader connection-mysql)))
 
 (defstruct param sql-type value)

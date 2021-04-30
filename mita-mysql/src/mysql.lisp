@@ -124,30 +124,31 @@
 
 (defun parse-row-bind (bind)
   (let ((sql-type (int-sql-type->keyword (bind-buffer-type bind))))
-    (ecase sql-type
-      ((:null)
-       nil)
-      ((:long)
-       (cffi:mem-ref (bind-buffer bind) :int32))
-      ((:longlong)
-       (cffi:mem-ref (bind-buffer bind) :int64))
-      ((:date)
-       (date->sql-string (bind-buffer bind)))
-      ((:time)
-       (time->sql-string (bind-buffer bind)))
-      ((:datetime)
-       (datetime->sql-string (bind-buffer bind)))
-      ((:string :var-string :blob)
-       (if (= (cffi:mem-ref (bind-is-null bind) :char) 1)
-           nil
-           (let ((len (cffi:mem-ref (bind-length bind) :long))
-                 (buf (bind-buffer bind)))
-             (let ((octets (cffi:foreign-array-to-lisp
-                            buf (list :array :uint8 len)
-                            :element-type '(unsigned-byte 8))))
-               (if (eql sql-type :blob)
-                   octets
-                   (octets-to-string octets)))))))))
+    (cond ((eql sql-type :null)
+           nil)
+          ((= (cffi:mem-ref (bind-is-null bind) :uint8) 1)
+           nil)
+          (t
+           (ecase sql-type
+             ((:long)
+              (cffi:mem-ref (bind-buffer bind) :int32))
+             ((:longlong)
+              (cffi:mem-ref (bind-buffer bind) :int64))
+             ((:date)
+              (date->sql-string (bind-buffer bind)))
+             ((:time)
+              (time->sql-string (bind-buffer bind)))
+             ((:datetime)
+              (datetime->sql-string (bind-buffer bind)))
+             ((:string :var-string :blob)
+              (let ((len (cffi:mem-ref (bind-length bind) :long))
+                    (buf (bind-buffer bind)))
+                (let ((octets (cffi:foreign-array-to-lisp
+                               buf (list :array :uint8 len)
+                               :element-type '(unsigned-byte 8))))
+                  (if (eql sql-type :blob)
+                      octets
+                      (octets-to-string octets))))))))))
 
 
 (define-condition mysql-error (error)
@@ -268,26 +269,27 @@
 (defun bind-allocate-null (bind)
   ;; This seems work well
   (setf (bind-buffer bind)  (cffi:null-pointer)
-        (bind-is-null bind) (cffi:null-pointer)
+        (bind-is-null bind) (cffi:foreign-alloc :uint8)
         (bind-length bind)  (cffi:null-pointer)))
 
 (defun bind-allocate-byte (bind cffi-type)
   (setf (bind-buffer bind)  (cffi:foreign-alloc cffi-type)
-        (bind-is-null bind) (cffi:null-pointer)
+
         (bind-length bind)  (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/refman/5.6/ja/c-api-prepared-statement-date-handling.html
 (defun bind-allocate-date (bind)
   (setf (bind-buffer bind)  (cffi:foreign-alloc *mysql-time-struct*)
-        (bind-is-null bind) (cffi:null-pointer)
+        (bind-is-null bind) (cffi:foreign-alloc :uint8)
         (bind-length bind)  (cffi:null-pointer)))
+
 
 ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
 (defun bind-allocate-string (bind &optional (length 1024))
   (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
         (bind-buffer-length bind) length
-        (bind-is-null bind)       (cffi:foreign-alloc :char)
-        (bind-length bind)        (cffi:foreign-alloc :long)))
+        (bind-is-null bind)       (cffi:foreign-alloc :uint8)
+        (bind-length bind)        (cffi:foreign-alloc :ulong)))
 
 (defun bind-release (bind)
   (macrolet ((free-if-not-null (exp)
@@ -324,7 +326,7 @@
          (cffi:lisp-array-to-foreign octets
                                      (bind-buffer bind)
                                      (list :array :uint8 len))
-         (setf (cffi:mem-ref (bind-length bind) :long) len))))
+         (setf (cffi:mem-ref (bind-length bind) :ulong) len))))
     (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type))))
 
 (defun setup-bind-for-result (bind sql-type)

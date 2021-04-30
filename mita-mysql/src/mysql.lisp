@@ -104,7 +104,7 @@
      (lambda (octets)
        (assert (null octets))
        nil))
-    ((:long :longlong)
+    ((:tiny :short :long :longlong)
      (lambda (octets)
        (if octets
            (parse-integer (octets-to-string octets))
@@ -131,6 +131,10 @@
            nil)
           (t
            (ecase sql-type
+             ((:tiny)
+              (cffi:mem-ref (bind-buffer bind) :int8))
+             ((:short)
+              (cffi:mem-ref (bind-buffer bind) :int16))
              ((:long)
               (cffi:mem-ref (bind-buffer bind) :int32))
              ((:longlong)
@@ -311,6 +315,10 @@
 (defun setup-bind-for-result (bind sql-type)
   (ecase sql-type
     ((:null)) ;; Doing nothing seems to work when null.
+    ((:tiny)
+     (bind-buffer-allocate-byte bind :int8))
+    ((:short)
+     (bind-buffer-allocate-byte bind :int16))
     ((:long)
      (bind-buffer-allocate-byte bind :int32))
     ((:longlong)

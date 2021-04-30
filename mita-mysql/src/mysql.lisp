@@ -301,6 +301,8 @@
 (defun setup-bind-for-param (bind param)
   (with-accessors ((sql-type param-sql-type)
                    (value param-value)) param
+    ;; It is not required to support for all the types
+    ;; because this is a part of the API of this software.
     (ecase sql-type
       ((:long)
        (bind-allocate-byte bind :long)

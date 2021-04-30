@@ -267,27 +267,20 @@
     (fetch-query-result mysql)))
 
 
-(defun bind-allocate-null (bind)
-  ;; This seems work well
-  (setf (bind-buffer bind)  (cffi:null-pointer)
-        (bind-length bind)  (cffi:null-pointer)
-        (bind-is-null bind) (cffi:null-pointer)))
-
-(defun bind-allocate-byte (bind cffi-type)
-  (setf (bind-buffer bind)  (cffi:foreign-alloc cffi-type)
-        (bind-length bind)  (cffi:null-pointer)))
+(defun bind-buffer-allocate-byte (bind cffi-type)
+  (setf (bind-buffer bind) (cffi:foreign-alloc cffi-type)
+        (bind-length bind) (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/refman/5.6/ja/c-api-prepared-statement-date-handling.html
-(defun bind-allocate-date (bind)
-  (setf (bind-buffer bind)  (cffi:foreign-alloc *mysql-time-struct*)
-        (bind-length bind)  (cffi:null-pointer)
-        (bind-is-null bind) (cffi:null-pointer)))
+(defun bind-buffer-allocate-date (bind)
+  (setf (bind-buffer bind) (cffi:foreign-alloc *mysql-time-struct*)
+        (bind-length bind) (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
-(defun bind-allocate-string (bind &optional (length 1024))
-  (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
-        (bind-length bind)        (cffi:foreign-alloc :ulong)
-        (bind-buffer-length bind) length))
+(defun bind-buffer-allocate-string (bind &optional (buffer-length 1024))
+  (setf (bind-buffer bind) (cffi:foreign-alloc :char :count buffer-length)
+        (bind-length bind) (cffi:foreign-alloc :ulong)
+        (bind-buffer-length bind) buffer-length))
 
 (defun keyword-sql-type->int (sql-type)
   (cffi:foreign-enum-value 'mita-mysql.cffi::enum-field-types sql-type))
@@ -303,10 +296,10 @@
     ;; because this is a part of the API of this software.
     (ecase sql-type
       ((:long)
-       (bind-allocate-byte bind :int32)
+       (bind-buffer-allocate-byte bind :int32)
        (setf (cffi:mem-ref (bind-buffer bind) :int32) value))
       ((:string)
-       (bind-allocate-string bind)
+       (bind-buffer-allocate-string bind)
        (let* ((octets (string-to-octets value))
               (len (length octets)))
          (cffi:lisp-array-to-foreign octets
@@ -317,16 +310,15 @@
 
 (defun setup-bind-for-result (bind sql-type)
   (ecase sql-type
-    ((:null)
-     (bind-allocate-null bind))
+    ((:null)) ;; Doing nothing seems to work when null.
     ((:long)
-     (bind-allocate-byte bind :int32))
+     (bind-buffer-allocate-byte bind :int32))
     ((:longlong)
-     (bind-allocate-byte bind :int64))
+     (bind-buffer-allocate-byte bind :int64))
     ((:date :time :datetime)
-     (bind-allocate-date bind))
+     (bind-buffer-allocate-date bind))
     ((:blob :string :var-string)
-     (bind-allocate-string bind)))
+     (bind-buffer-allocate-string bind)))
   ;; MEMO: If is-null is allocated in bind-for-param, nothing returns.
   (setf (bind-is-null bind) (cffi:foreign-alloc :bool))
   (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type)))

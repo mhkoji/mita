@@ -160,9 +160,9 @@
   ((error :initarg :error :reader mysql-error-error)
    (errno :initarg :errno :reader mysql-error-errno))
   (:report (lambda (condition stream)
-             (format stream "MySQL error: \"~A\" (errno = ~D)."
-                     (mysql-error-error condition)
-                     (mysql-error-errno condition)))))
+             (format stream "MySQL error (~D): \"~A\""
+                     (mysql-error-errno condition)
+                     (mysql-error-error condition)))))
 
 (defclass connection ()
   ((mysql

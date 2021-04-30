@@ -106,10 +106,15 @@
        nil))
     ((:long :longlong)
      (lambda (octets)
-       (parse-integer (octets-to-string octets))))
+       (if octets
+           (parse-integer (octets-to-string octets))
+           nil)))
     ((:string :var-string
       :datetime :time :date)
-     #'octets-to-string)
+     (lambda (octets)
+       (if octets
+           (octets-to-string octets)
+           nil)))
     ((:blob)
      #'identity)))
 
@@ -133,14 +138,16 @@
       ((:datetime)
        (datetime->sql-string (bind-buffer bind)))
       ((:string :var-string :blob)
-       (let ((len (cffi:mem-ref (bind-length bind) :long))
-             (buf (bind-buffer bind)))
-         (let ((octets (cffi:foreign-array-to-lisp
-                        buf (list :array :uint8 len)
-                        :element-type '(unsigned-byte 8))))
-           (if (eql sql-type :blob)
-               octets
-               (octets-to-string octets))))))))
+       (if (cffi:mem-ref (bind-is-null bind) :boolean)
+           nil
+           (let ((len (cffi:mem-ref (bind-length bind) :long))
+                 (buf (bind-buffer bind)))
+             (let ((octets (cffi:foreign-array-to-lisp
+                            buf (list :array :uint8 len)
+                            :element-type '(unsigned-byte 8))))
+               (if (eql sql-type :blob)
+                   octets
+                   (octets-to-string octets)))))))))
 
 
 (define-condition mysql-error (error)
@@ -279,16 +286,19 @@
 (defun bind-allocate-string (bind &optional (length 1024))
   (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
         (bind-buffer-length bind) length
-        (bind-is-null bind)       (cffi:null-pointer)
+        (bind-is-null bind)       (cffi:foreign-alloc :boolean)
         (bind-length bind)        (cffi:foreign-alloc :long)))
 
 (defun bind-release (bind)
-  (ignore-errors
-   (cffi:foreign-free (bind-buffer bind)))
-
-  (when (not (cffi:null-pointer-p (bind-length bind)))
+  (macrolet ((free-if-not-null (exp)
+               `(when (not (cffi:null-pointer-p ,exp))
+                  (cffi:foreign-free ,exp))))
     (ignore-errors
-     (cffi:foreign-free (bind-length bind)))))
+      (cffi:foreign-free (bind-buffer bind)))
+    (ignore-errors
+      (free-if-not-null (bind-length bind)))
+    (ignore-errors
+      (free-if-not-null (bind-error bind)))))
 
 
 (defun keyword-sql-type->int (sql-type)

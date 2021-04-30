@@ -7,6 +7,3 @@ Another Common Lisp Interface for MySQL
 ```
 sudo apt install libmysqlclient-dev
 ```
-
-
-

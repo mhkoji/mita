@@ -319,7 +319,9 @@
      (bind-buffer-allocate-date bind))
     ((:blob :string :var-string)
      (bind-buffer-allocate-string bind)))
-  ;; MEMO: If is-null is allocated in bind-for-param, nothing returns.
+  ;; MEMO:
+  ;; is-null should be allocation only in bind-for-result.
+  ;; If is-null is allocated in bind-for-param, nothing returns.
   (setf (bind-is-null bind) (cffi:foreign-alloc :bool))
   (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type)))
 

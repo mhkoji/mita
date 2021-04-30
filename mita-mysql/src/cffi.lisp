@@ -133,6 +133,7 @@
   (type :int)
   (extension :pointer))
 
+;; https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__BIND.html
 (cffi:defcstruct mysql-bind
   (length :pointer)
   (is-null :pointer)

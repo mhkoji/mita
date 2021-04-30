@@ -128,7 +128,7 @@
       ((:null)
        nil)
       ((:long)
-       (cffi:mem-ref (bind-buffer bind) :long))
+       (cffi:mem-ref (bind-buffer bind) :int32))
       ((:longlong)
        (cffi:mem-ref (bind-buffer bind) :int64))
       ((:date)
@@ -315,8 +315,8 @@
     ;; because this is a part of the API of this software.
     (ecase sql-type
       ((:long)
-       (bind-allocate-byte bind :long)
-       (setf (cffi:mem-ref (bind-buffer bind) :long) value))
+       (bind-allocate-byte bind :int32)
+       (setf (cffi:mem-ref (bind-buffer bind) :int32) value))
       ((:string)
        (bind-allocate-string bind)
        (let* ((octets (string-to-octets value))
@@ -332,7 +332,7 @@
     ((:null)
      (bind-allocate-null bind))
     ((:long)
-     (bind-allocate-byte bind :long))
+     (bind-allocate-byte bind :int32))
     ((:longlong)
      (bind-allocate-byte bind :int64))
     ((:date :time :datetime)

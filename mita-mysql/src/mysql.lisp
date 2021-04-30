@@ -138,7 +138,7 @@
       ((:datetime)
        (datetime->sql-string (bind-buffer bind)))
       ((:string :var-string :blob)
-       (if (cffi:mem-ref (bind-is-null bind) :boolean)
+       (if (= (cffi:mem-ref (bind-is-null bind) :char) 1)
            nil
            (let ((len (cffi:mem-ref (bind-length bind) :long))
                  (buf (bind-buffer bind)))
@@ -286,7 +286,7 @@
 (defun bind-allocate-string (bind &optional (length 1024))
   (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
         (bind-buffer-length bind) length
-        (bind-is-null bind)       (cffi:foreign-alloc :boolean)
+        (bind-is-null bind)       (cffi:foreign-alloc :char)
         (bind-length bind)        (cffi:foreign-alloc :long)))
 
 (defun bind-release (bind)

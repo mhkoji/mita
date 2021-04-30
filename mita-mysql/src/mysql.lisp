@@ -289,18 +289,6 @@
         (bind-length bind)        (cffi:foreign-alloc :ulong)
         (bind-buffer-length bind) length))
 
-(defun bind-release (bind)
-  (macrolet ((free-if-not-null (exp)
-               `(when (not (cffi:null-pointer-p ,exp))
-                  (cffi:foreign-free ,exp))))
-    (ignore-errors
-      (cffi:foreign-free (bind-buffer bind)))
-    (ignore-errors
-      (free-if-not-null (bind-length bind)))
-    (ignore-errors
-      (free-if-not-null (bind-error bind)))))
-
-
 (defun keyword-sql-type->int (sql-type)
   (cffi:foreign-enum-value 'mita-mysql.cffi::enum-field-types sql-type))
 
@@ -342,6 +330,19 @@
   ;; MEMO: If is-null is allocated in bind-for-param, nothing returns.
   (setf (bind-is-null bind) (cffi:foreign-alloc :bool))
   (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type)))
+
+(defun bind-release (bind)
+  (macrolet ((free-if-not-null (exp)
+               `(when (not (cffi:null-pointer-p ,exp))
+                  (cffi:foreign-free ,exp))))
+    (ignore-errors
+      (free-if-not-null (bind-buffer bind)))
+    (ignore-errors
+      (free-if-not-null (bind-length bind)))
+    (ignore-errors
+      (free-if-not-null (bind-error bind)))
+    (ignore-errors
+      (free-if-not-null (bind-is-null bind)))))
 
 (defun parse-row (binds num-fields)
   (loop for i from 0 below num-fields

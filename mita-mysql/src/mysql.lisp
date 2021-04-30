@@ -126,7 +126,8 @@
   (let ((sql-type (int-sql-type->keyword (bind-buffer-type bind))))
     (cond ((eql sql-type :null)
            nil)
-          ((= (cffi:mem-ref (bind-is-null bind) :uint8) 1)
+          ((and (not (cffi:null-pointer-p (bind-is-null bind)))
+                (cffi:mem-ref (bind-is-null bind) :bool))
            nil)
           (t
            (ecase sql-type
@@ -269,27 +270,24 @@
 (defun bind-allocate-null (bind)
   ;; This seems work well
   (setf (bind-buffer bind)  (cffi:null-pointer)
-        (bind-is-null bind) (cffi:foreign-alloc :uint8)
-        (bind-length bind)  (cffi:null-pointer)))
+        (bind-length bind)  (cffi:null-pointer)
+        (bind-is-null bind) (cffi:null-pointer)))
 
 (defun bind-allocate-byte (bind cffi-type)
   (setf (bind-buffer bind)  (cffi:foreign-alloc cffi-type)
-
         (bind-length bind)  (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/refman/5.6/ja/c-api-prepared-statement-date-handling.html
 (defun bind-allocate-date (bind)
   (setf (bind-buffer bind)  (cffi:foreign-alloc *mysql-time-struct*)
-        (bind-is-null bind) (cffi:foreign-alloc :uint8)
-        (bind-length bind)  (cffi:null-pointer)))
-
+        (bind-length bind)  (cffi:null-pointer)
+        (bind-is-null bind) (cffi:null-pointer)))
 
 ;; https://dev.mysql.com/doc/c-api/8.0/en/mysql-stmt-fetch.html
 (defun bind-allocate-string (bind &optional (length 1024))
   (setf (bind-buffer bind)        (cffi:foreign-alloc :char :count length)
-        (bind-buffer-length bind) length
-        (bind-is-null bind)       (cffi:foreign-alloc :uint8)
-        (bind-length bind)        (cffi:foreign-alloc :ulong)))
+        (bind-length bind)        (cffi:foreign-alloc :ulong)
+        (bind-buffer-length bind) length))
 
 (defun bind-release (bind)
   (macrolet ((free-if-not-null (exp)
@@ -341,6 +339,8 @@
      (bind-allocate-date bind))
     ((:blob :string :var-string)
      (bind-allocate-string bind)))
+  ;; MEMO: If is-null is allocated in bind-for-param, nothing returns.
+  (setf (bind-is-null bind) (cffi:foreign-alloc :bool))
   (setf (bind-buffer-type bind) (keyword-sql-type->int sql-type)))
 
 (defun parse-row (binds num-fields)

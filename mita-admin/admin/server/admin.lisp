@@ -14,11 +14,13 @@
                        locator
                        postgres-dir
                        content-base
-                       thumbnail-base)
+                       thumbnail-base
+                       &key (id (mita.id:gen)))
   (let ((account
          (mita.db:with-connection (conn (make-admin-db locator))
            (mita.db:with-tx (conn)
-             (mita.admin.account:create-account conn username password)))))
+             (mita.admin.account:create-account
+              conn id username password)))))
     (let ((id-string (mita.id:to-string
                       (mita.admin.account:account-id account))))
       (mita.account:create-account id-string
@@ -45,7 +47,9 @@
 
 (defun init (locator postgres-dir content-base thumbnail-base)
   (mita.db.impl:create-admin-database postgres-dir "admin" locator)
-  (create-account "mita" "mita"
-                  locator postgres-dir
-                  content-base
-                  thumbnail-base))
+  (let ((id (mita.id:parse "7128DA4E-2B13-45CC-A0BF-78AEC1668E2C")))
+    (create-account "mita" "mita"
+                    locator postgres-dir
+                    content-base
+                    thumbnail-base
+                    :id id)))

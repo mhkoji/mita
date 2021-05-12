@@ -31,11 +31,12 @@
        :username (second row)))))
 
 (defmethod mita.admin.account:create-account ((conn connection)
+                                              (id mita.id:id)
                                               (username string)
                                               (password string))
   (alexandria:appendf (gethash +account+ (connection-table-hash conn))
                       (list 
-                       (list (mita.id:to-string (mita.id:gen))
+                       (list (mita.id:to-string id)
                              username
                              (mita.util.password:hash password))))
   (mita.admin.account:find-account conn username))

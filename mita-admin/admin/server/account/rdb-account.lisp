@@ -28,11 +28,12 @@
      :username (account-username row))))
 
 (defmethod mita.admin.account:create-account ((conn mita.db.rdb:connection)
+                                              (id mita.id:id)
                                               (username string)
                                               (password string))
   (account-insert conn
                   (make-account
-                   :id (mita.id:gen)
+                   :id id
                    :username username
                    :hashed-password (mita.util.password:hash password)))
   (mita.admin.account:find-account conn username))

@@ -24,7 +24,7 @@
 
 (defgeneric find-account (conn username))
 
-(defgeneric create-account (conn username password))
+(defgeneric create-account (conn id username password))
 
 (defgeneric delete-account (conn account-id))
 

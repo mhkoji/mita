@@ -2,4 +2,7 @@
   :serial t
 
   :components
-  ((:file "b-plus-tree")))
+  ((:file "b-plus-tree"))
+
+  :depends-on
+  (:alexandria))

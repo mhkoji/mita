@@ -1,6 +1,6 @@
 (defpackage :mita.util.b+tree
   (:use :cl)
-  (:export :search
+  (:export :search-leaf-node
            :delete
            :insert
            :make-tree)
@@ -15,8 +15,10 @@
 
 (defstruct tree
   root
-  (node-id 1000)
-  nodes)
+  node-id
+  nodes
+  (key< #'<)
+  (key= #'=))
 
 (defvar *MAX* 3)
 
@@ -56,8 +58,13 @@
           (when parent
             (return-from find-parent parent)))))))
 
+(defun key< (tree a b)
+  (funcall (tree-key< tree) a b))
 
-(defun search-leaf-node-to-insert (tree k)
+(defun key= (tree a b)
+  (funcall (tree-key= tree) a b))
+
+(defun search-leaf-node (tree k)
   (let ((parent nil)
         (node (tree-root tree)))
     (loop while (and node (not (node-leaf-p node))) do
@@ -66,7 +73,7 @@
                        (size node-size)) node
         (setq parent node)
         (loop for i from 0 below size
-              if (< k (item-key (aref items i)))
+              if (key< tree k (item-key (aref items i)))
                 do (progn (setq node (aref ptrs i))
                           (return))
               if (= i (1- size))
@@ -86,7 +93,7 @@
                          (size node-size)) node
           (let ((i 0))
             (loop while (and (< i (node-size node))
-                             (< (item-key (aref items i)) k))
+                             (key< tree (item-key (aref items i)) k))
                   do (incf i))
             (loop for j from (+ size 0) downto (+ i 1)
                   do (setf (aref items j) (aref items (1- j))))
@@ -121,7 +128,7 @@
               ;;             0       1        2        3 (= (1+ i)   4
               ;;
               (loop while (and (< i *MAX*)
-                               (< (item-key (aref buf-items i)) k))
+                               (key< tree (item-key (aref buf-items i)) k))
                     do (incf i))
               (loop for j from (+ *MAX* 0) downto (+ i 1)
                     do (setf (aref buf-items j)
@@ -187,15 +194,14 @@
         (setf (node-size node) 1)
         (setf (tree-root tree) node))
 
-      (multiple-value-bind (node parent)
-          (search-leaf-node-to-insert tree k)
+      (multiple-value-bind (node parent) (search-leaf-node tree k)
         (if (< (node-size node) *MAX*)
             (with-accessors ((items node-items)
                              (ptrs node-ptrs)
                              (size node-size)) node
               (let ((i 0))
                 (loop while (and (< i size)
-                                 (< (item-key (aref items i)) k))
+                                 (key< tree (item-key (aref items i)) k))
                       do (incf i))
                 (loop for j from size downto (1+ i)
                       do (setf (aref items j) (aref items (1- j))))
@@ -211,7 +217,7 @@
                       (aref (node-items node) i)))
               (let ((i 0))
                 (loop while (and (< i *MAX*)
-                                 (< (item-key (aref buf-items i)) k))
+                                 (key< tree (item-key (aref buf-items i)) k))
                       do (incf i))
                 (loop for j from *MAX* downto (1+ i)
                       do (setf (aref buf-items j)
@@ -244,14 +250,6 @@
                       (insert-child tree parent new-item new-leaf)))))))))
 
 
-(defun search (tree k)
-  (let ((node (search-leaf-node-to-insert tree k)))
-    (let ((items (node-items node))
-          (size (node-size node)))
-      (loop for i from 0 below size
-            for item = (aref items i)
-            if (= (item-key item) k) return item))))
-
 
 (defun search-sequence-to-leaf (tree k)
   (labels ((iter (node acc)
@@ -265,7 +263,7 @@
                            return (cons node acc))
                    (loop for i from 0 below size
                          for item = (aref items i)
-                         when (or (< k (item-key item)))
+                         when (or (key< tree k (item-key item)))
                            return (iter (aref ptrs i)
                                         (cons node acc))
                          when (= i (1- size))
@@ -276,7 +274,7 @@
 (defun delete-child (tree child parents)
   (let ((node (car parents)))
     (let ((i (position child (node-ptrs node)
-                       :test #'eq
+                       :test (alexandria:curry #'key= tree)
                        :end (1+ (node-size node)))))
       (assert i)
       (cond ((= i (node-size node))
@@ -394,7 +392,7 @@
       (when nodes
         (let ((leaf (car nodes)))
           (let ((i (position k (node-items leaf)
-                             :test #'=
+                             :test (alexandria:curry #'key= tree)
                              :key #'item-key
                              :end (node-size leaf))))
             (loop for k from i below (1- (node-size leaf))
@@ -486,14 +484,14 @@
           (dolist (node (cdr nodes))
             ;; skip (car nodes) = leaf
             (let ((i (position k (node-items node)
-                               :test #'=
+                               :test (alexandria:curry #'key= tree)
                                :key #'item-key
                                :end (node-size node))))
               (when i
                 (setf (aref (node-items node) i)
                       (aref (node-items leaf) 0))))))))))
 
-;; CL-USER> (let ((tree (mita.util.b+tree:make-tree)))
+;; CL-USER> (let ((tree (mita.util.b+tree:make-tree :node-id 1000)))
 ;;            (mita.util.b+tree:insert tree 10 nil)
 ;;            (mita.util.b+tree:insert tree 11 nil)
 ;;            (mita.util.b+tree:insert tree -9 nil)

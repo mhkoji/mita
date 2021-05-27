@@ -274,7 +274,7 @@
 (defun delete-child (tree child parents)
   (let ((node (car parents)))
     (let ((i (position child (node-ptrs node)
-                       :test (alexandria:curry #'key= tree)
+                       :test #'eq
                        :end (1+ (node-size node)))))
       (assert i)
       (cond ((= i (node-size node))

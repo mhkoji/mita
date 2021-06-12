@@ -1,6 +1,6 @@
 (defpackage :mita.util.b+tree
   (:use :cl)
-  (:export :search-leaf-node
+  (:export :search-in
            :delete
            :insert
            :make-tree)
@@ -249,7 +249,30 @@
                         (setf (tree-root tree) new-root))
                       (insert-child tree parent new-item new-leaf)))))))))
 
-
+(defun search-in (tree keys)
+  (assert keys)
+  (setq keys (remove-duplicates (sort keys
+                                      (lambda (k1 k2) (key< tree k1 k2)))
+                                :test (lambda (k1 k2) (key= tree k1 k2))))
+  (let ((values nil)
+        (first-key-node (search-leaf-node tree (car keys))))
+    (loop for node = first-key-node then (aref (node-ptrs node)
+                                               (node-size node))
+          while (and node keys)
+          do (let ((i 0)
+                   (size (node-size node))
+                   (items (node-items node)))
+               (loop while (and keys (< i size)) do
+                 (let ((curr-key (car keys)))
+                   (loop while
+                         (and (< i size)
+                              (key< tree (item-key (aref items i)) curr-key))
+                         do (incf i))
+                   (when (and (< i size)
+                              (key= tree (item-key (aref items i)) curr-key))
+                     (push (item-value (aref items i)) values)
+                     (pop keys))))))
+    values))
 
 (defun search-sequence-to-leaf (tree k)
   (labels ((iter (node acc)

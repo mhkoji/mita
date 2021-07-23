@@ -1,6 +1,7 @@
 *~
 .idea
 data
+mysql_data
 
 ## for webapps
 **/*/static/gen

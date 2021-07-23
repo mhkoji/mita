@@ -14,6 +14,8 @@ services:
     environment:
       - MYSQL_DATABASE=admin
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - ../mysql_data:/var/lib/mysql
     expose:
       - 3306
 

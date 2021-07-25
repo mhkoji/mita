@@ -1,18 +1,3 @@
-FROM node:12.18.3-stretch AS static_builder
-
-WORKDIR /build
-
-COPY delivery-gui/frontend/package.json delivery-gui/frontend/package-lock.json ./
-
-RUN npm install
-
-COPY delivery-gui/frontend .
-
-RUN mkdir -p /gui/static/gen/ && npm run build
-
-
-################################################
-
 FROM ubuntu:18.04 AS bin_builder
 
 RUN apt update && apt install -y \
@@ -49,8 +34,6 @@ RUN sbcl --noinform \
          --non-interactive \
          --load "/root/quicklisp/setup.lisp" \
          --load "/build/requirements.lisp"
-
-COPY --from=static_builder /gui/static /app/static
 
 COPY . /root/quicklisp/local-projects/mita
 RUN sbcl --noinform \

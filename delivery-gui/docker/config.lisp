@@ -25,9 +25,6 @@
    :host "postgres"
    :port 5432))
 
-(defvar *static-root*
-  "/app/static/")
-
 (defvar *content-base*
   "/data/content/")
 

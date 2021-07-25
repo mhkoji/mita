@@ -7,7 +7,6 @@
 (defun clack ()
   (mita.gui.clack:start
    :use-thread nil
-   :static-root *static-root*
    :content-base *content-base*
    :thumbnail-base *thumbnail-base*
    :locator *locator*))

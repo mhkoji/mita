@@ -3,6 +3,7 @@
 
   :components
   ((:file "state")
+   (:file "view")
    (:file "gui")
    (:file "jsown")
    (:file "clack"))

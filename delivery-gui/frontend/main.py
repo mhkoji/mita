@@ -11,6 +11,8 @@ WS_URL = 'ws://localhost:6000/ws'
 
 websocket.enableTrace(True)
 
+LIMIT = 5
+
 class Model():
     def __init__(self):
         self.ws = websocket.WebSocketApp(
@@ -22,12 +24,16 @@ class Model():
     def set_on_change(self, h):
         self.on_change = h
         
-    def viewAlbums(self, offset, limit):
-        req = json.dumps({
-            'op': 'view-albums',
-            'offset': offset,
-            'limit': limit
-        })
+    def view_albums(self, limit):
+        req = json.dumps({ 'op': 'view-albums', 'limit': LIMIT })
+        self.ws.send(req)
+
+    def next_albums(self):
+        req = json.dumps({ 'op': 'next-albums' })
+        self.ws.send(req)
+
+    def prev_albums(self):
+        req = json.dumps({ 'op': 'prev-albums' })
         self.ws.send(req)
 
     def on_message(self, ws, msg):
@@ -38,10 +44,8 @@ class Model():
         self.ws.run_forever()
 
 class MainWindow(PyQt5.QtWidgets.QWidget):
-    def __init__(self, on_more, parent=None):
+    def __init__(self, on_prev, on_next, parent=None):
         super(MainWindow, self).__init__(parent)
-
-        self.on_more = on_more
 
         self.setGeometry(300, 50, 400, 350)
         self.setWindowTitle('Mita')
@@ -51,30 +55,37 @@ class MainWindow(PyQt5.QtWidgets.QWidget):
         self.loading.adjustSize()
         self.loading.move(100, 100)
 
-        button = PyQt5.QtWidgets.QPushButton(self)
-        button.setText('button')
-        button.clicked.connect(self.handleClickButton)
-
         self.box = PyQt5.QtWidgets.QHBoxLayout(self)
-        self.labels = [PyQt5.QtWidgets.QLabel(self) for _ in range(5)]
+
+        self.labels = [PyQt5.QtWidgets.QLabel(self) for _ in range(LIMIT)]
         for lbl in self.labels:
             self.box.addWidget(lbl)
-        self.box.addWidget(button)
+
+        self.prevButton = PyQt5.QtWidgets.QPushButton(self)
+        self.prevButton.setText('prev')
+        self.prevButton.clicked.connect(on_prev)
+        self.box.addWidget(self.prevButton)
+
+        self.nextButton = PyQt5.QtWidgets.QPushButton(self)
+        self.nextButton.setText('next')
+        self.nextButton.clicked.connect(on_next)
+        self.box.addWidget(self.nextButton)
+
         self.setLayout(self.box)
 
-    def handleClickButton(self):
-        self.on_more()
+    def update_viewing(self, v):
+        if self.loading:
+            self.loading.deleteLater()
+            self.loading = None
 
-    def showThumbnails(self, albums):
-        for i, album in enumerate(albums):
+        self.prevButton.setEnabled(v['hasPrev'])
+        self.nextButton.setEnabled(v['hasNext'])
+        
+        # show_thumbnails
+        for i, album in enumerate(v['albums']):
             path = album['thumbnail']['path']
             pixmap = PyQt5.QtGui.QPixmap(path)
             self.labels[i].setPixmap(pixmap)
-
-data = {
-    'offset': 0,
-    'limit': 5
-}
 
 def main():
     model = Model()
@@ -83,26 +94,22 @@ def main():
     t = threading.Thread(target=model.run_forever)
     t.start()
 
-    def handleMore():
-        model.viewAlbums(data['offset'], data['limit'])
-
     app = PyQt5.QtWidgets.QApplication(sys.argv)
-    wnd = MainWindow(on_more=handleMore)
+    wnd = MainWindow(
+        on_prev=model.prev_albums,
+        on_next=model.next_albums
+    )
 
-    def handleChangeView(v):
+    def handle_change_view(v):
         if v['type'] == 'loading':
             pass
         elif v['type'] == 'viewing':
-            if wnd.loading:
-                wnd.loading.deleteLater()
-                wnd.loading = None
-            wnd.showThumbnails(v['albums'])
-            data['offset'] = v['nextOffset']
+            wnd.update_viewing(v)
 
-    model.set_on_change(handleChangeView)
+    model.set_on_change(handle_change_view)
 
     wnd.show()
-    model.viewAlbums(data['offset'], data['limit'])
+    model.view_albums(LIMIT)
    
     sys.exit(app.exec_())
 

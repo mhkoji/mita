@@ -1,16 +1,21 @@
 (defpackage :mita.gui.state
   (:use :cl)
-  (:export :viewing
-           :viewing-albums
-           :viewing-limit
-           :viewing-next-offset
-           :viewing-prev-offset
-           :make-viewing))
+  (:export :album-list
+           :album-list-albums
+           :album-list-limit
+           :album-list-next-offset
+           :album-list-prev-offset
+           :make-album-list
+           :album
+           :album-images
+           :make-album))
 (in-package :mita.gui.state)
 
-(defstruct viewing
+(defstruct album-list
   albums
   limit
   prev-offset
   next-offset)
 
+(defstruct album
+  images)

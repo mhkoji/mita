@@ -136,7 +136,7 @@
                                            (album-id mita.id:id))
   (mapcar #'parse-image
           (select-from conn
-                       "i.image_id, i.path"
+                       "i.image_id, i.source, i.path"
                        "images AS i
                           INNER JOIN album_image
                           ON

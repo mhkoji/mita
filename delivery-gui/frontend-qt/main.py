@@ -7,7 +7,7 @@ import PyQt5.QtWidgets
 
 import websocket
 
-WS_URL = 'ws://localhost:6000/ws'
+WS_URL = 'ws://localhost:16000/ws'
 
 websocket.enableTrace(True)
 
@@ -25,7 +25,7 @@ class Model():
         self.on_change = h
         
     def view_albums(self, limit):
-        req = json.dumps({ 'op': 'view-albums', 'limit': LIMIT })
+        req = json.dumps({ 'op': 'list-albums', 'limit': LIMIT })
         self.ws.send(req)
 
     def next_albums(self):
@@ -73,7 +73,7 @@ class MainWindow(PyQt5.QtWidgets.QWidget):
 
         self.setLayout(self.box)
 
-    def update_viewing(self, v):
+    def update_album_list(self, v):
         if self.loading:
             self.loading.deleteLater()
             self.loading = None
@@ -101,10 +101,11 @@ def main():
     )
 
     def handle_change_view(v):
-        if v['type'] == 'loading':
-            pass
-        elif v['type'] == 'viewing':
-            wnd.update_viewing(v)
+        if v['state'] == 'album-list':
+            if v['type'] == 'loading':
+                pass
+            elif v['type'] == 'album-list':
+                wnd.update_album_list(v)
 
     model.set_on_change(handle_change_view)
 

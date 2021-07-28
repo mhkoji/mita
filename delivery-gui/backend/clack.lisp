@@ -23,25 +23,32 @@
     :initarg :ws)))
 
 (defmethod mita.gui:update-view ((gw websocket-gateway) (view mita.gui.view:view))
-  (websocket-driver:send (slot-value gw 'ws) (mita.gui.view:view-json view)))
-                                 
+  (websocket-driver:send (slot-value gw 'ws)
+                         (let ((state (state-holder-state gw)))
+                           (let ((state-name
+                                  (string-downcase (symbol-name (type-of state)))))
+                             (mita.gui.view:view-json state-name view)))))
+
 (defun process-message (db gw message)
   (let* ((msg (jsown:parse message))
          (op (jsown:val msg "op"))
          (state (state-holder-state gw)))
-    (cond ((string= op "view-albums")
+    (cond ((string= op "list-albums")
            (let ((limit (jsown:val msg "limit")))
-             (mita.gui:view-albums db 0 limit gw)))
+             (mita.gui:list-albums db 0 limit gw)))
           ((string= op "next-albums")
-           (assert (typep state 'mita.gui.state:viewing))
-           (let ((offset (mita.gui.state:viewing-next-offset state))
-                 (limit (mita.gui.state:viewing-limit state)))
-             (mita.gui:view-albums db offset limit gw)))
+           (assert (typep state 'mita.gui.state:album-list))
+           (let ((offset (mita.gui.state:album-list-next-offset state))
+                 (limit (mita.gui.state:album-list-limit state)))
+             (mita.gui:list-albums db offset limit gw)))
           ((string= op "prev-albums")
-           (assert (typep state 'mita.gui.state:viewing))
-           (let ((offset (mita.gui.state:viewing-prev-offset state))
-                 (limit (mita.gui.state:viewing-limit state)))
-             (mita.gui:view-albums db offset limit gw))))))
+           (assert (typep state 'mita.gui.state:album-list))
+           (let ((offset (mita.gui.state:album-list-prev-offset state))
+                 (limit (mita.gui.state:album-list-limit state)))
+             (mita.gui:list-albums db offset limit gw)))
+          ((string= op "select-album")
+           (let ((album-id (mita.id:parse-short (jsown:val msg "album-id"))))
+             (mita.gui:select-album db album-id gw))))))
 
 
 (defstruct req)
@@ -51,7 +58,7 @@
 (defmethod mita.web.app:request-account-id ((req req))
   *account-id*)
 
-(defun start (&key (port 6000)
+(defun start (&key (port 16000)
                    (use-thread t)
                    (content-base
                     (cl-fad:directory-exists-p

@@ -3,10 +3,12 @@
 
   :components
   ((:file "state")
+   (:file "tag-edit")
+   (:file "album-list")
+   (:file "album")
    (:file "view")
-   (:file "gui")
-   (:file "jsown")
-   (:file "clack"))
+   (:file "ws/jsown")
+   (:file "ws/clack"))
 
   :depends-on
   (:mita

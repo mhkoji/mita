@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -6,6 +6,7 @@ import { Spinner } from '../spinner';
 import Header from '../header';
 import EditAlbumTagsModal from '../edit-tags/edit-tags';
 import EditButton from '../edit-tags/edit-button';
+import { Model } from '../../model';
 
 function ImageRow(props) {
   if (props.images.length === 0) {
@@ -48,81 +49,80 @@ function ImageList(props) {
   return <div>{rowList}</div>;
 }
 
-class Model {
-  constructor(ws) {
-    self.ws = ws
+const albumId = new URL(location).searchParams.get('albumId');
+
+function App(props) {
+  const [album, setAlbum] = useState(null);
+  const [tagEdit, setTagEdit] = useState(null);
+  const modelRef = useRef(null);
+
+  function startEditTags() {
+    modelRef.current.startEditTags(albumId);
   }
-  
-   selectAlbum(albumId) {
-    self.ws.send(JSON.stringify({ 'op': 'select-album', 'album-id': albumId }));
-  }
-}
-
-function makeModel(ws, onViewUpdate) {
-  ws.addEventListener('message', (event) => {
-    onViewUpdate(JSON.parse(event.data));
-  });
-  return new Model(ws);
-}
-
-let model = null;
-
-function App({view}) {
-  const [isEditingTags, setIsEditingTags] = useState(false);
-
-  if (!view) {
-    return null;
-  }
-
-  if (view.state === 'album') {
-    if (view.type === 'loading') {
-      return (
-        <div>
-          <Header />
-          <Spinner/>
-        </div>
-      );
-    }
-
-    if (view.type === 'album') {
-      return (
-          <div>
-            <Header />
-
-            <main>
-              <div>
-                <div className="jumbotron">
-                  <h1 className="display">{view.name}</h1>
-                  <EditButton onClick={() => setIsEditingTags(true)} />
-                </div>
-              </div>
-
-              <div className="container">
-                <ImageList images={view.images} />
-              </div>
-            </main>
-          </div>
-      );
-    }
-  }
-}
-
-function AppWrapper () {
-  const [view, setView] = useState(null);
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:16000/ws');
-    model = makeModel(ws, setView);
-    const albumId = new URL(location).searchParams.get('albumId');
-    ws.addEventListener('open', () => model.selectAlbum(albumId));
+    ws.addEventListener('open', () => {
+      const model = new Model(ws, (state) => {
+        if (state.name === 'album') {
+          setAlbum(state.view);
+        } else if (state.name === 'tag-edit') {
+          setTagEdit(state.view);
+        }
+      });
+      modelRef.current = model;
+      model.listImages(albumId);
+    });
     return function cleanup() {
-      ws.close();
+      if (modelRef.current) {
+        modelRef.current.close();
+      }
     };
   }, [])
 
-  return (<App view={view} />);
+
+  if (!album) {
+    return null;
+  }
+
+  if (album.type === 'loading') {
+    return (
+      <div>
+        <Header />
+        <Spinner/>
+      </div>
+    );
+  }
+
+  if (album.type === 'album') {
+    return (
+        <div>
+          <Header />
+
+          <main>
+            <div>
+              <div className="jumbotron">
+                <h1 className="display">{album.name}</h1>
+                <EditButton onClick={startEditTags} />
+              </div>
+            </div>
+
+            <div className="container">
+              <ImageList images={album.images} />
+            </div>
+          </main>
+
+          <EditAlbumTagsModal
+            tagEdit={tagEdit}
+            model={modelRef.current}
+          />
+        </div>
+    );
+  }
+
+  return null;
 }
 
 ReactDOM.render(
-    <AppWrapper />,
+    <App />,
     document.getElementById('app'));

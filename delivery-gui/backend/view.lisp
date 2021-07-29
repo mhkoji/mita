@@ -1,41 +1,64 @@
 (defpackage :mita.gui.view
   (:use :cl)
-  (:export :view
-           :view-json
-           :make-loading
-           :make-album-list
-           :make-album))
+  (:export :to-json))
 (in-package :mita.gui.view)
 
-(defclass view ()
-  ((jsown
-    :initarg :jsown
-    :reader view-jsown)))
+(defgeneric make-view (state))
 
-(defun make-view (jsown)
-  (make-instance 'view :jsown jsown))
+(defmethod make-view (state)
+  (jsown:new-js))
 
-(defun view-json (state-name view)
+(defun to-json (state-category state)
   (jsown:to-json
-   (jsown:extend-js (view-jsown view)
-     ("state" state-name))))
-
-(defun make-loading ()
-  (make-view
    (jsown:new-js
-     ("type" "loading"))))
+     ("name" (string-downcase (symbol-name state-category)))
+     ("view" (make-view state)))))
 
-(defun make-album-list (&key albums has-prev has-next)
-  (make-view
-   (jsown:new-js
-     ("type" "album-list")
-     ("albums" albums)
-     ("hasNext" (if has-next :t :f))
-     ("hasPrev" (if has-prev :t :f)))))
+(defun json-bool (val)
+  (if val :t :f))
 
-(defun make-album (&key name images)
-  (make-view
-   (jsown:new-js
-     ("type" "album")
-     ("name" name)
-     ("images" images))))
+(defmethod make-view ((state mita.gui.state:loading))
+  (jsown:new-js
+    ("type" "loading")))
+
+(defmethod make-view ((state mita.gui.album-list:listed))
+  (jsown:new-js
+    ("type"
+     "album-list")
+    ("albums"
+     (mita.gui.album-list:listed-albums state))
+    ("hasNext"
+     (json-bool (mita.gui.album-list:listed-next-offset state)))
+    ("hasPrev"
+     (json-bool (mita.gui.album-list:listed-prev-offset state)))))
+
+(defmethod make-view ((state mita.gui.album:album))
+  (jsown:new-js
+    ("type"
+     "album")
+    ("name"
+     (mita.gui.album:album-name state))
+    ("images"
+     (mita.gui.album:album-images state))))
+
+(defmethod make-view ((state mita.gui.tag-edit:editing))
+  (jsown:new-js
+    ("type"
+     "editing")
+    ("isTagAdded"
+     (json-bool
+      (mita.gui.tag-edit:editing-is-tag-added state)))
+    ("tags"
+     (mita.gui.tag-edit:editing-tags state))
+    ("contentTags"
+     (mita.gui.tag-edit:editing-content-tags state))))
+
+(defmethod make-view ((state mita.gui.tag-edit:saving))
+  (jsown:new-js
+    ("type"
+     "saving")))
+
+(defmethod make-view ((state mita.gui.tag-edit:saved))
+  (jsown:new-js
+    ("type"
+     "saved")))

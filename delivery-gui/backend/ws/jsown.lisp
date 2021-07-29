@@ -1,6 +1,6 @@
-(defpackage :mita.gui.jsown
+(defpackage :mita.gui.ws.jsown
   (:use :cl))
-(in-package :mita.gui.jsown)
+(in-package :mita.gui.ws.jsown)
 
 (defvar *account-content-root* "/")
 

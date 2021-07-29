@@ -1,19 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Spinner } from '../spinner';
 
 export function Saving(props) {
-  function saveTags() {
-    props.onChangeState({ state: 'saving' });
+  const [type, setType] = useState('saving');
 
-    props.api.putContentTags(props.state.contentTags)
+  function saveTags() {
+    setType('saving');
+
+    props.api.putContentTags(props.contentTags)
         .then(() => {
           setTimeout(() => {
-            props.onChangeState({ state: 'saved' })
-
+            setType('saved');
             setTimeout(() => props.onFinishSave(), 500);
           }, 100);
         }, () => {
-          props.onChangeState({ state: 'failed' });
+          setType('failed');
         });
   }
 
@@ -23,15 +24,15 @@ export function Saving(props) {
 
   useEffect(() => saveTags(), []);
 
-  if (props.state.state === 'saving') {
+  if (type === 'saving') {
     return (<Spinner />);
   }
 
-  if (props.state.state === 'saved') {
+  if (type === 'saved') {
     return (<div>Saved!</div>);
   }
 
-  if (props.state.state === 'failed') {
+  if (type === 'failed') {
     return (
         <div>
           <div

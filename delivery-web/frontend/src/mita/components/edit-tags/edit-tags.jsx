@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from 'react-modal';
 
 import { Loading } from './loading';
@@ -27,11 +27,56 @@ function ModalFooter(props) {
   );
 }
 
+function EditingModal(props) {
+  const [newName, setNewName] = useState(null);
+  const [tags, setTags] = useState(props.tags);
+  const [contentTags, setContentTags] = useState(props.contentTags);
+
+  function handleAddTag() {
+    props.api.putTag(newName).then(() => {
+      setNewName('');
+      props.api.tags().then((tags) => { setTags(tags); });
+    });
+  }
+
+  function handleDeleteTag(tag) {
+    props.api.deleteTag(tag).then(() => {
+      props.api.tags().then((tags) => { setTags(tags); });
+    });
+  }
+
+  function handleAttachTag(tag) {
+    setContentTags(contentTags.concat([tag]));
+  }
+
+  function handleDetachTag(tag) {
+    setContentTags(contentTags.filter((t) => t.id !== tag.id));
+  }
+
+  return (
+    <Modal
+        isOpen={true}
+        onRequestClose={props.onClose}>
+      <Editing
+          newName={newName}
+          onChangeNewName={setNewName}
+          onAddTag={handleAddTag}
+          onDeleteTag={handleDeleteTag}
+          tags={tags}
+          contentTags={contentTags}
+          onAttach={handleAttachTag}
+          onDetach={handleDetachTag} />
+      <ModalFooter
+          onSave={() => props.onSave(contentTags)}
+          onCancel={props.onClose} />
+    </Modal>
+  );
+}
+
 export default class EditAlbumTagsModal extends React.Component {
   constructor(props) {
     super(props);
 
-    this.handleChangeCurrentState = this.handleChangeCurrentState.bind(this);
     this.handleLoaded = this.handleLoaded.bind(this);
     this.handleSave = this.handleSave.bind(this);
 
@@ -45,38 +90,21 @@ export default class EditAlbumTagsModal extends React.Component {
 
     this.state = {
       type: 'loading',
-      value: null
     };
-  }
-
-  handleChangeCurrentState(value) {
-    this.setState((state) => {
-      const newValue = (value instanceof Function) ?
-          value(state.value) :
-          value;
-      return Object.assign({}, state, {value: newValue});
-    });
   }
 
   handleLoaded(tags, contentTags) {
     this.setState({
       type: 'editing',
-      value: {
-        tags: tags,
-        contentTags: contentTags,
-        newName: ''
-      }
+      tags: tags,
+      contentTags: contentTags,
     });
   }
 
-  handleSave() {
-    this.setState((state) => {
-      return {
-        type: 'saving',
-        value: {
-          contentTags: state.value.contentTags
-        }
-      };
+  handleSave(contentTags) {
+    this.setState({
+      type: 'saving',
+      contentTags: contentTags
     });
   }
 
@@ -94,8 +122,6 @@ export default class EditAlbumTagsModal extends React.Component {
               onRequestClose={props.onClose}>
             <Loading
                 api={this.api}
-                state={state.value}
-                onChangeState={this.handleChangeCurrentState}
                 onLoaded={this.handleLoaded} />
           </Modal>
       );
@@ -103,19 +129,13 @@ export default class EditAlbumTagsModal extends React.Component {
 
     if (state.type === 'editing') {
       return (
-          <Modal
-              isOpen={true}
-              onRequestClose={props.onClose}>
-            <Editing
-                api={this.api}
-                state={state.value}
-                onChangeState={this.handleChangeCurrentState}
-                onSave={this.handleSave}
-                onCancle={props.onClose} />
-            <ModalFooter
-                onSave={this.handleSave}
-                onCancel={props.onClose} />
-          </Modal>
+          <EditingModal
+              api={this.api}
+              tags={this.state.tags}
+              contentTags={this.state.contentTags}
+              onClose={props.onClose}
+              onSave={this.handleSave}
+          />
       );
     }
 
@@ -126,8 +146,7 @@ export default class EditAlbumTagsModal extends React.Component {
               onRequestClose={props.onClose}>
             <Saving
                 api={this.api}
-                state={state.value}
-                onChangeState={this.handleChangeCurrentState}
+                contentTags={state.contentTags}
                 onFinishSave={props.onClose} />
           </Modal>);
     }

@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Spinner } from '../spinner';
 
 export function Loading(props) {
+  const [type, setType] = useState('loading');
+
   function loadTags() {
-    props.onChangeState('loading');
+    setType('loading');
 
     Promise.all([
       props.api.tags(), props.api.contentTags()
@@ -11,7 +13,7 @@ export function Loading(props) {
       const [tags, contentTags] = result;
       props.onLoaded(tags, contentTags);
     }, () => {
-      props.onChangeState('failed');
+      setType('failed');
     })
   }
 
@@ -21,11 +23,11 @@ export function Loading(props) {
 
   useEffect(() => loadTags(), []);
 
-  if (props.state === null || props.state === 'loading') {
+  if (type === 'loading') {
     return (<Spinner />);
   }
 
-  if (props.state === 'failed') {
+  if (type === 'failed') {
     return (
         <div>
           <div

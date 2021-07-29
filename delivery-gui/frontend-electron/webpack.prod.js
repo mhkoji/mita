@@ -15,7 +15,8 @@ module.exports = merge(common, {
   },
 
   entry: {
-    index: './src/components/entries/index.jsx'
+    index: './src/components/entries/index.jsx',
+    album: './src/components/entries/album.jsx'
   },
 
   output: {

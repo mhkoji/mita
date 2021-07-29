@@ -4,7 +4,8 @@ import Modal from 'react-modal';
 import { Loading } from './loading';
 import { Editing } from './editing';
 import { Saving } from './saving';
-import * as apis from '../../apis';
+// import * as apis from '../../apis';
+const apis = {};
 
 function ModalFooter(props) {
   return (

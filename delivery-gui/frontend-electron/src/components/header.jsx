@@ -2,7 +2,8 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-import * as apis from '../apis';
+// import * as apis from '../apis';
+const apis = {};
 
 export default function Header() {
   const brand = {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
 import { Spinner } from '../spinner';
@@ -54,19 +54,19 @@ function AppAlbumList({pager, albums, onSelectAlbum, onEditTags}) {
   );
 }
 
-let ws = null;
-
 function App () {
+  const wsRef = useRef(null);
+
   function listAlbums() {
-    ws.send(JSON.stringify({ 'op': 'list-albums', 'limit': 50 }));
+    wsRef.current.send(JSON.stringify({ 'op': 'list-albums', 'limit': 50 }));
   }
 
   function prevAlbums() {
-    ws.send(JSON.stringify({ 'op': 'prev-albums' }));
+    wsRef.current.send(JSON.stringify({ 'op': 'prev-albums' }));
   }
 
   function nextAlbums() {
-    ws.send(JSON.stringify({ 'op': 'next-albums' }));
+    wsRef.current.send(JSON.stringify({ 'op': 'next-albums' }));
   }
 
   ////
@@ -79,9 +79,10 @@ function App () {
   }
 
   useEffect(() => {
-    ws = new WebSocket('ws://localhost:16000/ws');
+    const ws = new WebSocket('ws://localhost:16000/ws');
     ws.addEventListener('message', (event) => setView(JSON.parse(event.data)));
     ws.addEventListener('open', () => listAlbums());
+    wsRef.current = ws;
     return function cleanup() { ws.close(); };
   }, [])
 
@@ -110,6 +111,7 @@ function App () {
       );
     }
   }
+
   return null;
 }
 

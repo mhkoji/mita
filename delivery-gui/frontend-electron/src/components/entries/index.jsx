@@ -1,44 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 
-import { Spinner } from '../spinner';
-import { ArrowLeft, ArrowRight } from '../fa';
-import Header from '../header';
-import AlbumList from '../album-list';
-import EditAlbumTagsModal from '../edit-tags/edit-tags';
-import { Model } from '../../model';
+import { Spinner } from "../spinner";
+import { ArrowLeft, ArrowRight } from "../fa";
+import Header from "../header";
+import AlbumList from "../album-list";
+import EditAlbumTagsModal from "../edit-tags/edit-tags";
+import { Model } from "../../model";
 
 function Pager({ onPrev, onNext }) {
   return (
-      <nav aria-label="pager">
-        <ul className="pagination justify-content-center">
-          <li className={'page-item' + (onPrev ? '' : ' disabled')}>
-            <button className="page-link" onClick={onPrev}>
-              <ArrowLeft />
-            </button>
-          </li>
-          <li className={'page-item' + (onNext ? '' : ' disabled')}>
-            <button className="page-link" onClick={onNext}>
-              <ArrowRight />
-            </button>
-          </li>
-        </ul>
-      </nav>
+    <nav aria-label="pager">
+      <ul className="pagination justify-content-center">
+        <li className={"page-item" + (onPrev ? "" : " disabled")}>
+          <button className="page-link" onClick={onPrev}>
+            <ArrowLeft />
+          </button>
+        </li>
+        <li className={"page-item" + (onNext ? "" : " disabled")}>
+          <button className="page-link" onClick={onNext}>
+            <ArrowRight />
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 }
-
 
 function AppLoading() {
   return (
     <div>
       <Header />
-      <Spinner/>
+      <Spinner />
     </div>
   );
 }
 
-function AppAlbumList({ pager, albums, onSelectAlbum, onEditTags,
-                        editAlbumTagsModal }) {
+function AppAlbumList({
+  pager,
+  albums,
+  onSelectAlbum,
+  onEditTags,
+  editAlbumTagsModal,
+}) {
   return (
     <div>
       <Header />
@@ -60,7 +64,7 @@ function AppAlbumList({ pager, albums, onSelectAlbum, onEditTags,
   );
 }
 
-function App (props) {
+function App(props) {
   const [albumList, setAlbumList] = useState(null);
   const [tagEdit, setTagEdit] = useState(null);
   const modelRef = useRef(null);
@@ -74,7 +78,7 @@ function App (props) {
   }
 
   function handleSelectAlbum(albumId) {
-    window.open('album.html?albumId=' + albumId);
+    window.open("album.html?albumId=" + albumId);
   }
 
   function startEditTags(albumId) {
@@ -82,12 +86,12 @@ function App (props) {
   }
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:16000/ws');
-    ws.addEventListener('open', () => {
+    const ws = new WebSocket("ws://localhost:16000/ws");
+    ws.addEventListener("open", () => {
       const model = new Model(ws, (state) => {
-        if (state.name === 'album-list') {
+        if (state.name === "album-list") {
           setAlbumList(state.view);
-        } else if (state.name === 'tag-edit') {
+        } else if (state.name === "tag-edit") {
           setTagEdit(state.view);
         }
       });
@@ -99,32 +103,29 @@ function App (props) {
         modelRef.current.close();
       }
     };
-  }, [])
+  }, []);
 
   if (!albumList) {
     return null;
   }
 
-  if (albumList.type === 'loading') {
-    return (
-      <AppLoading />
-    );
+  if (albumList.type === "loading") {
+    return <AppLoading />;
   }
 
-  if (albumList.type === 'album-list') {
+  if (albumList.type === "album-list") {
     return (
       <AppAlbumList
         pager={{
           onNext: albumList.hasNext && nextAlbums,
-          onPrev: albumList.hasPrev && prevAlbums
+          onPrev: albumList.hasPrev && prevAlbums,
         }}
         albums={albumList.albums}
         onSelectAlbum={handleSelectAlbum}
         onEditTags={startEditTags}
-
         editAlbumTagsModal={{
           tagEdit: tagEdit,
-          model: modelRef.current
+          model: modelRef.current,
         }}
       />
     );
@@ -133,6 +134,4 @@ function App (props) {
   return null;
 }
 
-ReactDOM.render(
-    <App />,
-    document.getElementById('app'));
+ReactDOM.render(<App />, document.getElementById("app"));

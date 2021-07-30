@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-import { Spinner } from '../spinner';
-import Header from '../header';
-import EditAlbumTagsModal from '../edit-tags/edit-tags';
-import EditButton from '../edit-tags/edit-button';
-import { Model } from '../../model';
+import { Spinner } from "../spinner";
+import Header from "../header";
+import EditAlbumTagsModal from "../edit-tags/edit-tags";
+import EditButton from "../edit-tags/edit-button";
+import { Model } from "../../model";
 
 function ImageRow(props) {
   if (props.images.length === 0) {
@@ -14,22 +14,20 @@ function ImageRow(props) {
   }
   const cardEls = props.images.map((image) => {
     return (
-        <div key={image.id} className="col-md-4">
-          <div className="card mb-4 shadow-sm">
-            <img alt={image.id}
-                 src={image.path}
-                 width="100%"
-                 height={400}
-                 className="card-img-top bd-placeholder-img" />
-          </div>
+      <div key={image.id} className="col-md-4">
+        <div className="card mb-4 shadow-sm">
+          <img
+            alt={image.id}
+            src={image.path}
+            width="100%"
+            height={400}
+            className="card-img-top bd-placeholder-img"
+          />
         </div>
+      </div>
     );
   });
-  return (
-      <div className="row">
-        {cardEls}
-      </div>
-  );
+  return <div className="row">{cardEls}</div>;
 }
 
 function ImageList(props) {
@@ -42,14 +40,13 @@ function ImageList(props) {
   const inDeckCount = 3;
   for (let i = 0; i < images.length; i += inDeckCount) {
     const subImages = images.slice(i, Math.min(i + inDeckCount, images.length));
-    rowList.push((<ImageRow key={i} images={subImages} />));
-                            
+    rowList.push(<ImageRow key={i} images={subImages} />);
   }
 
   return <div>{rowList}</div>;
 }
 
-const albumId = new URL(location).searchParams.get('albumId');
+const albumId = new URL(location).searchParams.get("albumId");
 
 function App(props) {
   const [album, setAlbum] = useState(null);
@@ -61,12 +58,12 @@ function App(props) {
   }
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:16000/ws');
-    ws.addEventListener('open', () => {
+    const ws = new WebSocket("ws://localhost:16000/ws");
+    ws.addEventListener("open", () => {
       const model = new Model(ws, (state) => {
-        if (state.name === 'album') {
+        if (state.name === "album") {
           setAlbum(state.view);
-        } else if (state.name === 'tag-edit') {
+        } else if (state.name === "tag-edit") {
           setTagEdit(state.view);
         }
       });
@@ -78,51 +75,45 @@ function App(props) {
         modelRef.current.close();
       }
     };
-  }, [])
-
+  }, []);
 
   if (!album) {
     return null;
   }
 
-  if (album.type === 'loading') {
+  if (album.type === "loading") {
     return (
       <div>
         <Header />
-        <Spinner/>
+        <Spinner />
       </div>
     );
   }
 
-  if (album.type === 'album') {
+  if (album.type === "album") {
     return (
-        <div>
-          <Header />
+      <div>
+        <Header />
 
-          <main>
-            <div>
-              <div className="jumbotron">
-                <h1 className="display">{album.name}</h1>
-                <EditButton onClick={startEditTags} />
-              </div>
+        <main>
+          <div>
+            <div className="jumbotron">
+              <h1 className="display">{album.name}</h1>
+              <EditButton onClick={startEditTags} />
             </div>
+          </div>
 
-            <div className="container">
-              <ImageList images={album.images} />
-            </div>
-          </main>
+          <div className="container">
+            <ImageList images={album.images} />
+          </div>
+        </main>
 
-          <EditAlbumTagsModal
-            tagEdit={tagEdit}
-            model={modelRef.current}
-          />
-        </div>
+        <EditAlbumTagsModal tagEdit={tagEdit} model={modelRef.current} />
+      </div>
     );
   }
 
   return null;
 }
 
-ReactDOM.render(
-    <App />,
-    document.getElementById('app'));
+ReactDOM.render(<App />, document.getElementById("app"));

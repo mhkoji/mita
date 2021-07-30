@@ -1,34 +1,33 @@
-const path = require('path');
-const webpack = require('webpack');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const path = require("path");
+const webpack = require("webpack");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
   plugins: [
     new MiniCssExtractPlugin({
-      filename: '[name].bundle.css'
+      filename: "[name].bundle.css",
     }),
     new webpack.ProvidePlugin({
-      $: 'jquery',
-      jQuery: 'jquery'
-    })
+      $: "jquery",
+      jQuery: "jquery",
+    }),
   ],
 
   module: {
     rules: [
       {
         test: /\.jsx$/,
-        include: [
-          path.resolve(__dirname, 'src/')
-        ],
-        loader: 'babel-loader'
-      }, {
+        include: [path.resolve(__dirname, "src/")],
+        loader: "babel-loader",
+      },
+      {
         test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader']
-      }
-    ]
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
+      },
+    ],
   },
 
   resolve: {
-    extensions: ['.js', '.jsx']
-  }
+    extensions: [".js", ".jsx"],
+  },
 };

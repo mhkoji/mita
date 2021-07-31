@@ -1,4 +1,4 @@
-(defpackage :mita.db.rdb.vendor.postgres
+(defpackage :mita.db.vendor.postgres
   (:use :cl)
   (:export :make-locator
            :postgres
@@ -6,7 +6,7 @@
            :create-admin-database
            :create-database
            :drop-database))
-(in-package :mita.db.rdb.vendor.postgres)
+(in-package :mita.db.vendor.postgres)
 
 (defstruct locator user host port)
 
@@ -48,27 +48,6 @@
     (cl-postgres:exec-prepared
      conn-impl "" args #'cl-postgres:list-row-reader)))
 
-;;;
-
-(defun create-admin-database (postgres-dir db-name locator)
-  (postmodern:with-connection (make-spec db-name locator)
-    (postmodern:execute-file
-     (merge-pathnames postgres-dir "./admin-ddl.sql"))))
-
-;;;
-
-(defun create-database (postgres-dir admin-db-name db-name locator)
-  (postmodern:with-connection (make-spec admin-db-name locator)
-    (postmodern:query (format nil "CREATE DATABASE ~A" db-name)))
-  (postmodern:with-connection (make-spec db-name locator)
-    (postmodern:execute-file
-     (merge-pathnames postgres-dir "./mita-ddl.sql"))))
-
-(defun drop-database (admin-db-name db-name locator)
-  (postmodern:with-connection (make-spec admin-db-name locator)
-    (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
-
-;;;
 
 (defmethod mita.db.rdb:album-select-album-ids ((conn connection) offset limit)
   (mapcar (lambda (row)

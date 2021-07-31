@@ -1,52 +1,67 @@
-(defpackage :mita.db.rdb.vendor.sqlite
+(defpackage :mita.db.vendor.mysql
   (:use :cl)
   (:export :make-locator
-           :sqlite
+           :mysql
            :connection
            :create-database
            :drop-database))
-(in-package :mita.db.rdb.vendor.sqlite)
+(in-package :mita.db.vendor.mysql)
 
-(defstruct locator path)
+(defstruct locator user host port)
 
-(defclass sqlite (mita.db:db)
-  ((locator
+(progn
+  (remhash :timestamp cl-mysql:*type-map*)
+  (remhash :date      cl-mysql:*type-map*)
+  (remhash :time      cl-mysql:*type-map*)
+  (remhash :datetime  cl-mysql:*type-map*)
+  (remhash :newdate   cl-mysql:*type-map*))
+
+(defclass mysql (mita.db:db)
+  ((db-name
+    :initarg :db-name
+    :reader mysql-db-name)
+   (locator
     :initarg :locator
-    :reader sqlite-locator)))
+    :reader mysql-locator)))
 
 (defclass connection (mita.db.rdb:connection)
   ((impl
     :initarg :impl
     :reader connection-impl)))
 
-(defmethod mita.db:call-with-connection ((db sqlite) fn)
-  (sqlite:with-open-database (impl (locator-path (sqlite-locator db)))
-    (funcall fn (make-instance 'connection :impl impl))))
-
+(defmethod mita.db:call-with-connection ((db mysql) fn)
+  (let ((locator (mysql-locator db)))
+    (mita.util.mysql:call-with-connection
+     (lambda (conn-impl)
+       (funcall fn (make-instance 'connection :impl conn-impl)))
+     (mysql-db-name db)
+     (locator-user locator)
+     (locator-host locator)
+     (locator-port locator))))
+  
 (defmethod mita.db:call-with-tx ((conn connection) fn)
-  (sqlite:with-transaction (connection-impl conn)
-    (funcall fn)))
+  (mita.util.mysql:call-with-tx (connection-impl conn) fn))
 
 (defun execute (conn query-string args)
-  (apply #'sqlite:execute-to-list (connection-impl conn) query-string args))
+  (mita.util.mysql:execute (connection-impl conn) query-string args))
 
 ;;;
 
-(defun to-sqlite-timestamp-string (timestamp)
+(defun to-mysql-timestamp-string (timestamp)
   (local-time:format-timestring nil timestamp
    :format '((:year 4) #\- (:month 2) #\- (:day 2) #\space
              (:hour 2) #\: (:min 2) #\: (:sec 2) #\. (:nsec 9))))
 
-(defun parse-sqlite-timestamp-string (string)
+(defun parse-mysql-timestamp-string (string)
   (local-time:parse-timestring string :date-time-separator #\Space))
 
 (defmethod mita.db.rdb.common:timestamp-to-string ((conn connection)
                                                    (ts local-time:timestamp))
-  (to-sqlite-timestamp-string ts))
+  (to-mysql-timestamp-string ts))
 
 (defmethod mita.db.rdb.common:parse-timestamp ((conn connection)
                                                (s string))
-  (parse-sqlite-timestamp-string s))
+  (parse-mysql-timestamp-string s))
 
 (defmethod mita.db.rdb.common:insert-into ((conn connection)
                                            table-name
@@ -149,26 +164,15 @@
                                                 order-by)
   (destructuring-bind (query-string args)
       (convert-select-query column-names table-name where order-by)
-    (execute conn query-string args)))
-
-;;;
-
-(defun create-database (sqlite-dir locator)
-  (mita.db:with-connection (conn (make-instance 'sqlite :locator locator))
-    (dolist (sql (cl-ppcre:split
-                  (format nil "~%~%")
-                  (alexandria:read-file-into-string
-                   (merge-pathnames sqlite-dir "./mita-ddl.sql"))))
-      (sqlite:execute-non-query (connection-impl conn) sql))))
-
-(defun drop-database (locator)
-  (uiop:delete-file-if-exists (locator-path locator)))
-
-;;;
+    (let ((plists (execute conn query-string args)))
+      (mapcar (lambda (plist)
+                (mapcar #'cdr (alexandria:plist-alist plist)))
+              plists))))
 
 (defmethod mita.db.rdb:album-select-album-ids ((conn connection) offset limit)
-  (mapcar (lambda (row)
-            (mita.id:parse (car row)))
+  (mapcar (lambda (plist)
+            (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
+              (mita.id:parse (car row))))
           (execute conn
            (concatenate 'string
             "SELECT album_id FROM albums"
@@ -181,3 +185,25 @@
   (execute conn
    "UPDATE tags SET name = ? where tag_id = ?"
    (list name (mita.id:to-string tag-id))))
+
+;;;
+
+(defun create-database (locator db-name ddl-file-path)
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name nil
+                                  :locator locator))
+    (cl-dbi:do-sql (connection-impl conn)
+      (format nil "CREATE DATABASE IF NOT EXISTS ~A" db-name)))
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name db-name
+                                  :locator locator))
+    (dolist (sql (cl-ppcre:split (format nil "~%~%")
+                                 (alexandria:read-file-into-string ddl-file-path)))
+      (cl-dbi:do-sql (connection-impl conn) sql))))
+
+(defun drop-database (locator db-name)
+  (mita.db:with-connection (conn (make-instance 'mysql
+                                  :db-name nil
+                                  :locator locator))
+    (cl-dbi:do-sql (connection-impl conn)
+      (format nil "DROP DATABASE IF EXISTS ~A" db-name))))

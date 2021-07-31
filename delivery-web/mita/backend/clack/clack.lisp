@@ -3,8 +3,6 @@
   (:export :start))
 (in-package :mita.web.clack)
 
-(defvar *locator* (mita.db.impl:make-locator))
-
 (defvar *handler* nil)
 
 (defun system-relative-pathname (name)
@@ -15,15 +13,16 @@
                     (system-relative-pathname "../delivery-web/mita/static/"))
                    (use-thread t)
                    (serve-image t)
-                   ;; Call directory-exists-p to resolve symlink beforehand
+                   (db-manager
+                    mita.web.auth.server::*db-manager*)
+                    ;; Call directory-exists-p to resolve symlink beforehand
                    (content-base
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/content/")))
                    (thumbnail-base
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/thumbnail/")))
-                   (session-store mita.web.auth.server:*session-store*)
-                   (locator *locator*))
+                   (session-store mita.web.auth.server:*session-store*))
   (when *handler*
     (clack:stop *handler*))
   (setq *handler*
@@ -44,9 +43,8 @@
            (list mita.web.externs:*login-url*))
 
           (mita.web.clack.mita:make-middleware
-           locator
            (make-instance 'mita.web.app:spec
-                          :locator locator
+                          :db-manager db-manager
                           :content-base (namestring content-base)
                           :thumbnail-base (namestring thumbnail-base))
            :serve-image-p serve-image)

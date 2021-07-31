@@ -28,7 +28,7 @@
      :username (account-username row))))
 
 (defmethod mita.auth.admin.account:create-account ((conn mita.db.rdb:connection)
-                                              (id mita.id:id)
+                                                   (id mita.id:id)
                                                    (username string)
                                                    (password string))
   (account-insert conn

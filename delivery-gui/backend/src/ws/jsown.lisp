@@ -2,9 +2,9 @@
   (:use :cl))
 (in-package :mita.gui.ws.jsown)
 
-(defvar *account-content-root* "/")
+(defvar *content-root* "/")
 
-(defvar *account-thumbnail-root* "/")
+(defvar *thumbnail-root* "/")
 
 (defmethod jsown:to-json ((album mita.album:album))
   (jsown:to-json
@@ -30,9 +30,9 @@
        ("path" (format nil "~A/~A"
                        (let ((src (mita.image:image-source obj)))
                          (cond ((eql src mita.image:+source-content+)
-                                *account-content-root*)
+                                *content-root*)
                                ((eql src mita.image:+source-thumbnail+)
-                                *account-thumbnail-root*)
+                                *thumbnail-root*)
                                (t
                                 (assert nil))))
                        (mita.image:image-path obj)))))))

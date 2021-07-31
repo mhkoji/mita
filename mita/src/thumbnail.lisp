@@ -1,13 +1,16 @@
 (defpackage :mita.thumbnail
   (:use :cl)
-  (:export :create))
+  (:export :*convert-path*
+           :create))
 (in-package :mita.thumbnail)
+
+(defvar *convert-path* "/usr/bin/convert")
 
 (defun resize-image (target source x y)
   (let ((resize (format nil "~Ax~A" x y)))
     ;; call ImageMagic
     #+sbcl
-    (sb-ext:run-program "/usr/bin/convert"
+    (sb-ext:run-program *convert-path*
                         (list source "-resize" resize target)
                         :output t :error t)
     #+ccl

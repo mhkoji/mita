@@ -2,8 +2,7 @@
   (:use :cl :mita.web.clack.util)
   (:export :make-middleware)
   (:import-from :mita.web.app
-                :make-db
-                :make-db-from-spec)
+                :get-db)
   (:import-from :alexandria
                 :when-let
                 :when-let*
@@ -51,7 +50,7 @@
        (let ((offset (ensure-integer (q req "offset") 0))
              (limit (ensure-integer (q req "limit") 50)))
          (multiple-value-bind (albums full-loaded-p)
-             (mita.db:with-connection (conn (make-db-from-spec req spec))
+             (mita.db:with-connection (conn (get-db spec req))
                (mita.album:load-albums conn offset limit))
            (let ((format-str "/albums?offset=~A&limit=~A"))
              (html-response
@@ -75,18 +74,18 @@
        `(200 (:content-type "text/plain") ("OK"))))
     ("/albums/:album-id"
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db-from-spec req spec))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((album-id (ensure-uuid-short (getf params :album-id))))
            (if-let ((album (mita.album:load-album-by-id conn album-id)))
              (html-response (mita.web.html:album conn album))
              (html-response (mita.web.html:not-found)
                             :status-code 404)))))))))
 
-(defun connect-view (mapper locator)
+(defun connect-view (mapper spec)
   (connect-all mapper
    (("/view/album/:album-id"
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((album-id (ensure-uuid-short (getf params :album-id))))
            (if-let ((album (mita.album:load-album-by-id conn album-id)))
              (html-response (mita.web.html:view
@@ -101,34 +100,34 @@
        (declare (ignore params req))
        (html-response (mita.web.html:home)))))))
 
-(defun connect-tag (mapper locator)
+(defun connect-tag (mapper spec)
   (connect-all mapper
    (("/tags"
      (lambda (params req)
        (declare (ignore params))
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (html-response (mita.web.html:tags conn)))))
     (("/api/tags/_create" :method :post)
      (lambda (params req)
        (declare (ignore params))
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((name (q req "name")))
            (mita.tag:create-tag conn name)
            (json-response (jsown:new-js))))))
     ("/api/tags"
      (lambda (params req)
        (declare (ignore params))
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (json-response (mita.tag:load-tags conn)))))
     (("/api/tags/:tag-id" :method :delete)
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((tag-id (ensure-uuid-short (getf params :tag-id))))
            (mita.tag:delete-tag conn tag-id)
            (json-response (jsown:new-js))))))
     (("/api/tags/:tag-id" :method :put)
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((tag-id (ensure-uuid-short (getf params :tag-id)))
                (name (q req "name")))
            (when-let ((tag (mita.tag:load-tag-by-id conn tag-id)))
@@ -136,7 +135,7 @@
            (json-response (jsown:new-js))))))
     (("/api/tags/:tag-id/contents")
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((tag-id (ensure-uuid-short (getf params :tag-id))))
            (if-let ((tag (mita.tag:load-tag-by-id conn tag-id)))
              (json-response
@@ -146,14 +145,14 @@
 
     ("/api/albumTags/:album-id"
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((album-id (ensure-uuid-short (getf params :album-id))))
            (if-let ((album (mita.album:load-album-by-id conn album-id)))
              (json-response (mita.tag:content-tags conn album))
              (json-response (jsown:new-js) :status-code 404))))))
     (("/api/albumTags/:album-id" :method :put)
      (lambda (params req)
-       (mita.db:with-connection (conn (make-db req locator))
+       (mita.db:with-connection (conn (get-db spec req))
          (let ((album-id
                 (ensure-uuid-short (getf params :album-id)))
                (nullable-tag-id-list
@@ -170,12 +169,12 @@
 
 ;;;
 
-(defun make-middleware (locator spec &key serve-image-p)
+(defun make-middleware (spec &key serve-image-p)
   (let ((mapper (myway:make-mapper)))
     (connect-album mapper spec)
-    (connect-view mapper locator)
+    (connect-view mapper spec)
     (connect-home mapper)
-    (connect-tag mapper locator)
+    (connect-tag mapper spec)
     (connect-dir mapper spec)
     (when serve-image-p
       (connect-image mapper spec))

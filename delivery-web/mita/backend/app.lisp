@@ -14,16 +14,12 @@
 
 (defgeneric request-account-id (request))
 
-(defun make-db (request locator)
-  (mita.account:make-db (request-account-id request)
-                        locator))
-
 ;;;;;
   
 (defclass spec ()
-  ((locator
-    :initarg :locator
-    :reader spec-locator)
+  ((db-manager
+    :initarg :db-manager
+    :reader spec-db-manager)
    (content-base
     :initarg :content-base
     :reader spec-content-base)
@@ -31,16 +27,17 @@
     :initarg :thumbnail-base
     :reader spec-thumbnail-base)))
 
-(defun make-db-from-spec (request spec)
-  (make-db request (spec-locator spec)))
+(defun get-db (spec req)
+  (mita.auth.admin:get-account-db (spec-db-manager spec)
+                                  (request-account-id req)))
 
 (defun account-content-root (spec req)
-  (mita.account:account-root (spec-content-base spec)
-                             (request-account-id req)))
+  (mita.auth.admin:account-root (spec-content-base spec)
+                                (request-account-id req)))
 
 (defun account-thumbnail-root (spec req)
-  (mita.account:account-root (spec-thumbnail-base spec)
-                             (request-account-id req)))
+  (mita.auth.admin:account-root (spec-thumbnail-base spec)
+                                (request-account-id req)))
 
 (defun album-upload (spec req files)
   (let ((full-paths nil)
@@ -67,7 +64,7 @@
             (thumbnail-folder (mita.fs.dir:as-file
                                (account-thumbnail-root spec req)
                                (account-thumbnail-root spec req))))
-        (mita.db:with-connection (conn (make-db-from-spec req spec))
+        (mita.db:with-connection (conn (get-db spec req))
           (mita.db:with-tx (conn)
             (mita.add-albums:run conn folders thumbnail-folder)))))))
 
@@ -93,7 +90,7 @@
           (thumbnail-folder (mita.fs.dir:as-file
                              (account-thumbnail-root spec req)
                              (account-thumbnail-root spec req))))
-      (mita.db:with-connection (conn (make-db-from-spec req spec))
+      (mita.db:with-connection (conn (get-db spec req))
         (mita.db:with-tx (conn)
           (mita.add-albums:run conn folders thumbnail-folder))))))
 
@@ -102,7 +99,7 @@
 (defun image-serve (spec req image-id-string
                     &key on-found
                          on-not-found)
-  (mita.db:with-connection (conn (make-db-from-spec req spec))
+  (mita.db:with-connection (conn (get-db spec req))
     (let ((image-id (mita.id:parse-short-or-nil image-id-string)))
       (unless image-id
         (return-from image-serve (funcall on-not-found)))

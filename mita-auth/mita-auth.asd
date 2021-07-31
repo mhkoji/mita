@@ -5,7 +5,11 @@
   ((:module :admin
     :pathname "admin"
     :components
-    ((:module :account
+    ((:file "db/db")
+     (:file "db/mysql")
+     (:file "db/postgres")
+
+     (:module :account
       :pathname "account"
       :components ((:file "account")
                    (:file "db-file")
@@ -17,4 +21,6 @@
   :depends-on
   (:mita-util-password
    :mita-util-auth
-   :mita))
+   :mita
+   :mita-db-vendor-mysql
+   :mita-db-vendor-postgres))

@@ -6,25 +6,24 @@
            :*session-store*))
 (in-package :mita.web.auth.server)
 
-(defvar *handler* nil)
-
 (defvar *session-store* (lack.session.store.memory:make-memory-store))
 
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
+(defvar *db-manager*
+  (make-instance 'mita.auth.admin.db:mysql-manager
+                 :db-dir (system-relative-pathname "../mysql/")))
+
+(defvar *handler* nil)
 
 (defun start (&key (port 5002)
-                   (locator
-                    (mita.db.impl:make-locator))
+                   (session-store *session-store*)
+                   (db-manager *db-manager*)
                    (static-root
                     (cl-fad:directory-exists-p
                      (system-relative-pathname
                       "../delivery-web/auth/static/")))
-                   (session-store *session-store*)
-                   (postgres-dir
-                    (cl-fad:directory-exists-p
-                     (system-relative-pathname "../postgres/")))
                    (content-base
                     (cl-fad:directory-exists-p
                      (system-relative-pathname "../data/content/")))
@@ -42,9 +41,11 @@
 
                     (let ((app (make-instance 'ningle:<app>)))
                       (mita.web.auth.ningle:route-auth
-                       app locator :top-url "/albums")
+                       app db-manager :top-url "/albums")
+                       
                       (mita.web.auth.ningle:route-admin
-                       app locator postgres-dir
+                       app
+                       db-manager
                        (namestring content-base)
                        (namestring thumbnail-base))
                       app))

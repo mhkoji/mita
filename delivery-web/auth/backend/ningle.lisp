@@ -49,13 +49,13 @@
       :type "text/javascript"
       :src "/auth/static/gen/admin.bundle.js"))))
 
-(defun route-admin (app locator postgres-dir
+(defun route-admin (app db-manager
                     content-base
                     thumbnail-base)
   (setf (ningle:route app "/admin")
         (lambda (params)
           (declare (ignore params))
-          (admin-page (mita.auth.admin:list-accounts locator))))
+          (admin-page (mita.auth.admin:list-accounts db-manager))))
   (setf (ningle:route app "/admin/api/account" :method :post)
         (lambda (params)
           (declare (ignore params))
@@ -63,10 +63,9 @@
             (let ((body
                    (lack.request:request-body-parameters ningle:*request*)))
               (mita.auth.admin:create-account
+               db-manager
                (cdr (assoc "username" body :test #'string=))
                (cdr (assoc "password" body :test #'string=))
-               locator
-               postgres-dir
                content-base
                thumbnail-base))
             t)))
@@ -74,8 +73,8 @@
         (lambda (params)
           (with-safe-json-response
             (mita.auth.admin:delete-account
+             db-manager
              (mita.id:parse (cdr (assoc :id params)))
-             locator
              content-base
              thumbnail-base)
             t))))
@@ -83,7 +82,7 @@
 ;;;
 
 (defclass account-repository ()
-  ((locator :initarg :locator)))
+  ((db-manager :initarg :db-manager)))
 
 (defmethod mita.util.auth:account-identity
     ((account mita.auth.admin.account:account))
@@ -93,8 +92,8 @@
                                         username
                                         password)
   (when (and username password)
-    (mita.db:with-connection (conn (mita.auth.admin:make-admin-db
-                                    (slot-value repos 'locator)))
+    (mita.db:with-connection (conn (mita.auth.admin:get-admin-db
+                                    (slot-value repos 'db-manager)))
       (mita.auth.admin.account:find-account-with-password-checked
        conn username password))))
 
@@ -111,7 +110,7 @@
       :type "text/javascript"
       :src "/auth/static/gen/login.bundle.js"))))
 
-(defun route-auth (app locator &key top-url)
+(defun route-auth (app db-manager &key top-url)
   (setf (ningle:route app "/auth/login")
         (lambda (params)
           (declare (ignore params))
@@ -144,7 +143,7 @@
                    (make-instance 'mita.util.auth.lack:lack-session-holder
                                   :env env)
                    (make-instance 'account-repository
-                                  :locator locator)
+                                  :db-manager db-manager)
                    (cdr (assoc "username" body :test #'string=))
                    (cdr (assoc "password" body :test #'string=)))
                   t

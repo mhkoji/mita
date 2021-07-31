@@ -1,5 +1,6 @@
 (asdf:defsystem :mita
   :serial t
+  :pathname "src"
 
   :components
   ((:file "timezone")
@@ -27,26 +28,16 @@
       :components
       ((:file "rdb")
        (:file "common")
-       (:file "vendor/postgres")
-       (:file "vendor/mysql")
-       (:file "vendor/sqlite")
        (:file "image")
        (:file "album")
        (:file "tag")))
 
-     (:file "file/file")
-
-     (:file "impl")))
-   (:file "account"))
+     (:file "file/file"))))
 
   :depends-on
-  (:mita-util-mysql
-
-   :alexandria
+  (:alexandria
    :cl-base64
    :cl-fad
    :cl-ppcre
    :local-time
-   :postmodern
-   :uuid
-   :sqlite))
+   :uuid))

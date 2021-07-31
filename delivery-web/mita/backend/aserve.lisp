@@ -38,7 +38,7 @@
                    content-base
                    thumbnail-base
                    (session-store mita.web.auth.server:*session-store*)
-                   locator)
+                   (db-manager mita.web.auth.server::*db-manager*))
   (net.aserve:start :port port
                     :host "0.0.0.0")
   (net.aserve:publish-prefix
@@ -48,7 +48,7 @@
      (ensure-authenticated (account-id req :session-store session-store)
        (mita.web.app:image-serve
         (make-instance 'mita.web.app:spec
-                       :locator locator
+                       :db-manager db-manager
                        :content-base (namestring content-base)
                        :thumbnail-base (namestring thumbnail-base))
         (make-req :account-id account-id)

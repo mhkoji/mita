@@ -1,5 +1,6 @@
 (asdf:defsystem :mita-gui-backend
   :serial t
+  :pathname "src"
 
   :components
   ((:file "state")
@@ -9,10 +10,11 @@
    (:file "view")
    (:file "ws/jsown")
    (:file "ws/processor")
-   (:file "ws/clack"))
+   (:file "ws/server"))
 
   :depends-on
   (:mita
+   :mita-db-vendor-sqlite
 
    :clack
    :websocket-driver-server

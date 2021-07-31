@@ -45,6 +45,7 @@
    :alexandria
    :cl-base64
    :cl-fad
+   :cl-ppcre
    :local-time
    :postmodern
    :uuid

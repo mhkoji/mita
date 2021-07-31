@@ -25,6 +25,9 @@
    (namestring (system-relative-pathname "../data/thumbnail/"))
    "7128DA4E-2B13-45CC-A0BF-78AEC1668E2C"))
 
+;; In oreder not to install ssl on Windows.
+(push :hunchentoot-no-ssl *features*)
+
 (defun start (&key (port 16000)
                    (use-thread t)
                    (content-root *content-root*)

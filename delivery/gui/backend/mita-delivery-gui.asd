@@ -13,5 +13,4 @@
    :mita-db-vendor-sqlite
 
    :clack
-   :websocket-driver-server
-   :jsown))
+   :websocket-driver-server))

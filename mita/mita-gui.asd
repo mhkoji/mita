@@ -10,4 +10,5 @@
    (:file "view"))
 
   :depends-on
-  (:mita))
+  (:mita
+   :jsown))

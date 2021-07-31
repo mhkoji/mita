@@ -11,7 +11,6 @@
 
   :depends-on
   (:mita
-   :hunchentoot
    :myway
    :clack
    :jsown

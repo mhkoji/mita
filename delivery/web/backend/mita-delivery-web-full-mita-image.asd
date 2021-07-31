@@ -10,5 +10,6 @@
    :mita-web
    :mita-util-auth
    :mita-delivery-web-full-auth
+   :mita-delivery-web-full-mita
 
    :aserve))

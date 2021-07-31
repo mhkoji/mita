@@ -63,5 +63,5 @@
 
 (defun init ()
   (mita.db.vendor.sqlite:create-database
-   (system-relative-pathname "../sqlite")
+   (system-relative-pathname "../sqlite/")
    (mita.db.vendor.sqlite:make-locator :path *db-path*)))

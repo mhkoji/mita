@@ -9,11 +9,12 @@
 (defun system-relative-pathname (name)
   (asdf:system-relative-pathname (asdf:find-system :mita) name))
 
+(defvar *locator*
+  (mita.db.rdb.vendor.sqlite:make-locator
+   :path (system-relative-pathname "../db.sqlite")))
+
 (defvar *db*
-  (let ((locator
-         (mita.db.rdb.vendor.sqlite:make-locator
-          :path (system-relative-pathname "../db.sqlite"))))
-    (make-instance 'mita.db.rdb.vendor.sqlite:sqlite :locator locator)))
+  (make-instance 'mita.db.rdb.vendor.sqlite:sqlite :locator *locator*))
 
 (defvar *content-root*
   (mita.account:account-root
@@ -57,6 +58,9 @@
          :port port)))
 
 (defun init ()
+  (mita.db.rdb.vendor.sqlite:drop-database *locator*)
+  (mita.db.rdb.vendor.sqlite:create-database (system-relative-pathname "../sqlite/")
+                                             *locator*)
   (let ((folders (mita.fs.dir:list-folders
                   *content-root*
                   *content-root*))

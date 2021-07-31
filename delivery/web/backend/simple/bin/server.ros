@@ -13,17 +13,6 @@ exec ros -Q -- $0 "$@"
 (in-package :ros.script.server.3836752160)
 (ql:quickload :mita-delivery-web-simple)
 
-;; In oreder not to install ssl on Windows.
-(push :hunchentoot-no-ssl *features*)
-
-;; (setq mita.delivery.web.simple::*db-path*)
-
-;; (setq mita.delivery.web.simple::*static-root*)
-
-;; (setq mita.delivery.web.simple::*content-root*)
-
-;; (setq mita.delivery.web.simple::*thumbnail-root*)
-
 (defun main (&rest argv)
   (declare (ignorable argv))
   (mita.delivery.web.simple:start

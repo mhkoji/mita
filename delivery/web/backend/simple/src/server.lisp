@@ -1,6 +1,7 @@
 (defpackage :mita.delivery.web.simple
   (:use :cl)
-  (:export :start))
+  (:export :start
+           :init))
 (in-package :mita.delivery.web.simple)
 
 (defun system-relative-pathname (name)
@@ -59,3 +60,8 @@
 	 :debug nil
          :use-thread use-thread
          :port port)))
+
+(defun init ()
+  (mita.db.vendor.sqlite:create-database
+   (system-relative-pathname "../sqlite")
+   *db-path*))

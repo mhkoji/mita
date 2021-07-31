@@ -27,8 +27,9 @@
       :components
       ((:file "rdb")
        (:file "common")
-       (:file "postgres")
-       (:file "mysql")
+       (:file "vendor/postgres")
+       (:file "vendor/mysql")
+       (:file "vendor/sqlite")
        (:file "image")
        (:file "album")
        (:file "tag")))
@@ -46,4 +47,5 @@
    :cl-fad
    :local-time
    :postmodern
-   :uuid))
+   :uuid
+   :sqlite))

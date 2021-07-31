@@ -1,4 +1,4 @@
-(defpackage :mita.db.rdb.postgres
+(defpackage :mita.db.rdb.vendor.postgres
   (:use :cl)
   (:export :make-locator
            :postgres
@@ -6,7 +6,7 @@
            :create-admin-database
            :create-database
            :drop-database))
-(in-package :mita.db.rdb.postgres)
+(in-package :mita.db.rdb.vendor.postgres)
 
 (defstruct locator user host port)
 

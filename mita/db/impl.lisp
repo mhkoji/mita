@@ -10,40 +10,40 @@
 #+nil
 (progn
   (defun make-locator ()
-    (mita.db.rdb.postgres:make-locator
+    (mita.db.rdb.vendor.postgres:make-locator
      :user "postgres"
      :host "localhost"
      :port 5432))
 
   (defun make-db (db-name locator)
-    (make-instance 'mita.db.rdb.postgres:postgres
+    (make-instance 'mita.db.rdb.vendor.postgres:postgres
                    :db-name db-name
                    :locator locator))
 
   (reexport '(make-locator
               make-db
-              mita.db.rdb.postgres:create-admin-database
-              mita.db.rdb.postgres:create-database
-              mita.db.rdb.postgres:drop-database)))
+              mita.db.rdb.vendor.postgres:create-admin-database
+              mita.db.rdb.vendor.postgres:create-database
+              mita.db.rdb.vendor.postgres:drop-database)))
 
 (progn
   (defun make-locator ()
-    (mita.db.rdb.mysql:make-locator
+    (mita.db.rdb.vendor.mysql:make-locator
      :user "root"
      :host "127.0.0.1"
      :port 3306))
 
   (defun make-db (db-name locator)
-    (make-instance 'mita.db.rdb.mysql:mysql
+    (make-instance 'mita.db.rdb.vendor.mysql:mysql
                    :db-name db-name
                    :locator locator))
 
 
   (reexport '(make-locator
               make-db
-              mita.db.rdb.mysql:create-admin-database
-              mita.db.rdb.mysql:create-database
-              mita.db.rdb.mysql:drop-database)))
+              mita.db.rdb.vendor.mysql:create-admin-database
+              mita.db.rdb.vendor.mysql:create-database
+              mita.db.rdb.vendor.mysql:drop-database)))
 
 #+nil
 (progn

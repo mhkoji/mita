@@ -8,6 +8,7 @@
    (:file "album")
    (:file "view")
    (:file "ws/jsown")
+   (:file "ws/processor")
    (:file "ws/clack"))
 
   :depends-on

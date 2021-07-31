@@ -81,7 +81,7 @@
                :id (mita.id:parse (first row))
                :name (second row)
                :created-on (parse-timestamp conn (third row))))
-            (select-from conn "*" "albums"
+            (select-from conn "album_id, name, created_on" "albums"
              :where `(:in "album_id" (:p ,(mapcar #'mita.id:to-string
                                                   album-id-list)))))))
 

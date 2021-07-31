@@ -1,9 +1,10 @@
 (asdf:defsystem :mita-delivery-web-simple
   :serial t
-  :pathname "simple"
+  :pathname "simple/src"
 
   :components
-  ((:file "server"))
+  ((:file "server")
+   (:file "config"))
 
   :depends-on
   (:mita

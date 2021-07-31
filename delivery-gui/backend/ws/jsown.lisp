@@ -13,7 +13,15 @@
      ("name" (mita.album:album-name album))
      ("thumbnail" (or (mita.album:album-thumbnail album) :null)))))
 
-;; overwrite the definition in web
+(defmethod jsown:to-json ((obj mita.id:id))
+  (jsown:to-json (mita.id:to-string-short obj)))
+
+(defmethod jsown:to-json ((obj mita.tag:tag))
+  (jsown:to-json
+   (jsown:new-js
+     ("id" (mita.tag:tag-id obj))
+     ("name" (mita.tag:tag-name obj)))))
+
 (defmethod jsown:to-json ((obj mita.image:image))
   (let ((id (mita.image:image-id obj)))
     (jsown:to-json

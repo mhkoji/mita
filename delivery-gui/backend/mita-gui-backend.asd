@@ -13,7 +13,6 @@
 
   :depends-on
   (:mita
-   :mita-web-backend
 
    :clack
    :websocket-driver-server

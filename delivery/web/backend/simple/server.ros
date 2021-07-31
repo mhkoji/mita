@@ -16,13 +16,13 @@ exec ros -Q -- $0 "$@"
 ;; In oreder not to install ssl on Windows.
 (push :hunchentoot-no-ssl *features*)
 
-;; (setq *db-path*)
+;; (setq mita.delivery.web.simple::*db-path*)
 
-;; (setq *static-root*)
+;; (setq mita.delivery.web.simple::*static-root*)
 
-;; (setq *content-root*)
+;; (setq mita.delivery.web.simple::*content-root*)
 
-;; (setq *thumbnail-root*)
+;; (setq mita.delivery.web.simple::*thumbnail-root*)
 
 (defun main (&rest argv)
   (declare (ignorable argv))

@@ -11,7 +11,7 @@ exec ros -Q -- $0 "$@"
 (defpackage :ros.script.server.3836709310
   (:use :cl))
 (in-package :ros.script.server.3836709310)
-(ql:quickload :mita-gui-backend)
+(ql:quickload :mita-delivery-gui)
 
 ;; In oreder not to install ssl on Windows.
 (push :hunchentoot-no-ssl *features*)

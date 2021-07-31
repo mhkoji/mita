@@ -1,19 +1,15 @@
-(asdf:defsystem :mita-gui-backend
+(asdf:defsystem :mita-delivery-gui
   :serial t
   :pathname "src"
 
   :components
-  ((:file "state")
-   (:file "tag-edit")
-   (:file "album-list")
-   (:file "album")
-   (:file "view")
-   (:file "ws/jsown")
+  ((:file "ws/jsown")
    (:file "ws/processor")
    (:file "ws/server"))
 
   :depends-on
   (:mita
+   :mita-gui
    :mita-db-vendor-sqlite
 
    :clack

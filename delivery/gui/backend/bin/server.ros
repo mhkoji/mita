@@ -17,6 +17,7 @@ exec ros -Q -- $0 "$@"
 (push :hunchentoot-no-ssl *features*)
 
 (defun main (&rest argv)
-  (mita.gui.ws.server:start :use-thread nil)
-  (declare (ignorable argv)))
+  (declare (ignorable argv))
+  (mita.gui.ws.server:start :use-thread nil))
+
 ;;; vim: set ft=lisp lisp:

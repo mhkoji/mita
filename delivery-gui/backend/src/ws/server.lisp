@@ -58,9 +58,9 @@
 
 (defun init ()
   (let ((locator (make-locator)))
-    (mita.db.rdb.vendor.sqlite:drop-database
+    (mita.db.vendor.sqlite:drop-database
      locator)
-    (mita.db.rdb.vendor.sqlite:create-database
+    (mita.db.vendor.sqlite:create-database
      (system-relative-pathname "../sqlite/") locator)
     (let ((folders (mita.fs.dir:list-folders *content-root*
                                              *content-root*))

@@ -31,6 +31,18 @@ export class Model {
     this.wsSend({ op: "album:list-images", "album-id": albumId });
   }
 
+  viewAlbum(imageId) {
+    this.wsSend({ op: "album:view", "image-id": imageId });
+  }
+
+  viewDiff(diff) {
+    this.wsSend({ op: "album:view-diff", diff: diff });
+  }
+
+  viewSetIndex(imageId) {
+    this.wsSend({ op: "album:view-set-index", "image-id": imageId });
+  }
+
   startEditTags(albumId) {
     this.wsSend({ op: "tag-edit:start", "album-id": albumId });
   }

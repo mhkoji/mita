@@ -7,6 +7,7 @@ import Header from "../header";
 import EditAlbumTagsModal from "../edit-tags/edit-tags";
 import EditButton from "../edit-tags/edit-button";
 import { Model } from "../../model";
+import { Single } from "../viewer";
 
 function ImageRow(props) {
   if (props.images.length === 0) {
@@ -22,6 +23,7 @@ function ImageRow(props) {
             width="100%"
             height={400}
             className="card-img-top bd-placeholder-img"
+            onClick={() => props.onSelectImage(image.id)}
           />
         </div>
       </div>
@@ -40,10 +42,51 @@ function ImageList(props) {
   const inDeckCount = 3;
   for (let i = 0; i < images.length; i += inDeckCount) {
     const subImages = images.slice(i, Math.min(i + inDeckCount, images.length));
-    rowList.push(<ImageRow key={i} images={subImages} />);
+    rowList.push(
+      <ImageRow
+        key={i}
+        images={subImages}
+        onSelectImage={props.onSelectImage}
+      />
+    );
   }
 
   return <div>{rowList}</div>;
+}
+
+function WindowWideSingleViewer(props) {
+  function getWindowSize() {
+    return { width: window.innerWidth, height: window.innerHeight };
+  }
+
+  const [windowSize, setWindowSize] = useState(getWindowSize());
+
+  function handleResizeWindow() {
+    setWindowSize(getWindowSize());
+  }
+
+  useEffect(() => {
+    window.addEventListener("resize", handleResizeWindow);
+    return function cleanup() {
+      window.removeEventListener("resize", handleResizeWindow);
+    };
+  }, []);
+
+  return (
+    <Single
+      currentImage={props.currentImage}
+      thumbnails={props.thumbnails.map((image) => {
+        return {
+          image: image,
+          isHighlighted: props.currentImage.id === image.id,
+          onSelect: () => props.onSelectImage(image.id),
+        };
+      })}
+      progress={props.progress}
+      size={windowSize}
+      onDiff={props.onDiff}
+    />
+  );
 }
 
 const albumId = new URL(location).searchParams.get("albumId");
@@ -55,6 +98,18 @@ function App(props) {
 
   function startEditTags() {
     modelRef.current.startEditTags(albumId);
+  }
+
+  function handleSelectImage(imageId) {
+    modelRef.current.viewAlbum(imageId);
+  }
+
+  function handleSelectViewerImage(imageId) {
+    modelRef.current.viewSetIndex(imageId);
+  }
+
+  function handleDiff(diff) {
+    modelRef.current.viewDiff(diff);
   }
 
   useEffect(() => {
@@ -104,12 +159,25 @@ function App(props) {
           </div>
 
           <div className="container">
-            <ImageList images={album.images} />
+            <ImageList
+              images={album.images}
+              onSelectImage={handleSelectImage}
+            />
           </div>
         </main>
 
         <EditAlbumTagsModal tagEdit={tagEdit} model={modelRef.current} />
       </div>
+    );
+  }
+
+  if (album.type === "viewing") {
+    return (
+      <WindowWideSingleViewer
+        {...album}
+        onSelectImage={handleSelectViewerImage}
+        onDiff={handleDiff}
+      />
     );
   }
 

@@ -32,6 +32,7 @@
     ("hasPrev"
      (json-bool (mita.gui.album-list:listed-prev-offset state)))))
 
+
 (defmethod make-view ((state mita.gui.album:album))
   (jsown:new-js
     ("type"
@@ -40,6 +41,21 @@
      (mita.gui.album:album-name state))
     ("images"
      (mita.gui.album:album-images state))))
+
+(defmethod make-view ((state mita.gui.state:viewing))
+  (jsown:new-js
+    ("type"
+     "viewing")
+    ("currentImage"
+     (mita.gui.state:viewing-current-image state))
+    ("thumbnails"
+     (mita.gui.state:viewing-thumbnails state 3))
+    ("progress"
+     (jsown:new-js
+       ("now"
+        (mita.gui.state:viewing-index state))
+       ("max"
+        (length (mita.gui.state:viewing-images state)))))))
 
 (defmethod make-view ((state mita.gui.tag-edit:editing))
   (jsown:new-js

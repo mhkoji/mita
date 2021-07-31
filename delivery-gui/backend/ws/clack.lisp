@@ -50,10 +50,32 @@
              (assert (typep state 'mita.gui.album-list:listed))
              (mita.gui.album-list:prev-albums state db gw)))
 
+
           ((string= op "album:list-images")
            (let ((album-id (mita.id:parse-short (jsown:val msg "album-id"))))
              (mita.gui.album:list-images album-id db gw)))
 
+          ((string= op "album:view")
+           (let ((state (gethash :album states)))
+             (assert (typep state 'mita.gui.album:album))
+             (let ((image-id (alexandria:when-let
+                                 ((str (jsown:val-safe msg "image-id")))
+                               (mita.id:parse-short str))))
+               (mita.gui.album:view state image-id gw))))
+
+          ((string= op "album:view-set-index")
+           (let ((state (gethash :album states)))
+             (assert (typep state 'mita.gui.album:viewing))
+             (let ((image-id (mita.id:parse-short (jsown:val msg "image-id"))))
+               (mita.gui.album:set-index state image-id gw))))
+
+          ((string= op "album:view-diff")
+           (let ((state (gethash :album states)))
+             (assert (typep state 'mita.gui.album:viewing))
+             (let ((diff (jsown:val msg "diff")))
+               (mita.gui.album:increment-index state diff gw))))
+
+          
           ((string= op "tag-edit:start")
            (let ((album-id (mita.id:parse-short (jsown:val msg "album-id"))))
              (labels ((load-content (conn)

@@ -87,7 +87,7 @@ export class Single extends React.Component {
     const { currentImage, thumbnails, progress } = this.props;
     const baseName = "mita-component-viewer-thumbnail";
     const thumbnailEls = thumbnails.map((thumb) => {
-      const { image, link, isHighlighted } = thumb;
+      const { image, link, isHighlighted, onSelect } = thumb;
       return (
         <div
           key={image.id}
@@ -95,9 +95,7 @@ export class Single extends React.Component {
             baseName + (isHighlighted ? " " + baseName + "-highlighted" : "")
           }
         >
-          <a href={link}>
-            <img alt={image.id} src={image.url} />
-          </a>
+          <img alt={image.id} src={image.path} onClick={onSelect} />
         </div>
       );
     });
@@ -116,7 +114,7 @@ export class Single extends React.Component {
               <div style={{ display: "inline-block" }}>
                 <img
                   alt={currentImage.id}
-                  src={currentImage.url}
+                  src={currentImage.path}
                   ref={this.imageRef}
                 />
               </div>

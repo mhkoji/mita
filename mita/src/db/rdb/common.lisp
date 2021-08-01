@@ -197,7 +197,7 @@
   (mapcar (lambda (row)
             (parse-tag conn row))
           (select-from conn
-                       "t.tag_id, t.name"
+                       "t.tag_id, t.name, t.added_on"
                        "tags AS t
                           INNER JOIN tag_content
                           ON

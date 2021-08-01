@@ -1,21 +1,41 @@
-(in-package :mita.auth.admin.db)
+(in-package :mita.db.vendor.mysql)
 
-(defmethod get-db ((dbm mysql-manager) db-name)
-  (make-instance 'mita.db.vendor.mysql:mysql
+(defmethod mita.auth.admin.db:get-db
+    ((dbm mita.auth.admin.db:mysql-manager)
+     db-name)
+  (make-instance 'mysql
                  :db-name db-name
-                 :locator (get-locator dbm)))
+                 :locator (mita.auth.admin.db::get-locator dbm)))
 
-(defmethod create-admin-database ((dbm mysql-manager) db-name)
-  (mita.db.vendor.mysql:create-database
-   (get-locator dbm)
-   db-name
-   (merge-pathnames (db-manager-db-dir dbm) "./admin-ddl.sql")))
+(defmethod mita.auth.admin.db:create-admin-database
+    ((dbm mita.auth.admin.db:mysql-manager)
+     db-name)
+  (let ((locator (mita.auth.admin.db:get-locator dbm))
+        (ddl-file (merge-pathnames (mita.auth.admin.db:db-manager-db-dir dbm)
+                                   "./admin-ddl.sql")))
+    (create-database locator db-name ddl-file)))
 
-(defmethod create-database ((dbm mysql-manager) db-name)
-  (mita.db.vendor.mysql:create-database
-   (get-locator dbm)
-   db-name
-   (merge-pathnames (db-manager-db-dir dbm) "./mita-ddl.sql")))
+(defmethod mita.auth.admin.db:create-database
+    ((dbm mita.auth.admin.db:mysql-manager)
+     db-name)
+  (let ((locator (mita.auth.admin.db:get-locator dbm))
+        (ddl-file (merge-pathnames (mita.auth.admin.db:db-manager-db-dir dbm)
+                                   "./mita-ddl.sql")))
+    (create-database locator db-name ddl-file)))
 
-(defmethod drop-database ((dbm mysql-manager) db-name)
-  (mita.db.vendor.mysql:drop-database (get-locator dbm) db-name))
+(defmethod mita.auth.admin.db:drop-database
+    ((dbm mita.auth.admin.db:mysql-manager)
+     db-name)
+  (drop-database (mita.auth.admin.db:get-locator dbm) db-name))
+
+
+(defmethod mita.auth.admin.account.rdb:account-select-all
+    ((conn mita.db.vendor.mysql:connection))
+  (mapcar
+   (lambda (plist)
+     (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
+       (mita.auth.admin.db.rdb.common:parse-account row)))
+   (execute
+    conn
+    "SELECT account_id, username, password_hashed FROM accounts LIMIT ?,?"
+    (list 0 50))))

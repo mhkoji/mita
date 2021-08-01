@@ -1,6 +1,7 @@
 (defpackage :mita.auth.admin.db
   (:use :cl)
-  (:export :mysql-manager
+  (:export :db-manager-db-dir
+           :mysql-manager
            :postgres-manager
            :get-locator
            :get-db

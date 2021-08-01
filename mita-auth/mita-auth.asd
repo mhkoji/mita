@@ -5,17 +5,15 @@
   ((:module :admin
     :pathname "admin"
     :components
-    ((:file "db/db")
+    ((:file "account")
+
+     (:file "db/db")
+     (:file "db/rdb/rdb")
+     (:file "db/rdb/common")
+     (:file "db/rdb/account")
      (:file "db/mysql")
      (:file "db/postgres")
 
-     (:module :account
-      :pathname "account"
-      :components ((:file "account")
-                   (:file "db-file")
-                   (:file "rdb")
-                   (:file "rdb-account")
-                   (:file "rdb-postgres")))
      (:file "admin"))))
 
   :depends-on

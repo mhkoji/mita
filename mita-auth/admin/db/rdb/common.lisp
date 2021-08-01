@@ -1,4 +1,7 @@
-(in-package :mita.db.vendor.postgres)
+(defpackage :mita.auth.admin.db.rdb.common
+  (:use :cl)
+  (:export :parse-account))
+(in-package :mita.auth.admin.db.rdb.common)
 
 (defun parse-account (row)
   (mita.auth.admin.account.rdb:make-account
@@ -24,7 +27,7 @@
 (defmethod mita.auth.admin.account.rdb:account-select
     ((conn mita.db.rdb:connection)
      (username string))
-  (mita.db.rdb.common::single
+  (mita.db.rdb.common:single
    #'parse-account
    (mita.db.rdb.common:select-from
     conn "account_id, username, password_hashed" "accounts"
@@ -33,30 +36,11 @@
 (defmethod mita.auth.admin.account.rdb:account-select-by-id
     ((conn mita.db.rdb:connection)
      (id mita.id:id))
-  (mita.db.rdb.common::single
+  (mita.db.rdb.common:single
    #'parse-account
    (mita.db.rdb.common:select-from
     conn "account_id, username, password_hashed" "accounts"
     :where `(:= "account_id" (:p ,(mita.id:to-string id))))))
-
-(defmethod mita.auth.admin.account.rdb:account-select-all
-    ((conn mita.db.vendor.postgres:connection))
-  (mapcar #'parse-account
-          (execute
-           conn
-           "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
-           (list 0 50))))
-
-(defmethod mita.auth.admin.account.rdb:account-select-all
-    ((conn mita.db.vendor.mysql:connection))
-  (mapcar
-   (lambda (plist)
-     (let ((row (mapcar #'cdr (alexandria:plist-alist plist))))
-       (parse-account row)))
-   (mita.db.vendor.mysql::execute
-    conn
-    "SELECT account_id, username, password_hashed FROM accounts LIMIT ?,?"
-    (list 0 50))))
 
 (defmethod mita.auth.admin.account.rdb:account-delete
     ((conn mita.db.rdb:connection)

@@ -5,6 +5,7 @@
   (:export :insert-into
            :select-from
            :delete-from
+           :single
            :timestamp-to-string
            :parse-timestamp))
 (in-package :mita.db.rdb.common)

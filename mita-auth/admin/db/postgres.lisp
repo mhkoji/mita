@@ -1,27 +1,44 @@
-(in-package :mita.auth.admin.db)
+(in-package :mita.db.vendor.postgres)
 
-(defmethod get-db ((dbm postgres-manager) db-name)
-  (make-instance 'mita.db.vendor.postgres:postgres
+(defmethod mita.auth.admin.db:get-db
+    ((dbm mita.auth.admin.db:postgres-manager)
+     db-name)
+  (make-instance 'postgres
                  :db-name db-name
-                 :locator (get-locator dbm)))
+                 :locator (mita.auth.admin.db:get-locator dbm)))
 
-(defmethod create-admin-database ((dbm postgres-manager) db-name)
-  (postmodern:with-connection (mita.db.vendor.postgres::make-spec
-                               db-name (get-locator dbm))
+(defmethod mita.auth.admin.db:create-admin-database
+    ((dbm mita.auth.admin.db:postgres-manager)
+     db-name)
+  (postmodern:with-connection (make-spec db-name
+                                         (mita.auth.admin.db:get-locator dbm))
     (postmodern:execute-file
-     (merge-pathnames (db-manager-db-dir dbm) "./admin-ddl.sql"))))
+     (merge-pathnames (mita.auth.admin.db:db-manager-db-dir dbm)
+                      "./admin-ddl.sql"))))
 
-(defmethod create-database ((dbm postgres-manager) db-name)
-  (let ((locator (get-locator dbm)))
-    (postmodern:with-connection (mita.db.vendor.postgres::make-spec
-                                 "admin" locator)
+(defmethod mita.auth.admin.db:create-database
+    ((dbm mita.auth.admin.db:postgres-manager)
+     db-name)
+  (let ((locator (mita.auth.admin.db:get-locator dbm)))
+    (postmodern:with-connection (make-spec "admin" locator)
       (postmodern:query (format nil "CREATE DATABASE ~A" db-name)))
-    (postmodern:with-connection (mita.db.vendor.postgres::make-spec
-                                 db-name locator)
+    (postmodern:with-connection (make-spec db-name locator)
       (postmodern:execute-file
-       (merge-pathnames (db-manager-db-dir dbm) "./mita-ddl.sql")))))
+       (merge-pathnames (mita.auth.admin.db:db-manager-db-dir dbm)
+                        "./mita-ddl.sql")))))
 
-(defmethod drop-database ((dbm postgres-manager) db-name)
-  (postmodern:with-connection (mita.db.vendor.postgres::make-spec
-                               "admin" (get-locator dbm))
+(defmethod mita.auth.admin.db:drop-database
+    ((dbm mita.auth.admin.db:postgres-manager)
+     db-name)
+  (postmodern:with-connection (make-spec "admin"
+                                         (mita.auth.admin.db:get-locator dbm))
     (postmodern:query (format nil "DROP DATABASE IF EXISTS ~A" db-name))))
+
+(defmethod mita.auth.admin.account.rdb:account-select-all
+    ((conn mita.db.vendor.postgres:connection))
+  (mapcar
+   #'mita.auth.admin.db.rdb.common:parse-account
+   (execute
+    conn
+    "SELECT account_id, username, password_hashed FROM accounts OFFSET $1 LIMIT $2"
+    (list 0 50))))

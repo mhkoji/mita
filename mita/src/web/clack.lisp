@@ -109,7 +109,8 @@
        (declare (ignore params))
        (mita.db:with-connection (conn (get-db spec req))
          (let ((name (q req "name")))
-           (mita.tag:create-tag conn name)
+           (mita.tag:do-create-tag (push-tag conn)
+             (push-tag name))
            (json-response (jsown:new-js))))))
     ("/api/tags"
      (lambda (params req)

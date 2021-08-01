@@ -3,12 +3,13 @@
   (:export :tag
            :tag-id
            :tag-name
+           :tag-added-on
            :content-id
            :content-type
            :content-name
            :content-thumbnail
            :construct-tag
-           :create-tag
+           :do-create-tag
            :delete-tag
            :load-tags
            :load-tag-by-id
@@ -21,10 +22,10 @@
            :update-content-tags))
 (in-package :mita.tag)
 
-(defstruct tag id name)
+(defstruct tag id name added-on)
 
-(defun construct-tag (&key id name)
-  (make-tag :id id :name name))
+(defun construct-tag (&key id name added-on)
+  (make-tag :id id :name name :added-on added-on))
 
 
 (defgeneric content-id (content))
@@ -58,7 +59,20 @@
 (defgeneric update-content-tags (conn content tag-ids))
 
 
-(defun create-tag (conn name)
-  (let ((id (mita.id:gen)))
-    (save-tag conn (construct-tag :id id :name name))
-    (load-tag-by-id conn id)))
+(defmacro do-create-tag ((push conn) &body body)
+  (let ((g-tags (gensym)))
+    `(let ((,g-tags nil))
+      (labels ((,push (name &key (added-on (local-time:now)))
+                 (let ((id (mita.id:gen)))
+                   (let ((tag (construct-tag :id id
+                                             :name name
+                                             :added-on added-on)))
+                     (push tag ,g-tags)))
+                 (values)))
+        (progn ,@body))
+      (dolist (tag ,g-tags)
+        (save-tag ,conn tag))
+      ;; refresh entities
+      (mapcar (lambda (tag)
+                (load-tag-by-id ,conn (tag-id tag)))
+              ,g-tags))))

@@ -145,10 +145,11 @@
                         (:p ,(mita.id:to-string album-id))))))
 
 
-(defun parse-tag (row)
+(defun parse-tag (conn row)
   (mita.tag:construct-tag
    :id (mita.id:parse (first row))
-   :name (second row)))
+   :name (second row)
+   :added-on (parse-timestamp conn (third row))))
 
 
 (defmethod mita.db.rdb:tag-delete ((conn connection)
@@ -159,7 +160,8 @@
                   
 
 (defmethod mita.db.rdb:tag-select ((conn connection))
-  (mapcar #'parse-tag
+  (mapcar (lambda (row)
+            (parse-tag conn row))
           (select-from conn "*" "tags" :order-by "added_on")))
 
 (defmethod mita.db.rdb:tag-insert ((conn connection)
@@ -168,7 +170,7 @@
                (list
                 (list (mita.id:to-string (mita.tag:tag-id tag))
                       (mita.tag:tag-name tag)
-                      (timestamp-to-string conn (local-time:now))))))
+                      (timestamp-to-string conn (mita.tag:tag-added-on tag))))))
 
 (defmethod mita.db.rdb:tag-content-delete ((conn connection)
                                            (tag-id mita.id:id))
@@ -192,7 +194,8 @@
 
 (defmethod mita.db.rdb:tag-content-select-tags ((conn connection)
                                                 (content-id mita.id:id))
-  (mapcar #'parse-tag
+  (mapcar (lambda (row)
+            (parse-tag conn row))
           (select-from conn
                        "t.tag_id, t.name"
                        "tags AS t

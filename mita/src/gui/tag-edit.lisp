@@ -49,7 +49,8 @@
 
 (defun add-tag (editing name db gw)
   (mita.db:with-connection (conn db)
-    (mita.tag:create-tag conn name)
+    (mita.tag:do-create-tag (push-tag conn)
+      (push-tag name))
     (setf (editing-tags editing) (mita.tag:load-tags conn)))
   (setf (editing-is-tag-added editing) t)
   (update-state gw editing)

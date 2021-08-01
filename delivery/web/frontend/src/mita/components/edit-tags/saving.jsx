@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { Spinner } from '../spinner';
+import React, { useEffect, useState } from "react";
+import { Spinner } from "../spinner";
 
 export function Saving(props) {
-  const [type, setType] = useState('saving');
+  const [type, setType] = useState("saving");
 
   function saveTags() {
-    setType('saving');
+    setType("saving");
 
-    props.api.putContentTags(props.contentTags)
-        .then(() => {
-          setTimeout(() => {
-            setType('saved');
-            setTimeout(() => props.onFinishSave(), 500);
-          }, 100);
-        }, () => {
-          setType('failed');
-        });
+    props.api.putContentTags(props.contentTags).then(
+      () => {
+        setTimeout(() => {
+          setType("saved");
+          setTimeout(() => props.onFinishSave(), 500);
+        }, 100);
+      },
+      () => {
+        setType("failed");
+      }
+    );
   }
 
   function handleRetryClick() {
@@ -24,28 +26,24 @@ export function Saving(props) {
 
   useEffect(() => saveTags(), []);
 
-  if (type === 'saving') {
-    return (<Spinner />);
+  if (type === "saving") {
+    return <Spinner />;
   }
 
-  if (type === 'saved') {
-    return (<div>Saved!</div>);
+  if (type === "saved") {
+    return <div>Saved!</div>;
   }
 
-  if (type === 'failed') {
+  if (type === "failed") {
     return (
-        <div>
-          <div
-              className="alert alert-danger"
-              role="alert">
-            Saving failed
-          </div>
-          <button
-              className="btn btn-primary"
-              onClick={handleRetryClick}>
-            Retry
-          </button>
+      <div>
+        <div className="alert alert-danger" role="alert">
+          Saving failed
         </div>
+        <button className="btn btn-primary" onClick={handleRetryClick}>
+          Retry
+        </button>
+      </div>
     );
   }
 

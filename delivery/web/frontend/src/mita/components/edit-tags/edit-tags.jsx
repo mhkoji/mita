@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
-import Modal from 'react-modal';
+import React, { useState } from "react";
+import Modal from "react-modal";
 
-import { Loading } from './loading';
-import { Editing } from './editing';
-import { Saving } from './saving';
-import * as apis from '../../apis';
+import { Loading } from "./loading";
+import { Editing } from "./editing";
+import { Saving } from "./saving";
+import * as apis from "../../apis";
 
 function ModalFooter(props) {
   return (
-      <div className="modal-footer">
-        <div className="form-row align-items-center">
-          <div className="col-auto">
-            <button className="btn"
-                    onClick={props.onCancel}>
-              Cancel
-            </button>
-          </div>
-          <div className="col-auto">
-            <button className="btn btn-primary"
-                    onClick={props.onSave}>
-              Save
-            </button>
-          </div>
+    <div className="modal-footer">
+      <div className="form-row align-items-center">
+        <div className="col-auto">
+          <button className="btn" onClick={props.onCancel}>
+            Cancel
+          </button>
+        </div>
+        <div className="col-auto">
+          <button className="btn btn-primary" onClick={props.onSave}>
+            Save
+          </button>
         </div>
       </div>
+    </div>
   );
 }
 
@@ -34,14 +32,18 @@ function EditingModal(props) {
 
   function handleAddTag() {
     props.api.putTag(newName).then(() => {
-      setNewName('');
-      props.api.tags().then((tags) => { setTags(tags); });
+      setNewName("");
+      props.api.tags().then((tags) => {
+        setTags(tags);
+      });
     });
   }
 
   function handleDeleteTag(tag) {
     props.api.deleteTag(tag).then(() => {
-      props.api.tags().then((tags) => { setTags(tags); });
+      props.api.tags().then((tags) => {
+        setTags(tags);
+      });
     });
   }
 
@@ -54,21 +56,21 @@ function EditingModal(props) {
   }
 
   return (
-    <Modal
-        isOpen={true}
-        onRequestClose={props.onClose}>
+    <Modal isOpen={true} onRequestClose={props.onClose}>
       <Editing
-          newName={newName}
-          onChangeNewName={setNewName}
-          onAddTag={handleAddTag}
-          onDeleteTag={handleDeleteTag}
-          tags={tags}
-          contentTags={contentTags}
-          onAttach={handleAttachTag}
-          onDetach={handleDetachTag} />
+        newName={newName}
+        onChangeNewName={setNewName}
+        onAddTag={handleAddTag}
+        onDeleteTag={handleDeleteTag}
+        tags={tags}
+        contentTags={contentTags}
+        onAttach={handleAttachTag}
+        onDetach={handleDetachTag}
+      />
       <ModalFooter
-          onSave={() => props.onSave(contentTags)}
-          onCancel={props.onClose} />
+        onSave={() => props.onSave(contentTags)}
+        onCancel={props.onClose}
+      />
     </Modal>
   );
 }
@@ -85,17 +87,17 @@ export default class EditAlbumTagsModal extends React.Component {
       putTag: apis.putTag,
       deleteTag: apis.deleteTag,
       contentTags: () => apis.albumTags(props.albumId),
-      putContentTags: (tags) => apis.putAlbumTags(props.albumId, tags)
+      putContentTags: (tags) => apis.putAlbumTags(props.albumId, tags),
     };
 
     this.state = {
-      type: 'loading',
+      type: "loading",
     };
   }
 
   handleLoaded(tags, contentTags) {
     this.setState({
-      type: 'editing',
+      type: "editing",
       tags: tags,
       contentTags: contentTags,
     });
@@ -103,8 +105,8 @@ export default class EditAlbumTagsModal extends React.Component {
 
   handleSave(contentTags) {
     this.setState({
-      type: 'saving',
-      contentTags: contentTags
+      type: "saving",
+      contentTags: contentTags,
     });
   }
 
@@ -115,44 +117,40 @@ export default class EditAlbumTagsModal extends React.Component {
       return null;
     }
 
-    if (state.type === 'loading') {
+    if (state.type === "loading") {
       return (
-          <Modal
-              isOpen={true}
-              onRequestClose={props.onClose}>
-            <Loading
-                api={this.api}
-                onLoaded={this.handleLoaded} />
-          </Modal>
+        <Modal isOpen={true} onRequestClose={props.onClose}>
+          <Loading api={this.api} onLoaded={this.handleLoaded} />
+        </Modal>
       );
     }
 
-    if (state.type === 'editing') {
+    if (state.type === "editing") {
       return (
-          <EditingModal
-              api={this.api}
-              tags={this.state.tags}
-              contentTags={this.state.contentTags}
-              onClose={props.onClose}
-              onSave={this.handleSave}
+        <EditingModal
+          api={this.api}
+          tags={this.state.tags}
+          contentTags={this.state.contentTags}
+          onClose={props.onClose}
+          onSave={this.handleSave}
+        />
+      );
+    }
+
+    if (state.type === "saving") {
+      return (
+        <Modal isOpen={true} onRequestClose={props.onClose}>
+          <Saving
+            api={this.api}
+            contentTags={state.contentTags}
+            onFinishSave={props.onClose}
           />
+        </Modal>
       );
-    }
-
-    if (state.type === 'saving') {
-      return (
-          <Modal
-              isOpen={true}
-              onRequestClose={props.onClose}>
-            <Saving
-                api={this.api}
-                contentTags={state.contentTags}
-                onFinishSave={props.onClose} />
-          </Modal>);
     }
 
     return null;
   }
 }
 
-Modal.setAppElement('#app-modal');
+Modal.setAppElement("#app-modal");

@@ -1,31 +1,33 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React from "react";
+import ReactDOM from "react-dom";
 
-import * as apis from '../../apis'
-import Header from '../header';
-import Tag from '../tag/tag';
+import * as apis from "../../apis";
+import Header from "../header";
+import Tag from "../tag/tag";
 
 const Api = {
   tags: apis.tags,
   putTagName: apis.putTagName,
-  tagContents: apis.tagContents
+  tagContents: apis.tagContents,
 };
 
 function TagList(props) {
   const itemEls = props.tags.map((tag) => {
-    let className = 'list-group-item list-group-item-action';
+    let className = "list-group-item list-group-item-action";
     if (tag === props.selectedTag) {
-      className += ' active';
+      className += " active";
     }
     return (
-        <a key={tag.id + '-' + tag.name}
-           className={className}
-           href={'tags#' + tag.id}>
-          {tag.name}
-        </a>
+      <a
+        key={tag.id + "-" + tag.name}
+        className={className}
+        href={"tags#" + tag.id}
+      >
+        {tag.name}
+      </a>
     );
   });
-  return (<div className="list-group">{itemEls}</div>);
+  return <div className="list-group">{itemEls}</div>;
 }
 
 class App extends React.Component {
@@ -39,7 +41,7 @@ class App extends React.Component {
     this.state = {
       tags: [],
       tag: null,
-      editingTagName: null
+      editingTagName: null,
     };
   }
 
@@ -47,13 +49,13 @@ class App extends React.Component {
     this.setState((state) => {
       return Object.assign({}, state, {
         tag: tag,
-        editingTagName: null
+        editingTagName: null,
       });
     });
   }
 
   selectTagByHash() {
-    if (!location.hash.startsWith('#')) {
+    if (!location.hash.startsWith("#")) {
       return;
     }
     const tagId = location.hash.substring(1);
@@ -67,7 +69,7 @@ class App extends React.Component {
   handleChangeTagName(newName) {
     this.setState((state) => {
       return Object.assign({}, state, {
-        editingTagName: newName
+        editingTagName: newName,
       });
     });
   }
@@ -87,64 +89,61 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    Api.tags().then((tagList) => {
-      this.setState((state) => {
-        return Object.assign({}, state, {
-          tags: tagList,
+    Api.tags()
+      .then((tagList) => {
+        this.setState((state) => {
+          return Object.assign({}, state, {
+            tags: tagList,
+          });
         });
+      })
+      .then(() => {
+        if (this.selectTagByHash()) {
+          return;
+        }
+        if (0 < this.state.tags.length) {
+          this.selectTag(this.state.tags[0]);
+        }
       });
-    }).then(() => {
-      if (this.selectTagByHash()) {
-        return;
-      }
-      if (0 < this.state.tags.length) {
-        this.selectTag(this.state.tags[0]);
-      }
-    });
-    window.addEventListener('hashchange', this.selectTagByHash);
+    window.addEventListener("hashchange", this.selectTagByHash);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('hashchange', this.selectTagByHash);
+    window.removeEventListener("hashchange", this.selectTagByHash);
   }
 
   render() {
     const { tags, tag, editingTagName } = this.state;
     return (
-        <div>
-          <Header/>
-          <main>
-            <div className="p-md-5">
-              <div className="container">
-                <div className="row">
-                  <div className="col-4">
-                    <TagList
-                        tags={tags}
-                        selectedTag={tag} />
-                  </div>
-                  <div className="col-8">
-                    {
-                      tag && (
-                          <Tag
-                              tag={tag}
-                              api={Api}
-                              editing={{
-                                name: editingTagName,
-                                onChange: this.handleChangeTagName,
-                                onSave: this.handleSaveTagName
-                              }}/>
-                      )
-                    }
-                  </div>
+      <div>
+        <Header />
+        <main>
+          <div className="p-md-5">
+            <div className="container">
+              <div className="row">
+                <div className="col-4">
+                  <TagList tags={tags} selectedTag={tag} />
+                </div>
+                <div className="col-8">
+                  {tag && (
+                    <Tag
+                      tag={tag}
+                      api={Api}
+                      editing={{
+                        name: editingTagName,
+                        onChange: this.handleChangeTagName,
+                        onSave: this.handleSaveTagName,
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
+      </div>
     );
   }
 }
 
-ReactDOM.render(
-    <App />,
-    document.getElementById('app'));
+ReactDOM.render(<App />, document.getElementById("app"));

@@ -1,57 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-modal';
+import React, { useState, useEffect } from "react";
+import Modal from "react-modal";
 
-import ReactDOM from 'react-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import ReactDOM from "react-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-import { Plus } from '../fa';
+import { Plus } from "../fa";
 
 function AccountList(props) {
   const { accounts } = props;
   const rows = accounts.map((a) => {
     return (
-        <tr key={a.id}>
-          <td>
-            {a.id}
-          </td>
-          <td>
-            {a.username}
-          </td>
-          <td>
-            <button type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => props.onDelete(a.id)} >
-              Delete
-            </button>
-          </td>
-        </tr>
+      <tr key={a.id}>
+        <td>{a.id}</td>
+        <td>{a.username}</td>
+        <td>
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            onClick={() => props.onDelete(a.id)}
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
     );
   });
   return (
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th scope="col">Account Id</th>
-            <th scope="col">Username</th>
-            <th scope="col">Ops</th>
-          </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
+    <table className="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col">Account Id</th>
+          <th scope="col">Username</th>
+          <th scope="col">Ops</th>
+        </tr>
+      </thead>
+      <tbody>{rows}</tbody>
+    </table>
   );
 }
 
 function Editing(props) {
   function setUsername(x) {
-    props.onChangeState((state) => Object.assign({}, state, {
-      username: x
-    }));
+    props.onChangeState((state) =>
+      Object.assign({}, state, {
+        username: x,
+      })
+    );
   }
 
   function setPassword(x) {
-    props.onChangeState((state) => Object.assign({}, state, {
-      password: x
-    }));
+    props.onChangeState((state) =>
+      Object.assign({}, state, {
+        password: x,
+      })
+    );
   }
 
   function handleSubmit(evt) {
@@ -60,35 +62,35 @@ function Editing(props) {
   }
 
   useEffect(() => {
-    setUsername('');
-    setPassword('');
+    setUsername("");
+    setPassword("");
   }, []);
 
   if (!props.state) {
-        return null;
+    return null;
   }
-  
+
   return (
-      <div>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Username
-            <input
-              value={props.state.username}
-              onChange={(e) => setUsername(e.target.value)}/>
-          </label>
-          <label>
-            Password
-            <input
-              value={props.state.password}
-              type="password"
-              onChange={(e) => setPassword(e.target.value)}/>
-          </label>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Username
           <input
-            type="submit"
-            value="Create" />
-        </form>
-      </div>
+            value={props.state.username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            value={props.state.password}
+            type="password"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+        <input type="submit" value="Create" />
+      </form>
+    </div>
   );
 }
 
@@ -98,38 +100,36 @@ class CreateAccountModal extends React.Component {
 
     this.handleChangeCurrentState = this.handleChangeCurrentState.bind(this);
     this.handleCreate = this.handleCreate.bind(this);
-      
+
     this.state = {
-      type: 'editing',
-      value: null
+      type: "editing",
+      value: null,
     };
   }
 
   handleChangeCurrentState(value) {
     this.setState((state) => {
-      const newValue = (value instanceof Function) ?
-          value(state.value) :
-          value;
-      return Object.assign({}, state, {value: newValue});
+      const newValue = value instanceof Function ? value(state.value) : value;
+      return Object.assign({}, state, { value: newValue });
     });
   }
 
   handleCreate(username, password) {
-    this.setState({ type: 'saving' });
-    fetch('/admin/api/account', {
-      method: 'POST',
+    this.setState({ type: "saving" });
+    fetch("/admin/api/account", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        'username': username,
-        'password': password
-      })
+        username: username,
+        password: password,
+      }),
     }).then((resp) => {
-        this.setState({ type: 'saved' });
-        setTimeout(() => {
-          window.location = window.location;
-        }, 1000);
+      this.setState({ type: "saved" });
+      setTimeout(() => {
+        window.location = window.location;
+      }, 1000);
     });
   }
 
@@ -137,32 +137,31 @@ class CreateAccountModal extends React.Component {
     const props = this.props;
     const state = this.state;
 
-    if (state.type === 'editing') {
+    if (state.type === "editing") {
       return (
-          <Modal
-              isOpen={true}
-              onRequestClose={props.onClose}>
-            <Editing
-              state={state.value}
-              onChangeState={this.handleChangeCurrentState}
-              onCreate={this.handleCreate} />
-          </Modal>
+        <Modal isOpen={true} onRequestClose={props.onClose}>
+          <Editing
+            state={state.value}
+            onChangeState={this.handleChangeCurrentState}
+            onCreate={this.handleCreate}
+          />
+        </Modal>
       );
     }
 
-    if (state.type === 'saving') {
+    if (state.type === "saving") {
       return (
-          <Modal isOpen={true}>
-            <span>Saving..</span>
-          </Modal>
+        <Modal isOpen={true}>
+          <span>Saving..</span>
+        </Modal>
       );
     }
 
-    if (state.type === 'saving') {
+    if (state.type === "saving") {
       return (
-          <Modal isOpen={true}>
-            <span>Saved!</span>
-          </Modal>
+        <Modal isOpen={true}>
+          <span>Saved!</span>
+        </Modal>
       );
     }
 
@@ -170,47 +169,42 @@ class CreateAccountModal extends React.Component {
   }
 }
 
-function App () {
-  const { accounts } = window['$mita'];
+function App() {
+  const { accounts } = window["$mita"];
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   function handleDeleteAccount(id) {
-    fetch('/admin/api/account/' + id, {
-      method: 'DELETE'
+    fetch("/admin/api/account/" + id, {
+      method: "DELETE",
     }).then((resp) => {
-        alert('Success!')
-        window.location = window.location;
+      alert("Success!");
+      window.location = window.location;
     });
   }
-  
+
   return (
-      <div>
-        <main className="p-md-5">
-          <div className="container">
+    <div>
+      <main className="p-md-5">
+        <div className="container">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setIsCreatingAccount(true)}
+          >
+            <Plus />
+          </button>
 
-            <button type="button"
-                    className="btn btn-primary"
-                    onClick={() => setIsCreatingAccount(true)} >
-              <Plus />
-            </button>
+          <AccountList accounts={accounts} onDelete={handleDeleteAccount} />
+        </div>
+      </main>
 
-            <AccountList
-              accounts={accounts}
-              onDelete={handleDeleteAccount} />
-          </div>
-        </main>
-
-        {
-            isCreatingAccount && (
-                <CreateAccountModal
-                  onClose={() => setIsCreatingAccount(false)} />)
-        }
-      </div>
+      {isCreatingAccount && (
+        <CreateAccountModal onClose={() => setIsCreatingAccount(false)} />
+      )}
+    </div>
   );
 }
 
-ReactDOM.render(
-  <App />,
-  document.getElementById('app'));
+ReactDOM.render(<App />, document.getElementById("app"));
 
-Modal.setAppElement('#app-modal');
+Modal.setAppElement("#app-modal");

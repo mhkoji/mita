@@ -98,7 +98,7 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("images" images)))))))
+            ("images" (mapcar #'mita.web.jsown:as-image images))))))))
      (:div :id "app")
      (:script
       :type "text/javascript"

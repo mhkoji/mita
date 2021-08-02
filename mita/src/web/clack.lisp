@@ -93,7 +93,20 @@
              (html-response (mita.web.html:view
                              (mita.album:album-images conn album)))
              (html-response (mita.web.html:not-found)
-                            :status-code 404)))))))))
+                            :status-code 404))))))
+    ("/view/dir/*"
+     (lambda (params req)
+       (mita.web.app:dir-serve
+        spec req (car (getf params :splat))
+        :on-folder
+        (lambda (folder files)
+          (declare (ignore folder))
+          (html-response (mita.web.html:view
+                          (remove-if #'mita.file:folder-p files))))
+        :on-file
+        (lambda (full-path)
+          `(200 () ,(parse-namestring full-path))))
+        :on-not-found (lambda ())))))))
   
 (defun connect-home (mapper)
   (connect-all mapper

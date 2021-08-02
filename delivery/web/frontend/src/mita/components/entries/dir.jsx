@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import Header from "../header";
-import { Images } from "../fa";
+import { Images, Upload } from "../fa";
 
 function FileModal(props) {
   function handleDelete() {
@@ -79,7 +79,7 @@ function Total(props) {
 function AddButton(props) {
   return (
     <button onClick={props.onClick} type="button" className="btn btn-primary">
-      <Images />
+      <Upload />
     </button>
   );
 }
@@ -113,6 +113,13 @@ function App() {
           <div className="jumbotron">
             <h1 className="display">{path}</h1>
             <AddButton onClick={() => handleClickAddButton()} />
+            <a
+              href={"/view/dir" + path}
+              className="btn btn-primary"
+              target="_blank"
+            >
+              <Images />
+            </a>
           </div>
         </div>
 

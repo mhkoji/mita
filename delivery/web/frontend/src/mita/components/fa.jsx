@@ -22,3 +22,7 @@ export function ArrowLeft() {
 export function ArrowRight() {
   return <i className="fas fa-arrow-right" />;
 }
+
+export function Upload() {
+  return <i className="fas fa-upload"></i>;
+}

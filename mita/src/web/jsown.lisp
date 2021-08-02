@@ -1,8 +1,25 @@
 (defpackage :mita.web.jsown
   (:use :cl)
   (:export :url-for
-           :as-content))
+           :as-content
+           :as-image))
 (in-package :mita.web.jsown)
+
+(defgeneric as-image (obj))
+
+(defmethod as-image ((obj mita.image:image))
+  (let* ((id (mita.image:image-id obj))
+         (url (format nil "/images/~A" (mita.id:to-string-short id))))
+    (jsown:new-js
+      ("id" id)
+      ("url" url))))
+
+(defmethod as-image ((obj mita.file:file))
+  (let ((path (mita.file:file-path obj)))
+    (jsown:new-js
+      ("id" path)
+      ("url" (format nil "/dir~A" path)))))
+
 
 (defgeneric url-for (content))
 
@@ -18,12 +35,7 @@
   (jsown:to-json (mita.id:to-string-short obj)))
 
 (defmethod jsown:to-json ((obj mita.image:image))
-  (let* ((id (mita.image:image-id obj))
-         (url (format nil "/images/~A" (mita.id:to-string-short id))))
-    (jsown:to-json
-     (jsown:new-js
-       ("id" id)
-       ("url" url)))))
+  (jsown:to-json (as-image obj)))
 
 (defmethod jsown:to-json ((obj mita.tag:tag))
   (jsown:to-json

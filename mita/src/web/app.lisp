@@ -5,7 +5,8 @@
            :get-content-root
            :get-thumbnail-root
            :image-serve
-           :album-upload
+           :dir-add
+           :dir-delete
            :dir-serve
            :dir-add-albums)
   (:import-from :alexandria
@@ -21,37 +22,27 @@
 (defgeneric get-thumbnail-root (spec req))
 
 ;;;;;
-  
-(defun album-upload (spec req files)
-  (let ((full-paths nil)
-        (content-root (get-content-root spec req)))
+
+;; todo: directory traversal
+(defun dir-add (spec req parent-dir files)
+  (let ((dir-full-path (merge-pathnames parent-dir (get-content-root spec req))))
     (loop for (path stream) in files do
-      (let ((full-path (concatenate 'string content-root path)))
-        (ensure-directories-exist full-path)
-        (with-open-file (out full-path
+      (let ((file-full-path (merge-pathnames path dir-full-path)))
+        (ensure-directories-exist file-full-path)
+        (with-open-file (out file-full-path
                              :direction :output
                              :element-type '(unsigned-byte 8)
                              :if-does-not-exist :create
                              :if-exists :overwrite)
-          (alexandria:copy-stream stream out))
-        (push full-path full-paths)))
-    (let ((folder-paths (remove-duplicates
-                         (mapcar (lambda (p)
-                                   (namestring
-                                    (cl-fad:pathname-directory-pathname p)))
-                                 full-paths)
-                         :test #'string=)))
-      (let ((folders (mapcar (lambda (dp)
-                            (mita.fs.dir:as-file content-root dp))
-                          folder-paths))
-            (thumbnail-folder (mita.fs.dir:as-file
-                               (get-thumbnail-root spec req)
-                               (get-thumbnail-root spec req))))
-        (mita.db:with-connection (conn (get-db spec req))
-          (mita.db:with-tx (conn)
-            (mita.add-albums:run conn folders thumbnail-folder)))))))
+          (alexandria:copy-stream stream out))))))
 
-;;;
+;; todo: directory traversal
+(defun dir-delete (spec req dir-path)
+  (let ((dir-full-path (merge-pathnames dir-path (get-content-root spec req))))
+    (uiop:delete-directory-tree dir-full-path
+                                :validate t ;; todo
+                                :if-does-not-exist :ignore)))
+
 
 (defun dir-serve (spec req path &key on-found on-not-found)
   (when (not path)

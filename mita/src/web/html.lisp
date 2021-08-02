@@ -55,14 +55,6 @@
                ("next" (or next-url :null))))))))))
      (:div :id "app")
      (:div :id "app-modal")
-     (:div
-      (:form :method "POST"
-             :enctype "multipart/form-data"
-             (:input :type "file"
-                     :name "upload-albums"
-                     :webkitdirectory "webkitdirectory"
-                     :mozdirectory "mozdirectory")
-             (:input :type "submit")))
      (:script
       :type "text/javascript"
       :src "/static/gen/albums.bundle.js"))))
@@ -142,6 +134,7 @@
             ("path" (mita.fs:file-path folder))
             ("files" (mita.fs:folder-list-children folder))))))))
      (:div :id "app")
+     (:div :id "app-modal")
      (:script
       :type "text/javascript"
       :src "/static/gen/dir.bundle.js"))))

@@ -36,6 +36,7 @@
    (jsown:new-js
      ("url" (url-for obj))
      ("name" (mita.fs:file-name obj))
+     ("path" (mita.fs:file-path obj))
      ("isDirectory" (mita.fs:folder-p obj))
      ("size" (mita.fs:file-size obj)))))
 

@@ -24,6 +24,23 @@
               `(200 () ,(parse-namestring
                          (mita.fs.dir:file-full-path file)))))
         :on-not-found (lambda ()))))
+    (("/dir/*" :method :post)
+     (lambda (params req)
+       (let ((parent-dir (car (getf params :splat)))
+             (files (mapcar (lambda (item)
+                              (destructuring-bind
+                                  (name stream path content-type) item
+                                (declare (ignore name content-type))
+                                (list path stream)))
+                            (lack.request:request-body-parameters req))))
+         (mita.web.app:dir-add spec req parent-dir files))
+       `(200 (:content-type "text/plain") ("OK"))))
+    (("/api/dir/*" :method :delete)
+     (lambda (params req)
+       (let ((parent-dir (car (getf params :splat))))
+         (mita.web.app:dir-delete spec req parent-dir))
+       (json-response (jsown:new-js))))
+
     (("/api/dir/add-albums" :method :post)
      (lambda (params req)
        (declare (ignore params))
@@ -57,18 +74,6 @@
                  (format nil format-str (max (- offset limit) 0) limit))
                (when full-loaded-p
                  (format nil format-str (+ offset limit) limit)))))))))
-    (("/albums" :method :post)
-     (lambda (params req)
-       (declare (ignore params))
-       (let ((files
-              (mapcar (lambda (item)
-                        (destructuring-bind
-                            (name stream path content-type) item
-                          (declare (ignore name content-type))
-                          (list path stream)))
-                      (lack.request:request-body-parameters req))))
-         (mita.web.app:album-upload spec req files))
-       `(200 (:content-type "text/plain") ("OK"))))
     ("/albums/:album-id"
      (lambda (params req)
        (mita.db:with-connection (conn (get-db spec req))

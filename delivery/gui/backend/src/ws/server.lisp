@@ -63,12 +63,15 @@
      locator)
     (mita.db.vendor.sqlite:create-database
      (system-relative-pathname "../sqlite/") locator)
-    (let ((folders (mita.fs.dir:list-folders *content-root*
-                                             *content-root*))
-          (thumbnail-folder (mita.fs.dir:as-file *thumbnail-root*
-                                               *thumbnail-root*)))
+    (let ((content-repos (make-instance 'mita.file.fs:repository
+                                        :root *content-root*))
+          (thumbnail-repos (make-instance 'mita.file.fs:repository
+                                          :root *thumbnail-root*)))
       (mita.db:with-connection (conn (make-instance
                                       'mita.db.vendor.sqlite:sqlite
                                       :locator locator))
         (mita.db:with-tx (conn)
-          (mita.add-albums:run conn folders thumbnail-folder))))))
+          (mita.add-albums:run conn
+                               thumbnail-repos
+                               content-repos
+                               (mita.file.fs:list-folders content-repos "/")))))))

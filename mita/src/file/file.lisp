@@ -1,6 +1,7 @@
-(defpackage :mita.fs
+(defpackage :mita.file
   (:use :cl)
-  (:export :file
+  (:export :repository
+           :file
            :file-name
            :file-path
            :file-created-on
@@ -8,7 +9,9 @@
            :folder-p
            :folder-list-children
            :make-thumbnail))
-(in-package :mita.fs)
+(in-package :mita.file)
+
+(defclass repository () ())
 
 (defclass file () ())
 
@@ -20,6 +23,7 @@
 
 (defgeneric folder-p (file))
 
-(defgeneric folder-list-children (file))
 
-(defgeneric make-thumbnail (dir source-file))
+(defgeneric folder-list-children (repos file))
+
+(defgeneric make-thumbnail (thumbnail-repos source-file))

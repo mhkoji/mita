@@ -23,6 +23,12 @@
 
 ;;;;;
 
+(defun content-repos (spec req)
+  (make-instance 'mita.file.fs:repository :root (get-content-root spec req)))
+
+(defun thumbnail-repos (spec req)
+  (make-instance 'mita.file.fs:repository :root (get-thumbnail-root spec req)))
+
 ;; todo: directory traversal
 (defun dir-add (spec req parent-dir files)
   (let ((dir-full-path (merge-pathnames parent-dir (get-content-root spec req))))
@@ -44,29 +50,29 @@
                                 :if-does-not-exist :ignore)))
 
 
-(defun dir-serve (spec req path &key on-found on-not-found)
+(defun dir-serve (spec req path &key on-folder on-file on-not-found)
   (when (not path)
     (return-from dir-serve (funcall on-not-found)))
-  (let* ((content-root (get-content-root spec req))
-         (full-path (parse-namestring
-                     (concatenate 'string content-root "/" path))))
-    (when (not (cl-fad:file-exists-p full-path))
-      (return-from dir-serve (funcall on-not-found)))
-    (funcall on-found (mita.fs.dir:as-file content-root full-path))))
+  (let ((content-repos (content-repos spec req)))
+    (let ((file (mita.file.fs:as-file content-repos path)))
+      (cond ((not file)
+             (funcall on-not-found))
+            ((mita.file:folder-p file)
+             (let ((files (mita.file:folder-list-children content-repos file)))
+               (funcall on-folder file files)))
+            (t
+             (funcall on-file (mita.file.fs:file-full-path file)))))))
 
 (defun dir-add-albums (spec req path)
-  (let* ((content-root (get-content-root spec req))
-         (full-path (parse-namestring
-                     (concatenate 'string content-root "/" path))))
-    (when (not (cl-fad:file-exists-p full-path))
-      (return-from dir-add-albums))
-    (let ((folders (mita.fs.dir:list-folders content-root full-path))
-          (thumbnail-folder (mita.fs.dir:as-file
-                             (get-thumbnail-root spec req)
-                             (get-thumbnail-root spec req))))
+  (let ((content-repos (content-repos spec req))
+        (thumbnail-repos (thumbnail-repos spec req)))
+    (let ((folders (mita.file.fs:list-folders content-repos path)))
+      (when (not folders)
+        (return-from dir-add-albums))
       (mita.db:with-connection (conn (get-db spec req))
         (mita.db:with-tx (conn)
-          (mita.add-albums:run conn folders thumbnail-folder))))))
+          (mita.add-albums:run conn thumbnail-repos content-repos folders))))))
+                               
 
 ;;;
 

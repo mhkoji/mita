@@ -17,12 +17,12 @@
      (lambda (params req)
        (mita.web.app:dir-serve
         spec req (car (getf params :splat))
-        :on-found
-        (lambda (file)
-          (if (mita.fs:folder-p file)
-              (html-response (mita.web.html:dir file))
-              `(200 () ,(parse-namestring
-                         (mita.fs.dir:file-full-path file)))))
+        :on-folder
+        (lambda (folder files)
+          (html-response (mita.web.html:dir folder files)))
+        :on-file
+        (lambda (full-path)
+          `(200 () ,(parse-namestring full-path)))
         :on-not-found (lambda ()))))
     (("/dir/*" :method :post)
      (lambda (params req)

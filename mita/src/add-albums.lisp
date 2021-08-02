@@ -11,30 +11,32 @@
 (defun make-image (source file)
   (mita.image:make-image
    :source source
-   :id (mita.id:gen-from-name (mita.fs:file-path file))
-   :path (mita.fs:file-path file)))
+   :id (mita.id:gen-from-name (mita.file:file-path file))
+   :path (mita.file:file-path file)))
 
-(defun folder-list-contents-only (folder)
-  (let ((children (remove-if #'mita.fs:folder-p
-                             (mita.fs:folder-list-children folder))))
+(defun list-sorted-file-children (content-repos folder)
+  (let ((children (remove-if
+                   #'mita.file:folder-p
+                   (mita.file:folder-list-children content-repos folder))))
     (funcall *sort-fn* children)))
 
-(defun create-source (thumbnail-folder folder)
+(defun create-source (thumbnail-repos content-repos folder)
   (mita.album:make-album-source
-   :id (mita.id:gen-from-name (mita.fs:file-path folder))
-   :name (mita.fs:file-path folder)
-   :created-on (mita.fs:file-created-on folder)
-   :thumbnail
-   (let ((file (car (folder-list-contents-only folder))))
-     (let ((thumbnail-file (mita.fs:make-thumbnail thumbnail-folder file)))
-       (make-image mita.image:+source-thumbnail+ thumbnail-file)))))
+   :id (mita.id:gen-from-name (mita.file:file-path folder))
+   :name (mita.file:file-path folder)
+   :created-on (mita.file:file-created-on folder)
+   :thumbnail (let ((file (car (list-sorted-file-children content-repos folder))))
+                (let ((thumbnail-file (mita.file:make-thumbnail
+                                       thumbnail-repos
+                                       file)))
+                  (make-image mita.image:+source-thumbnail+ thumbnail-file)))))
 
-(defun run (conn folders thumbnail-folder)
+(defun run (conn thumbnail-repos content-repos folders)
   (setq folders (remove-if (lambda (folder)
-                             (null (folder-list-contents-only folder)))
+                             (null (list-sorted-file-children content-repos folder)))
                            folders))
   (when-let ((sources (mapcar (lambda (folder)
-                                (create-source thumbnail-folder folder))
+                                (create-source thumbnail-repos content-repos folder))
                               folders)))
     (let ((albums (mita.album:create-with-images conn sources)))
       ;; Update images
@@ -43,7 +45,7 @@
             do (let ((images
                       (mapcar (lambda (p)
                                 (make-image mita.image:+source-content+ p))
-                              (folder-list-contents-only folder))))
+                              (list-sorted-file-children content-repos folder))))
                  (mita.image:delete-images
                   conn (mapcar #'mita.image:image-id images))
                  (mita.image:save-images conn images)

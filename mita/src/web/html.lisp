@@ -117,7 +117,7 @@
       :type "text/javascript"
       :src "/static/gen/home.bundle.js"))))
 
-(defun dir (folder)
+(defun dir (folder files)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -131,8 +131,8 @@
         (format nil "window['$mita'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("path" (mita.fs:file-path folder))
-            ("files" (mita.fs:folder-list-children folder))))))))
+            ("path" (mita.file:file-path folder))
+            ("files" files)))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script

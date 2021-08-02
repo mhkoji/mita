@@ -10,8 +10,8 @@
   (format nil "/albums/~A"
           (mita.id:to-string-short (mita.album:album-id c))))
 
-(defmethod url-for ((c mita.fs:file))
-  (format nil "/dir~A" (mita.fs:file-path c)))
+(defmethod url-for ((c mita.file:file))
+  (format nil "/dir~A" (mita.file:file-path c)))
 
 
 (defmethod jsown:to-json ((obj mita.id:id))
@@ -31,14 +31,14 @@
      ("id" (mita.tag:tag-id obj))
      ("name" (mita.tag:tag-name obj)))))
 
-(defmethod jsown:to-json ((obj mita.fs:file))
+(defmethod jsown:to-json ((obj mita.file:file))
   (jsown:to-json
    (jsown:new-js
      ("url" (url-for obj))
-     ("name" (mita.fs:file-name obj))
-     ("path" (mita.fs:file-path obj))
-     ("isDirectory" (mita.fs:folder-p obj))
-     ("size" (mita.fs:file-size obj)))))
+     ("name" (mita.file:file-name obj))
+     ("path" (mita.file:file-path obj))
+     ("isDirectory" (mita.file:folder-p obj))
+     ("size" (mita.file:file-size obj)))))
 
 (defun as-content (c)
   (jsown:new-js

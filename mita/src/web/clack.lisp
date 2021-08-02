@@ -106,7 +106,7 @@
         :on-file
         (lambda (full-path)
           `(200 () ,(parse-namestring full-path))))
-        :on-not-found (lambda ())))))))
+        :on-not-found (lambda ()))))))
   
 (defun connect-home (mapper)
   (connect-all mapper

@@ -59,7 +59,7 @@
       :type "text/javascript"
       :src "/static/gen/albums.bundle.js"))))
 
-(defun album (db album)
+(defun album (album images)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -77,7 +77,7 @@
              (jsown:new-js
                ("id"     (mita.album:album-id album))
                ("name"   (mita.album:album-name album))
-               ("images" (mita.album:album-images db album))))))))))
+               ("images" images)))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script

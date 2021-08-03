@@ -26,16 +26,16 @@
    (system-relative-pathname
     "../data/thumbnail/account_7128da4e_2b13_45cc_a0bf_78aec1668e2c/")))
 
-(defclass spec (mita.web.app:spec) ())
+(defclass dep (mita.web.dep:dep) ())
 
-(defmethod mita.web.app:get-db ((spec spec) req)
+(defmethod mita.web.dep:get-db ((dep dep) req)
   (let ((locator (mita.db.vendor.sqlite:make-locator :path *db-path*)))
     (make-instance 'mita.db.vendor.sqlite:sqlite :locator locator)))
 
-(defmethod mita.web.app:get-content-root ((spec spec) req)
+(defmethod mita.web.dep:get-content-root ((dep dep) req)
   *content-root*)
 
-(defmethod mita.web.app:get-thumbnail-root ((spec spec) req)
+(defmethod mita.web.dep:get-thumbnail-root ((dep dep) req)
   *thumbnail-root*)
 
 (defun start (&key (port 5000)
@@ -49,7 +49,7 @@
 
           (mita.util.clack:middleware-log)
 
-          (mita.web.clack:make-middleware (make-instance 'spec) :serve-image-p t)
+          (mita.web.clack:make-middleware (make-instance 'dep) :serve-image-p t)
 
           (lambda (env)
             (declare (ignore env))

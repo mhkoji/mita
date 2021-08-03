@@ -4,7 +4,11 @@
 
   :components
   ((:file "clack/util")
-   (:file "web/app")
+   (:file "web/dep")
+   (:file "web/add-albums")
+   (:file "web/album")
+   (:file "web/file")
+   (:file "web/image")
    (:file "web/jsown")
    (:file "web/html")
    (:file "web/clack"))

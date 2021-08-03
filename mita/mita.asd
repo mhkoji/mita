@@ -11,10 +11,8 @@
    (:file "album-with-images")
    (:file "tag")
 
-   (:file "file/file")
-   (:file "add-albums")
-
    (:file "thumbnail")
+   (:file "file/file")
    (:file "file/fs")
 
    (:file "db")

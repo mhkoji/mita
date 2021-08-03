@@ -5,32 +5,32 @@
 
 (defvar *handler* nil)
 
-(defclass spec ()
+(defclass dep ()
   ((db-manager
     :initarg :db-manager
-    :reader spec-db-manager)
+    :reader dep-db-manager)
    (content-base
     :initarg :content-base
-    :reader spec-content-base)
+    :reader dep-content-base)
    (thumbnail-base
     :initarg :thumbnail-base
-    :reader spec-thumbnail-base)))
+    :reader dep-thumbnail-base)))
 
 (defgeneric request-account-id (req))
 
 (defmethod request-account-id ((req lack.request:request))
   (getf (lack.request:request-env req) :mita.util.auth.identity))
 
-(defmethod mita.web.app:get-db ((spec spec) req)
-  (mita.auth.admin:get-account-db (spec-db-manager spec)
+(defmethod mita.web.dep:get-db ((dep dep) req)
+  (mita.auth.admin:get-account-db (dep-db-manager dep)
                                   (request-account-id req)))
 
-(defmethod mita.web.app:get-content-root ((spec spec) req)
-  (mita.auth.admin:account-root (spec-content-base spec)
+(defmethod mita.web.dep:get-content-root ((dep dep) req)
+  (mita.auth.admin:account-root (dep-content-base dep)
                                 (request-account-id req)))
 
-(defmethod mita.web.app:get-thumbnail-root ((spec spec) req)
-  (mita.auth.admin:account-root (spec-thumbnail-base spec)
+(defmethod mita.web.dep:get-thumbnail-root ((dep dep) req)
+  (mita.auth.admin:account-root (dep-thumbnail-base dep)
                                 (request-account-id req)))
 
 (defun system-relative-pathname (name)
@@ -73,7 +73,7 @@
            (list mita.delivery.web.full.server.externs:*login-url*))
 
           (mita.web.clack:make-middleware
-           (make-instance 'spec
+           (make-instance 'dep
                           :db-manager db-manager
                           :content-base (namestring content-base)
                           :thumbnail-base (namestring thumbnail-base))

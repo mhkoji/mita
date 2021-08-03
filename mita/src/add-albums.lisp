@@ -1,10 +1,10 @@
-(defpackage :mita.web.add-albums
+(defpackage :mita.add-albums
   (:use :cl)
   (:export :run
            :*sort-fn*)
   (:import-from :alexandria
                 :when-let))
-(in-package :mita.web.add-albums)
+(in-package :mita.add-albums)
 
 (defvar *sort-fn* #'identity)
 

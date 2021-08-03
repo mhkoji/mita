@@ -5,7 +5,6 @@
   :components
   ((:file "clack/util")
    (:file "web/dep")
-   (:file "web/add-albums")
    (:file "web/album")
    (:file "web/file")
    (:file "web/image")

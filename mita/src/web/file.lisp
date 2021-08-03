@@ -61,5 +61,4 @@
       (when folders
         (mita.db:with-connection (conn (mita.web.dep:get-db dep req))
           (mita.db:with-tx (conn)
-            (mita.web.add-albums:run
-             conn thumbnail-repos content-repos folders)))))))
+            (mita.add-albums:run conn thumbnail-repos content-repos folders)))))))

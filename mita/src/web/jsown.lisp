@@ -50,7 +50,9 @@
      ("name" (mita.file:file-name obj))
      ("path" (mita.file:file-path obj))
      ("isDirectory" (mita.file:folder-p obj))
-     ("size" (mita.file:file-size obj)))))
+     ("size" (if (mita.file:folder-p obj)
+                 4096
+                 (mita.file:file-size obj))))))
 
 (defun as-content (c)
   (jsown:new-js

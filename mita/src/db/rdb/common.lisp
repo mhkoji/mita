@@ -94,7 +94,7 @@
   (mapcar (lambda (row)
             (mita.id:parse (car row)))
           (select-from conn "album_id" "albums"
-           :order-by "created_on"
+           :order-by "created_on DESC"
            :limit `((:p ,offset) (:p ,limit)))))
 
 (defmethod mita.db.rdb:album-thumbnail-image-delete ((conn connection)

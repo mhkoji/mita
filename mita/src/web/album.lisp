@@ -10,16 +10,3 @@
       (if album
           (funcall on-found album (mita.album:album-images conn album))
           (funcall on-not-found)))))
-
-(defun load-albums (dep req offset limit &key on-loaded)
-  (multiple-value-bind (albums full-loaded-p)
-      (mita.db:with-connection (conn (mita.web.dep:get-db dep req))
-        (mita.album:load-albums conn offset limit))
-    (funcall on-loaded
-             (if full-loaded-p (butlast albums) albums)
-             (if (< 0 offset)
-                 (max (- offset limit) 0)
-                 nil)
-             (if full-loaded-p
-                 (+ offset limit)
-                 nil))))

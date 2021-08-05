@@ -16,7 +16,9 @@
   (let ((image-id (mita.id:parse-short-or-nil image-id-string)))
     (if (not image-id)
         (funcall on-not-found)
-        (let ((image (mita.db:with-connection (conn (mita.web.dep:get-db dep req))
+        (let ((image (mita.db:with-connection (conn (mita.web.dep:get-db
+                                                     dep
+                                                     req))
                        (mita.image:load-image conn image-id))))
           (if (not image)
               (funcall on-not-found)

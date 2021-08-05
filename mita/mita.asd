@@ -20,6 +20,7 @@
 
    (:file "db")
    (:file "tag-content")
+   (:file "load-albums")
 
    (:module :db-module
     :pathname "db"

@@ -24,7 +24,9 @@
           (cond ((not file)
                  (funcall on-not-found))
                 ((mita.file:folder-p file)
-                 (let ((files (mita.file:folder-list-children content-repos file)))
+                 (let ((files (mita.file:folder-list-children
+                               content-repos
+                               file)))
                    (funcall on-folder file files)))
                 (t
                  (funcall on-file (mita.file.fs:file-full-path file))))))))
@@ -61,4 +63,5 @@
       (when folders
         (mita.db:with-connection (conn (mita.web.dep:get-db dep req))
           (mita.db:with-tx (conn)
-            (mita.add-albums:run conn thumbnail-repos content-repos folders)))))))
+            (mita.add-albums:run
+             conn thumbnail-repos content-repos folders)))))))

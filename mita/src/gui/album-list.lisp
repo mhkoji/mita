@@ -25,16 +25,14 @@
 (defun list-albums (offset limit db gw)
   (update-state gw (make-loading))
 
-  (mita.db:with-connection (conn db)
-    (multiple-value-bind (albums full-loaded-p)
-        (mita.album:load-albums conn offset limit)
-      (update-state gw (make-listed
-                        :albums albums
-                        :limit limit
-                        :prev-offset (when (< 0 offset)
-                                       (max (- offset limit) 0))
-                        :next-offset (when full-loaded-p
-                                       (+ offset limit)))))))
+  (mita.load-albums:run db offset limit
+   :on-loaded
+   (lambda (albums prev-offset next-offset)
+     (update-state gw (make-listed
+                       :albums albums
+                       :limit limit
+                       :prev-offset prev-offset
+                       :next-offset next-offset)))))
 
 (defun next-albums (listed db gw)
   (list-albums (listed-next-offset listed) (listed-limit listed) db gw))

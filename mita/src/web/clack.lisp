@@ -63,7 +63,7 @@
        (declare (ignore params))
        (let ((offset (ensure-integer (q req "offset") 0))
              (limit (ensure-integer (q req "limit") 50)))
-         (mita.web.album:load-albums dep req offset limit
+         (mita.load-albums:run (get-db dep req) offset limit
           :on-loaded
           (lambda (albums prev-offset next-offset)
             (html-response

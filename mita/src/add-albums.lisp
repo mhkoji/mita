@@ -28,7 +28,8 @@
                 (let ((thumbnail-file (mita.file:make-thumbnail
                                        thumbnail-repos
                                        file)))
-                  (make-image mita.image:+source-thumbnail+ thumbnail-file)))))
+                  (make-image mita.image:+source-thumbnail+
+                              thumbnail-file)))))
 
 (defun run (conn thumbnail-repos content-repos folders)
   (setq folders
@@ -36,15 +37,18 @@
                      (null (list-files-sorted content-repos folder)))
                    folders))
   (when-let ((sources (mapcar (lambda (folder)
-                                (create-source thumbnail-repos content-repos folder))
+                                (create-source thumbnail-repos
+                                               content-repos
+                                               folder))
                               folders)))
     (let ((albums (mita.album:create-with-images conn sources)))
       ;; Update images
       (loop for folder in folders
             for album in albums
-            do (let ((images (mapcar (lambda (p)
-                                       (make-image mita.image:+source-content+ p))
-                                     (list-files-sorted content-repos folder))))
+            do (let ((images
+                      (mapcar (lambda (p)
+                                (make-image mita.image:+source-content+ p))
+                              (list-files-sorted content-repos folder))))
                  (mita.image:delete-images
                   conn (mapcar #'mita.image:image-id images))
                  (mita.image:save-images conn images)

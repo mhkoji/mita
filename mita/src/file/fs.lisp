@@ -26,7 +26,9 @@
 (defun as-file (repos path)
   (let ((full-path (full-path repos path)))
     (when (cl-fad:file-exists-p full-path)
-      (make-instance 'file :root (repository-root repos) :full-path full-path))))
+      (make-instance 'file
+                     :root (repository-root repos)
+                     :full-path full-path))))
 
 ;; /home/xxx/
 ;;          + a/
@@ -70,9 +72,9 @@
                (cons (make-instance 'file
                                     :root (repository-root repos)
                                     :full-path full-path)
-                     (let ((sub-folders
-                            (remove-if-not #'cl-fad:directory-pathname-p
-                                           (cl-fad:list-directory full-path))))
+                     (let ((sub-folders (remove-if-not
+                                         #'cl-fad:directory-pathname-p
+                                         (cl-fad:list-directory full-path))))
                        (alexandria:mappend #'rec sub-folders))))))
     (rec (full-path repos path))))
 

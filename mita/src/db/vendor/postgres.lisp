@@ -152,7 +152,9 @@
                                         column-names
                                         table-name
                                         &key where
-                                             order-by)
+                                             order-by
+                                             limit)
+  (assert (null limit))
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)

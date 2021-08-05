@@ -161,7 +161,9 @@
                                            column-names
                                            table-name
                                            &key where
-                                                order-by)
+                                                order-by
+                                                limit)
+  (assert (null limit))
   (destructuring-bind (query-string args)
       (convert-select-query column-names table-name where order-by)
     (let ((plists (execute conn query-string args)))

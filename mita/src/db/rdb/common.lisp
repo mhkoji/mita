@@ -12,9 +12,11 @@
 
 (defgeneric insert-into (conn table-name column-name-list values-list))
 
-(defgeneric select-from (conn column-names table-name &key where order-by))
+(defgeneric select-from (conn column-names table-name
+                         &key where order-by limit))
 
-(defgeneric delete-from (conn table-name &key where))
+(defgeneric delete-from (conn table-name
+                         &key where))
 
 (defun single (row-parser select-result)
   (car (mapcar row-parser select-result)))
@@ -75,7 +77,7 @@
                 albums)))
 
 (defmethod mita.db.rdb:album-select ((conn connection)
-                                  (album-id-list list))
+                                     (album-id-list list))
   (when album-id-list
     (mapcar (lambda (row)
               (mita.db.rdb:make-album
@@ -85,6 +87,15 @@
             (select-from conn "album_id, name, created_on" "albums"
              :where `(:in "album_id" (:p ,(mapcar #'mita.id:to-string
                                                   album-id-list)))))))
+
+(defmethod mita.db.rdb:album-select-album-ids ((conn connection)
+                                               offset
+                                               limit)
+  (mapcar (lambda (row)
+            (mita.id:parse (car row)))
+          (select-from conn "album_id" "albums"
+           :order-by "created_on"
+           :limit `((:p ,offset) (:p ,limit)))))
 
 (defmethod mita.db.rdb:album-thumbnail-image-delete ((conn connection)
                                                      (album-id-list list))
@@ -171,7 +182,8 @@
                (list
                 (list (mita.id:to-string (mita.tag:tag-id tag))
                       (mita.tag:tag-name tag)
-                      (timestamp-to-string conn (mita.tag:tag-added-on tag))))))
+                      (timestamp-to-string conn
+                                           (mita.tag:tag-added-on tag))))))
 
 (defmethod mita.db.rdb:tag-content-delete ((conn connection)
                                            (tag-id mita.id:id))

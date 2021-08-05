@@ -64,56 +64,24 @@
                      collect (format nil "(~{~A~^,~})" vals)))))
    (reduce #'append values-list)))
 
-(defun parse-clause (clause)
-  (labels ((rec (clause k)
-             (if (not (keywordp (car clause)))
-                 (funcall k
-                  (if (null clause)
-                      ""
-                      (format nil "~A" clause))
-                  nil)
-                 (ecase (car clause)
-                   ((:and :or)
-                    (let ((op (car clause)))
-                      (destructuring-bind (left right) (cdr clause)
-                        (rec left
-                         (lambda (l-cond l-acc-values)
-                           (rec right
-                            (lambda (r-cond r-acc-values)
-                              (funcall k
-                               (format nil "~A ~A ~A" l-cond op r-cond)
-                               (append l-acc-values r-acc-values)))))))))
-                   ((:fn)
-                    (let ((name (second clause))
-                          (arg (third clause)))
-                      (rec arg
-                        (lambda (cond acc-values)
-                          (funcall k
-                            (format nil "~A(~A)" name cond)
-                            acc-values)))))
-                   ((:in :=)
-                    (let ((op (car clause))
-                          (column-name (second clause)))
-                      (rec (third clause)
-                       (lambda (cond acc-values)
-                         (funcall k
-                          (format nil "(~A ~A ~A)" column-name op cond)
-                          acc-values)))))
-                   (:p
-                    (let ((values (alexandria:ensure-list
-                                   (second clause))))
-                      (funcall k
-                       (format nil "(~{~A~^,~})"
-                        (make-list (length values) :initial-element "?"))
-                       values)))
-                   (:where
-                    (rec (second clause)
-                     (lambda (cond acc-values)
-                       (funcall k
-                        (format nil "WHERE ~A" cond)
-                        acc-values))))))))
-    (rec clause #'list)))
+(defun get-place-holder (value-count)
+  (format nil "(~{~A~^,~})" (make-list
+                             value-count
+                             :initial-element "?")))
 
+(defun parse-where-condition (clause)
+  (mita.util.rdb:parse-where-condition clause
+   :get-place-holder-fn #'get-place-holder))
+
+(defun parse-limit (offset count)
+  (destructuring-bind (ofs ofs-value)
+      (mita.util.rdb:parse-expr offset
+       :get-place-holder-fn #'get-place-holder)
+    (destructuring-bind (cnt cnt-value)
+        (mita.util.rdb:parse-expr count
+         :get-place-holder-fn #'get-place-holder)
+      (list (format nil "~A,~A" ofs cnt) (append ofs-value cnt-value)))))
+  
 (defmethod mita.db.rdb.common:delete-from ((conn connection)
                                            table-name
                                            &key where)
@@ -123,32 +91,41 @@
              (format s "DELETE FROM ~A" table-name)
              (when where
                (destructuring-bind (cond-string values)
-                   (parse-clause (list :where where))
-                 (format s " ~A" cond-string)
+                   (parse-where-condition where)
+                 (format s " WHERE ~A" cond-string)
                  (alexandria:appendf args values))))))
       (execute conn query-string args))))
 
-(defun convert-select-query (column-names table-name where order-by)
+(defun convert-select-query (column-names table-name
+                             where order-by limit)
   (let ((args nil))
     (let ((query-string
            (with-output-to-string (s)
              (format s "SELECT ~A FROM ~A" column-names table-name)
              (when where
                (destructuring-bind (cond-string vals)
-                   (parse-clause (list :where where))
-                 (format s " ~A" cond-string)
+                   (parse-where-condition where)
+                 (format s " WHERE ~A" cond-string)
                  (alexandria:appendf args vals)))
              (when order-by
-               (format s " ORDER BY ~A" order-by)))))
+               (format s " ORDER BY ~A" order-by))
+             (when limit
+               (destructuring-bind (offset count) limit
+                 (destructuring-bind (limit-string vals)
+                     (parse-limit offset count)
+                   (format s " LIMIT ~A" limit-string)
+                   (alexandria:appendf args vals))))
+             )))
       (list query-string args))))
 
 (defmethod mita.db.rdb.common:select-from ((conn connection)
                                            column-names
                                            table-name
                                            &key where
-                                                order-by)
+                                                order-by
+                                                limit)
   (destructuring-bind (query-string args)
-      (convert-select-query column-names table-name where order-by)
+      (convert-select-query column-names table-name where order-by limit)
     (execute conn query-string args)))
 
 ;;;
@@ -168,15 +145,6 @@
   (uiop:delete-file-if-exists (locator-path locator)))
 
 ;;;
-
-(defmethod mita.db.rdb:album-select-album-ids ((conn connection) offset limit)
-  (mapcar (lambda (row)
-            (mita.id:parse (car row)))
-          (execute conn
-           (concatenate 'string
-            "SELECT album_id FROM albums"
-            " ORDER BY created_on DESC LIMIT ?, ?")
-           (list offset limit))))
 
 (defmethod mita.db.rdb:tag-update ((conn connection)
                                    (tag-id mita.id:id)

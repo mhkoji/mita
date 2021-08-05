@@ -6,4 +6,5 @@
 
   :depends-on
   (:mita
+   :mita-util-rdb
    :sqlite))

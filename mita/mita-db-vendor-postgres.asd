@@ -2,7 +2,8 @@
   :serial t
 
   :components
-  ((:file "src/db/vendor/postgres"))
+  ((:file "src/db/vendor/rdb")
+   (:file "src/db/vendor/postgres"))
 
   :depends-on
   (:mita

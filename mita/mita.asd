@@ -29,7 +29,6 @@
       :pathname "rdb"
       :components
       ((:file "rdb")
-       (:file "common")
        (:file "image")
        (:file "album")
        (:file "tag")))

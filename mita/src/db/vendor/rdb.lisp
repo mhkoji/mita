@@ -1,4 +1,4 @@
-(defpackage :mita.db.rdb.common
+(defpackage :mita.db.vendor.rdb
   (:use :cl)
   (:import-from :mita.db.rdb
                 :connection)
@@ -8,7 +8,7 @@
            :single
            :timestamp-to-string
            :parse-timestamp))
-(in-package :mita.db.rdb.common)
+(in-package :mita.db.vendor.rdb)
 
 (defgeneric insert-into (conn table-name column-name-list values-list))
 

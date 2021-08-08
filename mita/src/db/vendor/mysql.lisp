@@ -55,15 +55,15 @@
 (defun parse-mysql-timestamp-string (string)
   (local-time:parse-timestring string :date-time-separator #\Space))
 
-(defmethod mita.db.rdb.common:timestamp-to-string ((conn connection)
+(defmethod mita.db.vendor.rdb:timestamp-to-string ((conn connection)
                                                    (ts local-time:timestamp))
   (to-mysql-timestamp-string ts))
 
-(defmethod mita.db.rdb.common:parse-timestamp ((conn connection)
+(defmethod mita.db.vendor.rdb:parse-timestamp ((conn connection)
                                                (s string))
   (parse-mysql-timestamp-string s))
 
-(defmethod mita.db.rdb.common:insert-into ((conn connection)
+(defmethod mita.db.vendor.rdb:insert-into ((conn connection)
                                            table-name
                                            column-name-list
                                            values-list)
@@ -129,7 +129,7 @@
                         acc-values))))))))
     (rec clause #'list)))
 
-(defmethod mita.db.rdb.common:delete-from ((conn connection)
+(defmethod mita.db.vendor.rdb:delete-from ((conn connection)
                                            table-name
                                            &key where)
   (let ((args nil))
@@ -157,7 +157,7 @@
                (format s " ORDER BY ~A" order-by)))))
       (list query-string args))))
 
-(defmethod mita.db.rdb.common:select-from ((conn connection)
+(defmethod mita.db.vendor.rdb:select-from ((conn connection)
                                            column-names
                                            table-name
                                            &key where

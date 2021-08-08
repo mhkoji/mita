@@ -59,22 +59,22 @@
            (list offset limit))))
 
 (defmethod mita.db.rdb:tag-update ((conn connection)
-                                (tag-id mita.id:id)
-                                (name string))
+                                   (tag-id mita.id:id)
+                                   (name string))
   (execute conn
    "UPDATE tags SET name = $1 where tag_id = $2"
    (list name (mita.id:to-string tag-id))))
 
 ;;;
 
-(defmethod mita.db.rdb.common:timestamp-to-string ((conn connection)
+(defmethod mita.db.vendor.rdb:timestamp-to-string ((conn connection)
                                                 (ts local-time:timestamp))
   (local-time:to-rfc3339-timestring ts))
 
-(defmethod mita.db.rdb.common:parse-timestamp ((conn connection) val)
+(defmethod mita.db.vendor.rdb:parse-timestamp ((conn connection) val)
   (local-time:universal-to-timestamp val))
 
-(defmethod mita.db.rdb.common:insert-into ((conn connection)
+(defmethod mita.db.vendor.rdb:insert-into ((conn connection)
                                         table-name
                                         column-name-list
                                         values-list)
@@ -135,7 +135,7 @@
                           acc-values))))))))
       (rec clause #'list))))
 
-(defmethod mita.db.rdb.common:delete-from ((conn connection) table-name
+(defmethod mita.db.vendor.rdb:delete-from ((conn connection) table-name
                                         &key where)
   (let ((args nil))
     (let ((query-string
@@ -148,7 +148,7 @@
                  (alexandria:appendf args values))))))
       (execute conn query-string args))))
 
-(defmethod mita.db.rdb.common:select-from ((conn connection)
+(defmethod mita.db.vendor.rdb:select-from ((conn connection)
                                         column-names
                                         table-name
                                         &key where

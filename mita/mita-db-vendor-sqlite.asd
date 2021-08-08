@@ -2,7 +2,8 @@
   :serial t
 
   :components
-  ((:file "src/db/vendor/sqlite"))
+  ((:file "src/db/vendor/rdb")
+   (:file "src/db/vendor/sqlite"))
 
   :depends-on
   (:mita

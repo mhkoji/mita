@@ -2,7 +2,8 @@
   :serial t
 
   :components
-  ((:file "src/db/vendor/mysql"))
+  ((:file "src/db/vendor/rdb")
+   (:file "src/db/vendor/mysql"))
 
   :depends-on
   (:mita

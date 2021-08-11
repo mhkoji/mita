@@ -7,8 +7,11 @@
    (:file "tag-edit")
    (:file "album-list")
    (:file "album")
-   (:file "view"))
+   (:file "view")
+   (:file "ws/model")
+   (:file "ws/jsown"))
 
   :depends-on
   (:mita
-   :jsown))
+   :jsown
+   :websocket-driver-server))

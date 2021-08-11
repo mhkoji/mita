@@ -1,11 +1,11 @@
-(defpackage :mita.gui.ws.server
+(defpackage :mita.delivery.gui.server
   (:use :cl)
   (:export :*db-path*
            :*content-root*
            :*thumbnail-root*
            :start
            :init))
-(in-package :mita.gui.ws.server)
+(in-package :mita.delivery.gui.server)
 
 (defvar *handler* nil)
 
@@ -29,6 +29,8 @@
 (defun make-locator ()
   (mita.db.vendor.sqlite:make-locator :path *db-path*))
 
+(defvar *gws* nil)
+
 (defun start (&key (port 16000)
                    (use-thread t))
   (when *handler*
@@ -40,15 +42,15 @@
          (lambda (env)
            (assert (string= (getf env :path-info) "/ws"))
            (let ((ws (websocket-driver:make-server env)))
-             (websocket-driver:on
-              :message ws (let ((db (make-instance
-                                     'mita.db.vendor.sqlite:sqlite
-                                     :locator (make-locator)))
-                                (gw (make-instance
-                                     'mita.gui.ws.model:websocket-gateway
-                                     :ws ws)))
-                            (lambda (message)
-                              (mita.gui.ws.model:process-message db gw message))))
+             (let ((db (make-instance
+                        'mita.db.vendor.sqlite:sqlite
+                        :locator (make-locator)))
+                   (gw (make-instance
+                        'mita.gui.ws.model:websocket-gateway
+                        :ws ws)))
+               (websocket-driver:on
+                :message ws (mita.gui.ws.model:create-listener db gw))
+               (push gw *gws*))
              (lambda (responder)
                (declare (ignore responder))
                (websocket-driver:start-connection ws))))
@@ -67,11 +69,11 @@
                                         :root *content-root*))
           (thumbnail-repos (make-instance 'mita.file.fs:repository
                                           :root *thumbnail-root*)))
-      (mita.db:with-connection (conn (make-instance
-                                      'mita.db.vendor.sqlite:sqlite
-                                      :locator locator))
-        (mita.db:with-tx (conn)
-          (mita.add-albums:run conn
-                               thumbnail-repos
-                               content-repos
-                               (mita.file.fs:list-folders content-repos "/")))))))
+      (let ((folders (mita.file.fs:list-folders content-repos "/")))
+        (when folders
+          (mita.db:with-connection (conn (make-instance
+                                          'mita.db.vendor.sqlite:sqlite
+                                          :locator locator))
+            (mita.db:with-tx (conn)
+              (mita.add-albums:run
+               conn thumbnail-repos content-repos folders))))))))

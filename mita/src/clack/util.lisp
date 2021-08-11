@@ -6,8 +6,9 @@
            :bad-request
            :server-error
            :q
-           :connect-all
-           :mapper->middleware)
+           :node
+           :nodes
+           :node->middleware)
   (:use :cl))
 (in-package :mita.clack.util)
 
@@ -51,27 +52,52 @@
   (let ((params (lack.request:request-parameters req)))
     (cdr (assoc name params :test #'string=))))
 
-(defmacro connect-all (mapper arg-list)
-  `(progn
-     ,@(mapcar (lambda (arg)
-                 (destructuring-bind (endpoint fn) arg
-                   (destructuring-bind (url &rest rest)
-                       (alexandria:ensure-list endpoint)
-                     `(myway:connect ,mapper ,url
-                                     (lambda (params)
-                                       (lambda (req)
-                                         (,fn params req)))
-                                     ,@rest))))
-               arg-list)))
+(defstruct node
+  path
+  method-fn-list
+  children)
 
-(defun mapper->middleware (mapper)
-  (lambda (app)
-    (lambda (env)
-      (or (let ((request (lack.request:make-request env)))
-            (multiple-value-bind (handler foundp)
-                (let ((method (lack.request:request-method request))
-                      (path-info (lack.request:request-path-info request)))
-                  (myway:dispatch mapper path-info :method method))
-              (when foundp
-                (funcall handler request))))
-          (funcall app env)))))
+(defmacro node ((path &rest clauses))
+  (let ((children nil)
+        (method-fn-list nil))
+    (dolist (clause clauses)
+      (etypecase (car clause)
+        (string
+         (push `(node (,@clause)) children))
+        (keyword
+         (destructuring-bind (method fn) clause
+           (push `(list ,method
+                        (lambda (params)
+                          (lambda (req)
+                            (,fn params req))))
+                 method-fn-list)))))
+    `(make-node :path ,path
+                :method-fn-list (list ,@method-fn-list)
+                :children (list ,@children))))
+
+(defun connect-node (mapper node parent-path)
+  (let ((path (concatenate 'string
+                           parent-path
+                           (node-path node))))
+    (loop for (method fn) in (node-method-fn-list node) do
+      (myway:connect mapper path fn :method method)
+      (format *standard-output* "Connected: ~10A ~A~%" method path))
+    (loop for child in (node-children node) do
+      (connect-node mapper child path))))
+
+(defun nodes (nodes)
+  (make-node :path "" :children nodes))
+
+(defun node->middleware (node)
+  (let ((mapper (myway:make-mapper)))
+    (connect-node mapper node "")
+    (lambda (app)
+      (lambda (env)
+        (or (let ((request (lack.request:make-request env)))
+              (multiple-value-bind (handler foundp)
+                  (let ((method (lack.request:request-method request))
+                        (path-info (lack.request:request-path-info request)))
+                    (myway:dispatch mapper path-info :method method))
+                (when foundp
+                  (funcall handler request))))
+            (funcall app env))))))

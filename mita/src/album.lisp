@@ -22,7 +22,7 @@
            :make-album-source
 
            :create-with-images
-           :delete-with-imagesn)
+           :delete-with-images)
   (:import-from :alexandria :when-let))
 (in-package :mita.album)
 

@@ -3,6 +3,14 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 import EditButton from "./edit-tags/edit-button";
 
+function DetailButton(props) {
+  return (
+    <button className="btn btn-secondary mb-2" onClick={props.onClick}>
+      Detail
+    </button>
+  );
+}
+
 function AlbumRow(props) {
   if (props.albums.length === 0) {
     return null;
@@ -34,6 +42,7 @@ function AlbumRow(props) {
               </div>
             </div>
             <EditButton onClick={() => props.onEditTags(album.id)} />
+            <DetailButton onClick={() => props.onDetail(album.id)} />
           </div>
         </div>
       </div>
@@ -56,6 +65,7 @@ export default function AlbumList(props) {
         key={i}
         albums={albums.slice(i, Math.min(i + inDeckCount, albums.length))}
         onEditTags={props.onEditTags}
+        onDetail={props.onDetail}
       />
     );
   }

@@ -49,7 +49,8 @@
 
           (mita.util.clack:middleware-log)
 
-          (mita.web.clack:make-middleware (make-instance 'dep) :serve-image-p t)
+          (mita.web.clack:make-middleware (make-instance 'dep)
+                                          :serve-image-p t)
 
           (lambda (env)
             (declare (ignore env))

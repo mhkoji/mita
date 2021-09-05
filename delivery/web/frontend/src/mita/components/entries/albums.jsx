@@ -6,6 +6,35 @@ import Header from "../header";
 import AlbumList from "../album-list";
 import EditAlbumTagsModal from "../edit-tags/edit-tags";
 
+// Modal
+
+import Modal from "react-modal";
+
+function AlbumDetailModal(props) {
+  if (!props.album) {
+    return null;
+  }
+
+  function handleDelete() {
+    fetch("/api/albums/" + props.album.id, {
+      method: "DELETE",
+    }).then(() => location.reload());
+  }
+
+  return (
+    <Modal isOpen={true} onRequestClose={props.onClose}>
+      <div>
+        {props.album.name}
+        <button className="btn btn-danger" onClick={handleDelete}>
+          Delete
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// Modal
+
 function Pager(props) {
   const { prev, next } = props;
   return (
@@ -29,6 +58,7 @@ function Pager(props) {
 function App() {
   const { albums, pager } = window["$mita"];
   const [editingTagsAlbumId, setEditingTagsAlbumId] = useState(null);
+  const [detailAlbum, setDetailAlbum] = useState(null);
   return (
     <div>
       <Header />
@@ -40,6 +70,9 @@ function App() {
           <AlbumList
             albums={albums}
             onEditTags={(albumId) => setEditingTagsAlbumId(albumId)}
+            onDetail={(albumId) =>
+              setDetailAlbum(albums.find((a) => a.id === albumId))
+            }
           />
 
           <Pager {...pager} />
@@ -50,6 +83,13 @@ function App() {
         <EditAlbumTagsModal
           albumId={editingTagsAlbumId}
           onClose={() => setEditingTagsAlbumId(null)}
+        />
+      )}
+
+      {detailAlbum && (
+        <AlbumDetailModal
+          album={detailAlbum}
+          onClose={() => setDetailAlbum(null)}
         />
       )}
     </div>

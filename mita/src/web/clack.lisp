@@ -62,35 +62,43 @@
 
 (defun node-album (dep)
   (node
-   ("/albums"
-    (:get
-     (lambda (params req)
-       (declare (ignore params))
-       (let ((offset (ensure-integer (q req "offset") 0))
-             (limit (ensure-integer (q req "limit") 50)))
-         (mita.load-albums:run (get-db dep req) offset limit
-          :on-loaded
-          (lambda (albums prev-offset next-offset)
-            (html-response
-             (let ((format-str "/albums?offset=~A&limit=~A"))
-               (mita.web.html:albums
-                albums
-                (when prev-offset
-                  (format nil format-str prev-offset limit))
-                (when next-offset
-                  (format nil format-str next-offset limit))))))))))
-    ("/:album-id"
+   (""
+    ("/albums"
      (:get
       (lambda (params req)
-        (mita.web.album:load-album-by-id
-         dep req (ensure-uuid-short (getf params :album-id))
-         :on-found
-         (lambda (album images)
-           (html-response (mita.web.html:album album images)))
-         :on-not-found
-         (lambda ()
-           (html-response (mita.web.html:not-found)
-                          :status-code 404)))))))))
+        (declare (ignore params))
+        (let ((offset (ensure-integer (q req "offset") 0))
+              (limit (ensure-integer (q req "limit") 50)))
+          (mita.load-albums:run (get-db dep req) offset limit
+           :on-loaded
+           (lambda (albums prev-offset next-offset)
+             (html-response
+              (let ((format-str "/albums?offset=~A&limit=~A"))
+                (mita.web.html:albums
+                 albums
+                 (when prev-offset
+                   (format nil format-str prev-offset limit))
+                 (when next-offset
+                   (format nil format-str next-offset limit))))))))))
+     ("/:album-id"
+      (:get
+       (lambda (params req)
+         (mita.web.album:load-album-by-id
+          dep req (ensure-uuid-short (getf params :album-id))
+          :on-found
+          (lambda (album images)
+            (html-response (mita.web.html:album album images)))
+          :on-not-found
+          (lambda ()
+            (html-response (mita.web.html:not-found)
+                           :status-code 404)))))))
+    ("/api/albums/:album-id"
+     (:delete
+      (lambda (params req)
+        (let ((album-id (ensure-uuid-short (getf params :album-id))))
+          (mita.db:with-connection (conn (get-db dep req))
+            (mita.album:delete-with-images conn (list album-id))))
+        (json-response (jsown:new-js))))))))
 
 (defun node-view (dep)
   (node

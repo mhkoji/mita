@@ -75,5 +75,5 @@
                                           'mita.db.vendor.sqlite:sqlite
                                           :locator locator))
             (mita.db:with-tx (conn)
-              (mita.add-albums:run
+              (mita.album.add:run
                conn thumbnail-repos content-repos folders))))))))

@@ -7,12 +7,12 @@
 
    (:file "id")
    (:file "image")
-   (:file "album")
-   (:file "album-with-images")
+   (:file "album/album")
+   (:file "album/with-images")
    (:file "tag")
 
    (:file "file/file")
-   (:file "add-albums")
+   (:file "album/add")
 
    (:file "thumbnail")
 

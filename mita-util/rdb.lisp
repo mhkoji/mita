@@ -49,7 +49,7 @@
                              (funcall k
                                       (format nil "~A(~A)" name cond)
                                       acc-values)))))
-                      ((:in :=)
+                      ((:in := :like)
                        (let ((op (car clause))
                              (column-name (second clause)))
                          (rec (third clause)

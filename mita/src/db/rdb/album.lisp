@@ -86,3 +86,15 @@
   (album-image-delete conn (list (mita.album:album-id album)))
   (album-image-insert conn (mita.album:album-id album) images)
   (values))
+
+
+(defmethod mita.album.list:run ((conn connection)
+                                (q mita.album.list:query)
+                                (offset integer)
+                                (limit integer))
+  (let ((ids (album-select-album-ids-by-query conn q offset (1+ limit))))
+    (let ((has-more (= (length ids) (1+ limit))))
+      (let ((albums (mita.album:load-albums-in
+                     conn
+                     (if has-more (butlast ids) ids))))
+        (values albums has-more)))))

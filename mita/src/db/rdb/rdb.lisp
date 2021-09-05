@@ -1,7 +1,6 @@
 (defpackage :mita.db.rdb
   (:use :cl)
   (:export :connection
-
            :image-insert
            :image-select-by-ids
            :image-delete
@@ -13,6 +12,7 @@
            :album-insert
            :album-select
            :album-select-album-ids
+           :album-select-album-ids-by-query
            :make-album-thumbnail-image
            :album-thumbnail-image-album-id
            :album-thumbnail-image-image-id
@@ -57,6 +57,8 @@
 (defgeneric album-select (conn album-id-list))
 
 (defgeneric album-select-album-ids (conn offset limit))
+
+(defgeneric album-select-album-ids-by-query (conn query offset limit))
 
 (defgeneric album-insert (conn albums))
 

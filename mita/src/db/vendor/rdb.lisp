@@ -97,6 +97,44 @@
            :order-by "created_on DESC"
            :limit `((:p ,offset) (:p ,limit)))))
 
+(labels ((column-name (key)
+           (ecase key
+             (:name "name")
+             (:created-on "created_on")
+             (:album-id "album_id"))))
+  (defun album-ids-query-where (q)
+    (labels ((iter (node)
+               (ecase (car node)
+                 (:like
+                  (destructuring-bind (column value) (cdr node)
+                    `(:like ,(column-name column)
+                            ,(format nil "\"%~A%\"" value)))))))
+      (let ((root (mita.album.list:query-condition q)))
+        (when root
+          (iter root)))))
+
+  (defun album-ids-query-order-by (q)
+    (let ((sort-item (mita.album.list:query-sort q)))
+      (when sort-item
+        (format nil "~A ~A"
+                (column-name (mita.album.list:sort-item-name sort-item))
+                (ecase (mita.album.list:sort-item-direction sort-item)
+                  (:asc "ASC")
+                  (:desc "DESC")))))))
+
+(defmethod mita.db.rdb:album-select-album-ids-by-query
+    ((conn connection)
+     (q mita.album.list:query)
+     offset
+     limit)
+  (mapcar (lambda (row)
+            (mita.id:parse (car row)))
+          (select-from conn "album_id" "albums"
+           :where (album-ids-query-where q)
+           :order-by (album-ids-query-order-by q)
+           :limit `((:p ,offset) (:p ,limit)))))
+
+
 (defmethod mita.db.rdb:album-thumbnail-image-delete ((conn connection)
                                                      (album-id-list list))
   (when album-id-list

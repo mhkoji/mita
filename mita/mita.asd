@@ -8,6 +8,7 @@
    (:file "id")
    (:file "image")
    (:file "album/album")
+   (:file "album/list")
    (:file "album/with-images")
    (:file "tag")
 

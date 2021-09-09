@@ -5,35 +5,8 @@ import { ArrowLeft, ArrowRight } from "../fa";
 import Header from "../header";
 import AlbumList from "../album-list";
 import EditAlbumTagsModal from "../edit-tags/edit-tags";
-
-// Modal
-
-import Modal from "react-modal";
-
-function AlbumDetailModal(props) {
-  if (!props.album) {
-    return null;
-  }
-
-  function handleDelete() {
-    fetch("/api/albums/" + props.album.id, {
-      method: "DELETE",
-    }).then(() => location.reload());
-  }
-
-  return (
-    <Modal isOpen={true} onRequestClose={props.onClose}>
-      <div>
-        {props.album.name}
-        <button className="btn btn-danger" onClick={handleDelete}>
-          Delete
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-// Modal
+import AlbumDetailModal from "../album-detail";
+import AlbumFilterModal from "../album-filter";
 
 function Pager(props) {
   const { prev, next } = props;
@@ -59,12 +32,15 @@ function App() {
   const { albums, pager } = window["$mita"];
   const [editingTagsAlbumId, setEditingTagsAlbumId] = useState(null);
   const [detailAlbum, setDetailAlbum] = useState(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   return (
     <div>
       <Header />
 
       <main className="p-md-5">
         <div className="container">
+          <button onClick={() => setShowFilterModal(true)}>Filter</button>
+
           <Pager {...pager} />
 
           <AlbumList
@@ -90,6 +66,16 @@ function App() {
         <AlbumDetailModal
           album={detailAlbum}
           onClose={() => setDetailAlbum(null)}
+        />
+      )}
+
+      {showFilterModal && (
+        <AlbumFilterModal
+          onApply={(q) => {
+            console.dir(q);
+            setShowFilterModal(false);
+          }}
+          onClose={() => setShowFilterModal(false)}
         />
       )}
     </div>

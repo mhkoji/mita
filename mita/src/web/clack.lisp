@@ -67,17 +67,10 @@
      (:get
       (lambda (params req)
         (declare (ignore params))
-        (let ((query (q req "query"))
+        (let ((q      (q req "q"))
               (offset (ensure-integer (q req "offset") 0))
-              (limit (ensure-integer (q req "limit") 50)))
-          (mita.load-albums:run/query
-           (get-db dep req)
-           (make-instance 'mita.album.list:query
-                          :condition
-                          :sort (when (jsown:val query "sort")
-                                  
-           offset
-           limit
+              (limit  (ensure-integer (q req "limit") 50)))
+          (mita.web.album:load-albums dep req q offset limit
            :on-loaded
            (lambda (albums prev-offset next-offset)
              (html-response

@@ -1,6 +1,7 @@
 (defpackage :mita.load-albums
   (:use :cl)
-  (:export :run))
+  (:export :run
+           :run/query))
 (in-package :mita.load-albums)
 
 (defun run (db offset limit &key on-loaded)

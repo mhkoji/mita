@@ -38,13 +38,22 @@ function Condition(props) {
           </select>
 
           {renderInput(item)}
+
+          <button
+            className="btn btn-danger"
+            onClick={() => props.onDeleteItem(item.key)}
+          >
+            Delete
+          </button>
         </li>
       );
     });
 
   return (
     <div>
-      <button onClick={props.onAddItem}>Add</button>
+      <button onClick={props.onAddItem} disabled={!props.canAddItem}>
+        Add
+      </button>
       <ul>{itemEls}</ul>
     </div>
   );
@@ -75,11 +84,37 @@ function Sort(props) {
   );
 }
 
+function Footer(props) {
+  return (
+    <div className="modal-footer">
+      <div className="form-row align-items-center">
+        <div className="col-auto">
+          <button className="btn" onClick={props.onClose}>
+            Cancel
+          </button>
+        </div>
+        <div className="col-auto">
+          <button className="btn btn-primary" onClick={props.onApply}>
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 let itemCounter = 0;
+
+function canAddItem(condition) {
+  return Object.entries(condition).length < 5;
+}
 
 export default function AlbumFilterModal(props) {
   const [condition, setCondition] = useState({});
   function handleAddConditionItem() {
+    if (!canAddItem(condition)) {
+      return;
+    }
     const key = itemCounter++;
     const obj = {};
     obj[key] = {
@@ -103,6 +138,13 @@ export default function AlbumFilterModal(props) {
       },
     };
     setCondition((cond) => Object.assign({}, cond, obj));
+  }
+  function handleDeleteConditionItem(itemKey) {
+    setCondition((cond) => {
+      const newCond = Object.assign({}, cond);
+      delete newCond[itemKey];
+      return newCond;
+    });
   }
   function handleChangeConditionField(itemKey, value) {
     setCondition((cond) => {
@@ -156,13 +198,30 @@ export default function AlbumFilterModal(props) {
     setSort((s) => Object.assign({}, s, { direction: dir }));
   }
 
+  function handleApplyQuery() {
+    props.onApply({
+      condition: Object.values(condition)
+        .sort((a, b) => a.order - b.order)
+        .map((item) => {
+          return {
+            field: item.field.value,
+            op: item.op.value,
+            input: item.input.value,
+          };
+        }),
+      sort,
+    });
+  }
+
   return (
     <Modal isOpen={true} onRequestClose={props.onClose}>
       <div>
         <span>Condition</span>
         <Condition
           condition={condition}
+          canAddItem={canAddItem(condition)}
           onAddItem={handleAddConditionItem}
+          onDeleteItem={handleDeleteConditionItem}
           onChangeField={handleChangeConditionField}
           onChangeOp={handleChangeConditionOp}
           onChangeInputValue={handleChangeConditionInputValue}
@@ -178,36 +237,7 @@ export default function AlbumFilterModal(props) {
         />
       </div>
 
-      <div className="modal-footer">
-        <div className="form-row align-items-center">
-          <div className="col-auto">
-            <button className="btn" onClick={props.onClose}>
-              Cancel
-            </button>
-          </div>
-          <div className="col-auto">
-            <button
-              className="btn btn-primary"
-              onClick={() =>
-                props.onApply({
-                  condition: Object.values(condition)
-                    .sort((a, b) => a.order - b.order)
-                    .map((item) => {
-                      return {
-                        field: item.field.value,
-                        op: item.op.value,
-                        input: item.input.value,
-                      };
-                    }),
-                  sort,
-                })
-              }
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
+      <Footer onApply={handleApplyQuery} onClose={props.onClose} />
     </Modal>
   );
 }

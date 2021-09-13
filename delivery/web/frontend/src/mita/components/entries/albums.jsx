@@ -72,8 +72,8 @@ function App() {
       {showFilterModal && (
         <AlbumFilterModal
           onApply={(q) => {
-            console.dir(q);
-            setShowFilterModal(false);
+            const queryString = encodeURIComponent(JSON.stringify(q));
+            location.href = "/albums?q=" + queryString;
           }}
           onClose={() => setShowFilterModal(false)}
         />

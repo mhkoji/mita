@@ -1,4 +1,5 @@
 *.csv
+config.lisp
 
 *~
 .idea

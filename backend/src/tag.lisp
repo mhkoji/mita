@@ -3,9 +3,10 @@
   (:export :tag
            :tag-id
            :tag-name
-           :tag-contents
+           :tag-content-id-list
            :store-list-tags
            :store-add-tag
+           :store-get-tag
            :content-tags
            :content-tags-set
            :make-store))
@@ -45,6 +46,9 @@
       (remove-if-not (lambda (tag)
                        (find (tag-id tag) tag-ids :test #'uuid:uuid=))
                      tags)))
+
+  (defun store-get-tag (store tag-id)
+    (car (store-list-tags-in store (list tag-id))))
                        
   (defun store-add-tag (store name)
     (let ((tag (make-tag :id (uuid:make-v4-uuid)
@@ -91,7 +95,7 @@
                         :stream stream
                         :always-quote t)))
 
-  (defun tag-contents (store tag type)
+  (defun tag-content-id-list (store tag type)
     (with-open-store-file (stream store "content-tag.csv"
                                   :if-does-not-exist nil)
       (when (listen stream)
@@ -111,7 +115,7 @@
 ;;;
 
 (defmethod content-id ((c mita.file:folder))
-  (mita.file:file-path c))
+  (namestring (mita.file:file-path c)))
 
 (defmethod content-type ((c mita.file:folder))
   "folder")

@@ -7,9 +7,9 @@
            :folder
            :folder-p
            :folder-list-files
-           :os-list-files
-           :os-make-file
-           :make-loader))
+           :store-list-files
+           :store-make-file
+           :make-store))
 (in-package :mita.file)
 
 (defclass file ()
@@ -46,30 +46,36 @@
       (subseq full-namestring (length root-namestring))
       full-namestring))
 
+(defstruct store
+  root-path
+  (sort-file-fn #'identity))
+
 (defun make-file (path full-path)
   (make-instance (if (uiop/pathname:directory-pathname-p full-path)
                      'folder 'file)
                  :path path
                  :full-path full-path))
 
-(defun os-list-files (root-path base-path)
-  (let ((root-namestring (namestring root-path)))
-    (loop for full-path in (uiop/filesystem:with-current-directory
-                               (base-path)
-                             (uiop/filesystem:directory*
-                              uiop/pathname:*wild-file-for-directory*))
+(defun store-list-files (store base-path)
+  (let ((root-namestring (namestring (store-root-path store)))
+        (full-path-list
+         (uiop/filesystem:with-current-directory (base-path)
+           (funcall (store-sort-file-fn store)
+                    (uiop/filesystem:directory*
+                     uiop/pathname:*wild-file-for-directory*)))))
+    (loop for full-path in full-path-list
           for path = (uiop/pathname:relativize-pathname-directory
                       (namestring-subtract root-namestring
                                            (namestring full-path)))
           collect (make-file path full-path))))
 
-(defun os-make-file (root-path namestring)
+(defun store-make-file (store namestring)
   (let ((path (uiop/pathname:relativize-pathname-directory namestring)))
     (let ((full-path (uiop/pathname:ensure-absolute-pathname
-                      path (merge-pathnames root-path))))
+                      path (parse-namestring (store-root-path store)))))
       (make-file path full-path))))
 
 ;;;
 
-(defun folder-list-files (folder root-path)
-  (os-list-files root-path (file-full-path folder)))
+(defun folder-list-files (folder store)
+  (store-list-files store (file-full-path folder)))

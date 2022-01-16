@@ -4,11 +4,7 @@ export function tags() {
     headers: {
       "Content-Type": "application/json",
     },
-  })
-    .then((resp) => resp.json())
-    .then((body) => {
-      return body.value;
-    });
+  }).then((resp) => resp.json());
 }
 
 export function putTag(name) {
@@ -38,34 +34,26 @@ export function deleteTag(tag) {
   });
 }
 
-export function tagContents(tagId) {
-  return fetch("/api/tags/" + tagId + "/contents", {
+export function tagFolders(tagId) {
+  return fetch("/api/tags/" + tagId + "/folders", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
-  })
-    .then((resp) => resp.json())
-    .then((body) => {
-      return body.value;
-    });
+  }).then((resp) => resp.json());
 }
 
-export function albumTags(albumId) {
-  return fetch("/api/albumTags/" + albumId, {
+export function folderTags(path) {
+  return fetch("/api/folder/tags?path=" + encodeURIComponent(path), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
-  })
-    .then((resp) => resp.json())
-    .then((body) => {
-      return body.value;
-    });
+  }).then((resp) => resp.json());
 }
 
-export function putAlbumTags(albumId, tags) {
-  return fetch("/api/albumTags/" + albumId, {
+export function putFolderTags(path, tags) {
+  return fetch("/api/folder/tags?path=" + encodeURIComponent(path), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -74,17 +62,4 @@ export function putAlbumTags(albumId, tags) {
       "tag-id-list": tags.map((t) => t.id),
     }),
   });
-}
-
-export function logout() {
-  return fetch("/auth/api/logout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-    .then((resp) => resp.json())
-    .then((body) => {
-      return body.value;
-    });
 }

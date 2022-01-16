@@ -1,8 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-import EditButton from "./edit-tags/edit-button";
-
 function FolderRow(props) {
   if (props.folders.length === 0) {
     return null;
@@ -12,17 +10,20 @@ function FolderRow(props) {
       <div key={folder.path} className="col-md-4">
         <div className="card mb-4 shadow-sm">
           <a href={folder.url}>
-            <img
-              alt={folder.path}
-              src={folder.thumbnail ? folder.thumbnail.url : ""}
-              width="100%"
-              height={400}
-              className="card-img-top bd-placeholder-img"
-            />
+            {folder.thumbnail && (
+              <img
+                alt={folder.path}
+                src={folder.thumbnail.url}
+                width="100%"
+                height={400}
+                className="card-img-top bd-placeholder-img"
+              />
+            )}
           </a>
           <div className="card-body">
             <div className="title">
-              <div
+              <a
+                href={folder.url}
                 title={folder.path}
                 style={{
                   overflow: "hidden",
@@ -31,9 +32,8 @@ function FolderRow(props) {
                 }}
               >
                 {folder.path}
-              </div>
+              </a>
             </div>
-            <EditButton onClick={() => props.onEditTags(folder)} />
           </div>
         </div>
       </div>
@@ -55,7 +55,6 @@ export default function FolderList(props) {
       <FolderRow
         key={i}
         folders={folders.slice(i, Math.min(i + inDeckCount, folders.length))}
-        onEditTags={props.onEditTags}
       />
     );
   }

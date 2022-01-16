@@ -5,9 +5,9 @@ const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
-//  mode: "production",
+  //  mode: "production",
   mode: "development",
-    
+
   plugins: [
     new MiniCssExtractPlugin({
       filename: "[name].bundle.css",
@@ -47,7 +47,7 @@ module.exports = {
 
   entry: {
     folder: "./src/components/entries/folder.jsx",
-    view: "./src/components/entries/view.jsx"
+    view: "./src/components/entries/view.jsx",
   },
 
   output: {

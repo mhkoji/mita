@@ -4,7 +4,6 @@ import Modal from "react-modal";
 import { Loading } from "./loading";
 import { Editing } from "./editing";
 import { Saving } from "./saving";
-import * as apis from "../../apis";
 
 function ModalFooter(props) {
   return (
@@ -26,7 +25,7 @@ function ModalFooter(props) {
 }
 
 function EditingModal(props) {
-  const [newName, setNewName] = useState(null);
+  const [newName, setNewName] = useState("");
   const [tags, setTags] = useState(props.tags);
   const [contentTags, setContentTags] = useState(props.contentTags);
 
@@ -75,20 +74,12 @@ function EditingModal(props) {
   );
 }
 
-export default class EditAlbumTagsModal extends React.Component {
+export default class EditTagsModal extends React.Component {
   constructor(props) {
     super(props);
 
     this.handleLoaded = this.handleLoaded.bind(this);
     this.handleSave = this.handleSave.bind(this);
-
-    this.api = {
-      tags: apis.tags,
-      putTag: apis.putTag,
-      deleteTag: apis.deleteTag,
-      contentTags: () => apis.albumTags(props.albumId),
-      putContentTags: (tags) => apis.putAlbumTags(props.albumId, tags),
-    };
 
     this.state = {
       type: "loading",
@@ -113,14 +104,11 @@ export default class EditAlbumTagsModal extends React.Component {
   render() {
     const props = this.props;
     const state = this.state;
-    if (!props.albumId) {
-      return null;
-    }
 
     if (state.type === "loading") {
       return (
         <Modal isOpen={true} onRequestClose={props.onClose}>
-          <Loading api={this.api} onLoaded={this.handleLoaded} />
+          <Loading api={this.props.api} onLoaded={this.handleLoaded} />
         </Modal>
       );
     }
@@ -128,7 +116,7 @@ export default class EditAlbumTagsModal extends React.Component {
     if (state.type === "editing") {
       return (
         <EditingModal
-          api={this.api}
+          api={this.props.api}
           tags={this.state.tags}
           contentTags={this.state.contentTags}
           onClose={props.onClose}
@@ -141,7 +129,7 @@ export default class EditAlbumTagsModal extends React.Component {
       return (
         <Modal isOpen={true} onRequestClose={props.onClose}>
           <Saving
-            api={this.api}
+            api={this.props.api}
             contentTags={state.contentTags}
             onFinishSave={props.onClose}
           />

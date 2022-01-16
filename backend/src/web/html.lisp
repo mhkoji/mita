@@ -70,4 +70,4 @@
      (:div :id "app")
      (:script
       :type "text/javascript"
-            :src "/static/gen/view.bundle.js"))))
+      :src "/static/gen/view.bundle.js"))))

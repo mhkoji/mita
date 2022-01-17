@@ -4,6 +4,7 @@
            :file-path
            :file-size
            :file-full-path
+           :file-created-at
            :folder
            :folder-p
            :folder-list-files
@@ -24,6 +25,9 @@
   (with-open-file (in (file-full-path file)
                       :element-type '(unsigned-byte 8))
     (file-length in)))
+
+(defun file-created-at (file)
+  (file-write-date (file-full-path file)))
 
 (defclass folder (file) ())
 

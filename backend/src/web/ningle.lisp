@@ -28,7 +28,10 @@
      :folder-overview-list
      (mapcar (lambda (f)
                (folder->overview f file-store))
-             (remove-if-not #'mita.file:folder-p folder-files)))))
+             (sort (remove-if-not #'mita.file:folder-p folder-files)
+                   #'>
+                   :key #'mita.file:file-created-at)))))
+
 
 ;;;
 

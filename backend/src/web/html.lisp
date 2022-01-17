@@ -8,28 +8,21 @@
            :internal-server-error))
 (in-package :mita.web.html)
 
-(defstruct file
-  path
-  full-path)
-
-(defstruct folder
-  path
-  thumbnail-file)
-
 (defun file->jsown (file)
   (jsown:new-js
-    ("path" (namestring (file-path file)))
-    ("url"  (format nil "/folder/~A" (file-path file)))))
+    ("path" (namestring (mita.web.view:file-path file)))
+    ("url"  (format nil "/folder/~A" (mita.web.view:file-path file)))))
 
-(defun folder->jsown (folder)
-  (let ((path (folder-path folder)))
+(defun folder-overview->jsown (overview)
+  (let ((path (mita.web.view:folder-overview-path overview)))
     (jsown:new-js
       ("path" (namestring path))
       ("url" (format nil "/folder/~A" path))
-      ("thumbnail" (let ((file (folder-thumbnail-file folder)))
+      ("thumbnail" (let ((file (mita.web.view:folder-overview-thumbnail-file
+                                overview)))
                      (if file (file->jsown file) :null))))))
 
-(defun folder (path files folders)
+(defun folder (detail)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -43,9 +36,14 @@
         (format nil "window['$d'] = ~A;"
          (jsown:to-json
           (jsown:new-js
-            ("path" (namestring path))
-            ("files" (mapcar #'file->jsown files))
-            ("folders" (mapcar #'folder->jsown folders))))))))
+            ("path"
+             (namestring (mita.web.view:folder-detail-path detail)))
+            ("files"
+             (mapcar #'file->jsown
+                     (mita.web.view:folder-detail-file-list detail)))
+            ("folders"
+             (mapcar #'folder-overview->jsown
+                     (mita.web.view:folder-detail-file-list detail)))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script

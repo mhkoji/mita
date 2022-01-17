@@ -4,6 +4,34 @@
            :start))
 (in-package :mita.web.ningle)
 
+(defun file->view (file)
+  (mita.web.view:make-file :path (mita.file:file-path file)))
+
+(defun folder->overview (folder file-store)
+  (mita.web.view:make-folder-overview
+   :path (mita.file:file-path folder)
+   :thumbnail-file
+   (let ((file (first (remove-if #'mita.file:folder-p
+                                 (mita.file:folder-list-files
+                                  folder
+                                  file-store)))))
+     (when file
+       (file->view file)))))
+
+(defun folder->detail (folder file-store)
+  (let ((folder-files (mita.file:folder-list-files folder file-store)))
+    (mita.web.view:make-folder-detail
+     :path (mita.file:file-path folder)
+     :file-list
+     (mapcar #'file->view
+             (remove-if #'mita.file:folder-p folder-files))
+     :folder-overview-list
+     (mapcar (lambda (f)
+               (folder->overview f file-store))
+             (remove-if-not #'mita.file:folder-p folder-files)))))
+
+;;;
+
 (defvar *file-store*
   nil)
 
@@ -25,36 +53,8 @@
            `(404 (:content-type "text/plain") ("Not found")))
           ((mita.file:folder-p file)
            `(200 (:content-type "text/html")
-                 (,(let ((folder-files
-                           (mita.file:folder-list-files
-                            file
-                            *file-store*)))
-                     (mita.web.html:folder
-                      (mita.file:file-path file)
-                      (mapcar
-                       (lambda (f)
-                         (mita.web.html:make-file
-                          :path (mita.file:file-path f)
-                          :full-path (mita.file:file-full-path f)))
-                       (remove-if #'mita.file:folder-p
-                                  folder-files))
-                      (mapcar
-                       (lambda (f)
-                         (mita.web.html:make-folder
-                          :path (mita.file:file-path f)
-                          :thumbnail-file
-                          (let ((file (first
-                                       (remove-if
-                                        #'mita.file:folder-p
-                                        (mita.file:folder-list-files
-                                         f *file-store*)))))
-                            (when file
-                              (mita.web.html:make-file
-                               :path (mita.file:file-path file)
-                               :full-path
-                               (mita.file:file-full-path file))))))
-                       (remove-if-not #'mita.file:folder-p
-                                      folder-files)))))))
+                 (,(mita.web.html:folder
+                    (folder->detail file *file-store*)))))
           (t
            `(200 (:cache-control "max-age=31536000")
                  ,(mita.file:file-full-path file))))))
@@ -64,14 +64,9 @@
     `(200 (:content-type "text/html")
           (,(mita.web.html:view
              (when (mita.file:folder-p file)
-               (let ((folder-files (mita.file:folder-list-files
-                                    file *file-store*)))
-                 (mapcar
-                  (lambda (f)
-                    (mita.web.html:make-file
-                     :path (mita.file:file-path f)
-                     :full-path (mita.file:file-full-path f)))
-                  (remove-if #'mita.file:folder-p folder-files)))))))))
+               (mapcar #'file->view (remove-if #'mita.file:folder-p
+                                               (mita.file:folder-list-files
+                                                file *file-store*)))))))))
 
 (defun folder-tags (namestring)
   (let* ((folder
@@ -108,22 +103,10 @@
                    folder-namestrings)))
     `(200 (:content-type "application/json")
           (,(jsown:to-json
-             (mapcar
-              (lambda (f)
-                (mita.web.html::folder->jsown
-                 (mita.web.html:make-folder
-                  :path (mita.file:file-path f)
-                  :thumbnail-file
-                  (let ((file (first
-                               (remove-if
-                                #'mita.file:folder-p
-                                (mita.file:folder-list-files
-                                 f *file-store*)))))
-                    (when file
-                      (mita.web.html:make-file
-                       :path (mita.file:file-path file)
-                       :full-path (mita.file:file-full-path file)))))))
-              folders))))))
+             (mapcar (lambda (f)
+                       (mita.web.html::folder-overview->jsown
+                        (folder->overview f *file-store*)))
+                     folders))))))
 
 ;;;
 

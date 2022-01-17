@@ -43,7 +43,8 @@
                      (mita.web.view:folder-detail-file-list detail)))
             ("folders"
              (mapcar #'folder-overview->jsown
-                     (mita.web.view:folder-detail-file-list detail)))))))))
+                     (mita.web.view:folder-detail-folder-overview-list
+                      detail)))))))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script

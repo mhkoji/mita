@@ -52,7 +52,8 @@
 
 (defstruct store
   root-path
-  (sort-file-fn #'identity))
+  (sort-file-fn #'identity)
+  (list-files-cache (make-hash-table :test #'equal)))
 
 (defun make-file (path full-path)
   (make-instance (if (uiop/pathname:directory-pathname-p full-path)
@@ -60,18 +61,28 @@
                  :path path
                  :full-path full-path))
 
-(defun store-list-files (store base-path)
-  (let ((root-namestring (namestring (store-root-path store)))
-        (full-path-list
-         (uiop/filesystem:with-current-directory (base-path)
-           (funcall (store-sort-file-fn store)
-                    (uiop/filesystem:directory*
-                     uiop/pathname:*wild-file-for-directory*)))))
-    (loop for full-path in full-path-list
-          for path = (uiop/pathname:relativize-pathname-directory
-                      (namestring-subtract root-namestring
-                                           (namestring full-path)))
-          collect (make-file path full-path))))
+(defun store-list-files-from-cache-or-update (store path list-fn)
+  (let ((key (namestring path))
+        (cache (store-list-files-cache store)))
+    (copy-list (or (gethash key cache)
+                   (setf (gethash key cache)
+                         (funcall list-fn))))))
+
+(defun store-list-files (store path)
+  (store-list-files-from-cache-or-update store path
+   (lambda ()
+     (let ((root-namestring
+            (namestring (store-root-path store)))
+           (full-path-list
+             (funcall (store-sort-file-fn store)
+                      (uiop/filesystem:with-current-directory (path)
+                        (uiop/filesystem:directory*
+                         uiop/pathname:*wild-file-for-directory*)))))
+       (loop for full-path in full-path-list
+             for path = (uiop/pathname:relativize-pathname-directory
+                         (namestring-subtract root-namestring
+                                              (namestring full-path)))
+             collect (make-file path full-path))))))
 
 (defun store-make-file (store namestring)
   (let ((path (uiop/pathname:relativize-pathname-directory namestring)))

@@ -126,6 +126,10 @@
   (when *handler*
     (clack:stop *handler*))
   (let ((app (make-instance 'ningle:app)))
+    (setf (ningle:route app "/")
+          (lambda (params)
+            (declare (ignore params))
+            '(302 (:location "/folder/") nil)))
     (setf (ningle:route app "/folder*")
           (lambda (params)
             (folder (cadr (assoc :splat params)))))

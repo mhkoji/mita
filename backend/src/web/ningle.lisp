@@ -41,12 +41,57 @@
   (mita.tag:make-store
    :dir *default-pathname-defaults*))
 
+(defun file->jsown (file)
+  (jsown:new-js
+    ("path" (namestring (mita.web.view:file-path file)))
+    ("url"  (format nil "/folder/~A" (mita.web.view:file-path file)))))
+
+(defun folder-overview->jsown (overview)
+  (let ((path (mita.web.view:folder-overview-path overview)))
+    (jsown:new-js
+      ("path" (namestring path))
+      ("url" (format nil "/folder/~A" path))
+      ("thumbnail" (let ((file (mita.web.view:folder-overview-thumbnail-file
+                                overview)))
+                     (if file (file->jsown file) :null))))))
+
+(defun folder-detail->jsown (detail)
+  (jsown:new-js
+    ("path"
+     (namestring (mita.web.view:folder-detail-path detail)))
+    ("files"
+     (mapcar #'file->jsown
+             (mita.web.view:folder-detail-file-list detail)))
+    ("folders"
+     (mapcar #'folder-overview->jsown
+             (mita.web.view:folder-detail-folder-overview-list detail)))))
+
 (defun tag->jsown (tag)
   (jsown:new-js
     ("id" (format nil "~A" (mita.tag:tag-id tag)))
     ("name" (mita.tag:tag-name tag))))
 
 ;;;
+
+(defun simple-inserter (insert-fn)
+  (lambda (acc next)
+    (if (listp next)
+        (funcall insert-fn acc next)
+        (list next acc))))
+
+(defun insert-first (arg surround)
+  (list* (car surround) arg (cdr surround)))
+
+(defun insert-last (arg surround)
+  (append surround (list arg)))
+
+(defmacro -> (initial-form &rest forms)
+  (reduce (simple-inserter #'insert-first) forms
+          :initial-value initial-form))
+
+(defmacro ->> (initial-form &rest forms)
+  (reduce (simple-inserter #'insert-last) forms
+          :initial-value initial-form))
 
 (defvar *app* nil)
 
@@ -67,11 +112,13 @@
                                (mita.file:file-full-path file))
                               (uiop/filesystem:directory-exists-p
                                (mita.file:file-full-path file))))
-                     `(404 (:content-type "text/plain") ("Not found")))
+                     `(404 (:content-type "text/plain")
+                           ("Not found")))
                     ((mita.file:folder-p file)
                      `(200 (:content-type "text/html")
                            (,(mita.web.html:folder
-                              (folder->detail file *file-store*)))))
+                              (folder-detail->jsown
+                               (folder->detail file *file-store*))))))
                     (t
                      `(200 (:cache-control "max-age=31536000")
                            ,(mita.file:file-full-path file)))))))
@@ -86,10 +133,11 @@
               `(200 (:content-type "text/html")
                     (,(mita.web.html:view
                        (when (mita.file:folder-p file)
-                         (mapcar #'file->view
-                                 (remove-if #'mita.file:folder-p
-                                            (mita.file:folder-list-files
-                                             file *file-store*))))))))))
+                         (->> (mita.file:folder-list-files
+                               file *file-store*)
+                              (remove-if #'mita.file:folder-p)
+                              (mapcar #'file->view)
+                              (mapcar #'file->jsown)))))))))
    (lambda (params)
      (run (cadr (assoc :splat params))))))
 
@@ -124,12 +172,9 @@
               `(200 (:content-type "application/json")
                     (,(jsown:to-json (jsown:new-js)))))))
    (lambda (params)
-     (let ((namestring
-            (cdr (assoc "path" params :test #'string=)))
-           (tag-id-list
-            (mapcar #'uuid:make-uuid-from-string
-                    (cdr (assoc "tag-id-list" params :test #'string=)))))
-       (run namestring tag-id-list)))))
+     (run (cdr (assoc "path" params :test #'string=))
+          (->> (cdr (assoc "tag-id-list" params :test #'string=))
+               (mapcar #'uuid:make-uuid-from-string))))))
 
 (setf
  (ningle:route *app* "/api/tags/_create" :method :post)
@@ -155,12 +200,12 @@
               `(200 (:content-type "application/json")
                     (,(jsown:to-json
                        (mapcar (lambda (f)
-                                 (mita.web.html::folder-overview->jsown
+                                 (folder-overview->jsown
                                   (folder->overview f *file-store*)))
                                folders)))))))
    (lambda (params)
-     (run (uuid:make-uuid-from-string
-           (cdr (assoc :tag-id params :test #'string=)))))))
+     (run (->> (cdr (assoc :tag-id params :test #'string=))
+               (uuid:make-uuid-from-string))))))
 
 ;;;
 

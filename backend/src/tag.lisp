@@ -24,6 +24,7 @@
 (defmacro with-open-store-file ((stream store file &rest args)
                                 &body body)
   `(with-open-file (,stream (merge-pathnames ,file (store-dir ,store))
+                            :external-format :utf-8
                             ,@args)
      ,@body))
 

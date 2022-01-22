@@ -1,6 +1,7 @@
 (defpackage :mita.web.ningle
   (:use :cl)
   (:export :*file-store*
+           :*tag-store*
            :start
            :warmup))
 (in-package :mita.web.ningle)

@@ -105,39 +105,43 @@
 
 (setf
  (ningle:route *app* "/folder*")
- (labels ((run (namestring)
-            (let ((file (mita.file:store-make-file *file-store*
-                                                   namestring)))
-              (cond ((not (or (uiop/filesystem:file-exists-p
-                               (mita.file:file-full-path file))
-                              (uiop/filesystem:directory-exists-p
-                               (mita.file:file-full-path file))))
-                     `(404 (:content-type "text/plain")
-                           ("Not found")))
-                    ((mita.file:folder-p file)
-                     `(200 (:content-type "text/html")
-                           (,(mita.web.html:folder
-                              (folder-detail->jsown
-                               (folder->detail file *file-store*))))))
-                    (t
-                     `(200 (:cache-control "max-age=31536000")
-                           ,(mita.file:file-full-path file)))))))
+ (labels
+     ((run (namestring)
+        (let ((file (mita.file:store-make-file *file-store* namestring)))
+          (cond ((uiop/filesystem:file-exists-p
+                  (mita.file:file-full-path file))
+                 `(200 (:cache-control "max-age=31536000")
+                       ,(mita.file:file-full-path file)))
+                ((uiop/filesystem:directory-exists-p
+                  (mita.file:file-full-path file))
+                 (assert (mita.file:folder-p file))
+                 `(200 (:content-type "text/html")
+                       (,(mita.web.html:folder
+                          (-> (folder->detail file *file-store*)
+                              (folder-detail->jsown))))))
+                (t
+                 `(404 (:content-type "text/plain")
+                       ("Not found")))))))
    (lambda (params)
      (run (cadr (assoc :splat params))))))
 
 (setf
  (ningle:route *app* "/view*")
- (labels ((run (namestring)
-            (let ((file (mita.file:store-make-file *file-store*
-                                                   namestring)))
-              `(200 (:content-type "text/html")
-                    (,(mita.web.html:view
-                       (when (mita.file:folder-p file)
-                         (->> (mita.file:folder-list-files
-                               file *file-store*)
-                              (remove-if #'mita.file:folder-p)
-                              (mapcar #'file->view)
-                              (mapcar #'file->jsown)))))))))
+ (labels
+     ((run (namestring)
+        (let ((file (mita.file:store-make-file *file-store* namestring)))
+          (cond ((uiop/filesystem:directory-exists-p
+                  (mita.file:file-full-path file))
+                 (assert (mita.file:folder-p file))
+                 `(200 (:content-type "text/html")
+                       (,(mita.web.html:view
+                          (->> (mita.file:folder-list-files file *file-store*)
+                               (remove-if #'mita.file:folder-p)
+                               (mapcar #'file->view)
+                               (mapcar #'file->jsown))))))
+                (t
+                 `(404 (:content-type "text/plain")
+                       ("Not found")))))))
    (lambda (params)
      (run (cadr (assoc :splat params))))))
 
@@ -153,24 +157,23 @@
 
 (setf
  (ningle:route *app* "/api/folder/tags")
- (labels ((run (namestring)
-            (let* ((folder
-                    (mita.file:store-make-file *file-store* namestring))
-                   (tags
-                    (mita.tag:content-tags *tag-store* folder)))
-              `(200 (:content-type "application/json")
-                    (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
+ (labels
+     ((run (namestring)
+        (let* ((folder (mita.file:store-make-file *file-store* namestring))
+               (tags (mita.tag:content-tags *tag-store* folder)))
+          `(200 (:content-type "application/json")
+                (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
    (lambda (params)
      (run (cdr (assoc "path" params :test #'string=))))))
 
 (setf
  (ningle:route *app* "/api/folder/tags" :method :put)
- (labels ((run (namestring tag-id-list)
-            (let ((folder (mita.file:store-make-file *file-store*
-                                                     namestring)))
-              (mita.tag:content-tags-set *tag-store* folder tag-id-list)
-              `(200 (:content-type "application/json")
-                    (,(jsown:to-json (jsown:new-js)))))))
+ (labels
+     ((run (namestring tag-id-list)
+        (let ((folder (mita.file:store-make-file *file-store* namestring)))
+          (mita.tag:content-tags-set *tag-store* folder tag-id-list)
+          `(200 (:content-type "application/json")
+                (,(jsown:to-json (jsown:new-js)))))))
    (lambda (params)
      (run (cdr (assoc "path" params :test #'string=))
           (->> (cdr (assoc "tag-id-list" params :test #'string=))

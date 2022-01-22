@@ -15,5 +15,6 @@ exec ros -Q -- $0 "$@"
 
 (defun main (&rest argv)
   (declare (ignorable argv))
+  (mita.web.ningle:warmup)
   (mita.web.ningle:start :use-thread nil))
 ;;; vim: set ft=lisp lisp:

@@ -4,6 +4,7 @@
   :components
   ((:file "file")
    (:file "tag"))
-  :depends-on (:cl-csv
+  :depends-on (:bordeaux-threads
+               :cl-csv
                :split-sequence
                :uuid))

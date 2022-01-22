@@ -1,7 +1,8 @@
 (defpackage :mita.web.ningle
   (:use :cl)
   (:export :*file-store*
-           :start))
+           :start
+           :warmup))
 (in-package :mita.web.ningle)
 
 (defun file->view (file)
@@ -73,25 +74,26 @@
 
 ;;;
 
-(defun simple-inserter (insert-fn)
-  (lambda (acc next)
-    (if (listp next)
-        (funcall insert-fn acc next)
-        (list next acc))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun simple-inserter (insert-fn)
+    (lambda (acc next)
+      (if (listp next)
+          (funcall insert-fn acc next)
+          (list next acc))))
 
-(defun insert-first (arg surround)
-  (list* (car surround) arg (cdr surround)))
+  (defun insert-first (arg surround)
+    (list* (car surround) arg (cdr surround)))
 
-(defun insert-last (arg surround)
-  (append surround (list arg)))
+  (defun insert-last (arg surround)
+    (append surround (list arg)))
 
-(defmacro -> (initial-form &rest forms)
-  (reduce (simple-inserter #'insert-first) forms
-          :initial-value initial-form))
+  (defmacro -> (initial-form &rest forms)
+    (reduce (simple-inserter #'insert-first) forms
+            :initial-value initial-form))
 
-(defmacro ->> (initial-form &rest forms)
-  (reduce (simple-inserter #'insert-last) forms
-          :initial-value initial-form))
+  (defmacro ->> (initial-form &rest forms)
+    (reduce (simple-inserter #'insert-last) forms
+            :initial-value initial-form)))
 
 (defvar *app* nil)
 
@@ -239,3 +241,9 @@
          :address "0.0.0.0"
          :use-thread use-thread
          :port port)))
+
+(defun warmup ()
+  (bt:make-thread
+   (lambda ()
+     (ignore-errors
+      (mita.file:store-prepare-cache *file-store*)))))

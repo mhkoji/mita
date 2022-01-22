@@ -67,8 +67,9 @@
            (first row))
          (row->content-type (row)
            (second row))
-         (row->tag-ids (row)
-           (split-sequence:split-sequence #\, (third row)))
+         (row->tag-id (row)
+           (third row))
+         #+nil
          (->row (content tag-ids)
            (list (content-id content)
                  (content-type content)
@@ -79,14 +80,15 @@
                                          :if-does-not-exist nil)
              (when (listen stream)
                (let ((content-id (content-id content)))
-                 (row->tag-ids
-                  (find-if (lambda (row)
-                             (string= (row->content-id row)
-                                      content-id))
-                           (nreverse (cl-csv:read-csv stream)))))))))
+                 (mapcar #'row->tag-id
+                         (remove-if-not (lambda (row)
+                                          (string= (row->content-id row)
+                                                   content-id))
+                                        (cl-csv:read-csv stream))))))))
       (store-list-tags-in store tag-ids)))
 
   (defun content-tags-set (store content tag-ids)
+    #+nil
     (with-open-store-file (stream store "content-tag.csv"
                                     :direction :output
                                     :if-exists :append
@@ -99,17 +101,12 @@
     (with-open-store-file (stream store "content-tag.csv"
                                   :if-does-not-exist nil)
       (when (listen stream)
-        (let ((content-ids nil)
-              (scanned-hash (make-hash-table :test #'equal)))
+        (let ((tag-id (tag-id tag))
+              (content-ids nil))
           (dolist (row (cl-csv:read-csv stream))
-            (let ((content-id (row->content-id row)))
-              (when (and (not (gethash content-id scanned-hash))
-                         (string= (row->content-type row) type))
-                (when (find-if (lambda (tag-id)
-                                 (string= tag-id (tag-id tag)))
-                               (row->tag-ids row))
-                  (push content-id content-ids))
-                (setf (gethash content-id scanned-hash) t))))
+            (when (and (string= tag-id (row->tag-id row))
+                       (string= type (row->content-type row)))
+              (push (row->content-id row) content-ids)))
           content-ids)))))
 
 ;;;

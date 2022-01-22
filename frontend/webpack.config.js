@@ -48,6 +48,7 @@ module.exports = {
   entry: {
     folder: "./src/components/entries/folder.jsx",
     view: "./src/components/entries/view.jsx",
+    tags: "./src/components/entries/tags.jsx",
   },
 
   output: {

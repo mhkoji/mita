@@ -28,13 +28,10 @@
      ,@body))
 
 (labels ((row->tag (row)
-           (make-tag :id (uuid:make-uuid-from-string
-                          (first row))
+           (make-tag :id (first row)
                      :name (second row)))
-         (tag->row (tag)
-           (list (format nil "~A" (tag-id tag))
-                 (tag-name tag))))
-
+         (tag->row (tag added-at)
+           (list (tag-id tag) (tag-name tag) added-at)))
   (defun store-list-tags (store)
     (with-open-store-file (stream store "tags.csv"
                                   :if-does-not-exist nil)
@@ -44,20 +41,23 @@
   (defun store-list-tags-in (store tag-ids)
     (let ((tags (store-list-tags store)))
       (remove-if-not (lambda (tag)
-                       (find (tag-id tag) tag-ids :test #'uuid:uuid=))
+                       (find (tag-id tag) tag-ids :test #'string=))
                      tags)))
 
   (defun store-get-tag (store tag-id)
     (car (store-list-tags-in store (list tag-id))))
                        
   (defun store-add-tag (store name)
-    (let ((tag (make-tag :id (uuid:make-v4-uuid)
-                         :name name)))
+    (let ((tag (make-tag
+                :id (format nil "~A" (uuid:make-v4-uuid))
+                :name name))
+          (added-at (local-time:format-rfc3339-timestring
+                     nil (local-time:now))))
       (with-open-store-file (stream store "tags.csv"
                                     :direction :output
                                     :if-exists :append
                                     :if-does-not-exist :create)
-        (cl-csv:write-csv (list (tag->row tag)) :stream stream))
+        (cl-csv:write-csv (list (tag->row tag added-at)) :stream stream))
       tag)))
 
 ;;;
@@ -67,8 +67,7 @@
          (row->content-type (row)
            (second row))
          (row->tag-ids (row)
-           (mapcar #'uuid:make-uuid-from-string
-                   (split-sequence:split-sequence #\, (third row))))
+           (split-sequence:split-sequence #\, (third row)))
          (->row (content tag-ids)
            (list (content-id content)
                  (content-type content)
@@ -106,7 +105,7 @@
               (when (and (not (gethash content-id scanned-hash))
                          (string= (row->content-type row) type))
                 (when (find-if (lambda (tag-id)
-                                 (uuid:uuid= tag-id (tag-id tag)))
+                                 (string= tag-id (tag-id tag)))
                                (row->tag-ids row))
                   (push content-id content-ids))
                 (setf (gethash content-id scanned-hash) t))))

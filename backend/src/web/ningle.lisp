@@ -148,6 +148,13 @@
      (run (cadr (assoc :splat params))))))
 
 (setf
+ (ningle:route *app* "/tags")
+ (lambda (params)
+   (declare (ignore params))
+   `(200 (:content-type "text/html")
+         (,(mita.web.html:tags)))))
+
+(setf
  (ningle:route *app* "/api/tags")
  (labels ((run ()
             (let ((tags (mita.tag:store-list-tags *tag-store*)))
@@ -178,8 +185,7 @@
                 (,(jsown:to-json (jsown:new-js)))))))
    (lambda (params)
      (run (cdr (assoc "path" params :test #'string=))
-          (->> (cdr (assoc "tag-id-list" params :test #'string=))
-               (mapcar #'uuid:make-uuid-from-string))))))
+          (cdr (assoc "tag-id-list" params :test #'string=))))))
 
 (setf
  (ningle:route *app* "/api/tags/_create" :method :post)
@@ -198,10 +204,11 @@
                    (folder-namestrings
                     (mita.tag:tag-content-id-list *tag-store* tag "folder"))
                    (folders
-                    (mapcar (lambda (namestring)
-                              (mita.file:store-make-file *file-store*
-                                                         namestring))
-                            folder-namestrings)))
+                    (->> folder-namestrings
+                         (mapcar (lambda (namestring)
+                                   (mita.file:store-make-file
+                                    *file-store* namestring)))
+                         (remove-if-not #'mita.file:file-exists-p))))
               `(200 (:content-type "application/json")
                     (,(jsown:to-json
                        (mapcar (lambda (f)
@@ -209,8 +216,7 @@
                                   (folder->overview f *file-store*)))
                                folders)))))))
    (lambda (params)
-     (run (->> (cdr (assoc :tag-id params :test #'string=))
-               (uuid:make-uuid-from-string))))))
+     (run (cdr (assoc :tag-id params :test #'string=))))))
 
 ;;;
 

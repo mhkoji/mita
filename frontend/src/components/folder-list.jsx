@@ -1,11 +1,16 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
+import TagEditButton from "./edit-tags/edit-button";
+
 function FolderRow(props) {
   if (props.folders.length === 0) {
     return null;
   }
   const cardEls = props.folders.map((folder) => {
+    function handleClickTagEditButton() {
+      props.onEditTags(folder.path);
+    }
     return (
       <div key={folder.path} className="col-md-4">
         <div className="card mb-4 shadow-sm">
@@ -34,6 +39,7 @@ function FolderRow(props) {
                 {folder.path}
               </a>
             </div>
+            <TagEditButton onClick={handleClickTagEditButton} />
           </div>
         </div>
       </div>
@@ -55,6 +61,7 @@ export default function FolderList(props) {
       <FolderRow
         key={i}
         folders={folders.slice(i, Math.min(i + inDeckCount, folders.length))}
+        onEditTags={props.onEditTags}
       />
     );
   }

@@ -11,14 +11,14 @@ import * as apis from "../../apis";
 
 function App() {
   const { path, files, folders } = window["$d"];
-  const [openEditTagsModal, setOpenEditTagsModal] = useState(false);
+  const [editTagsModalPath, setEditTagsModalPath] = useState(false);
 
   function handleClickTagEditButton() {
-    setOpenEditTagsModal(true);
+    setEditTagsModalPath(path);
   }
 
   function handleCloseEditTagsModal() {
-    setOpenEditTagsModal(false);
+    setEditTagsModalPath(null);
   }
 
   return (
@@ -35,16 +35,17 @@ function App() {
           <ImageList files={files} viewUrl={"/view/" + path} />
 
           <p>Folders</p>
-          <FolderList folders={folders} />
+          <FolderList folders={folders} onEditTags={setEditTagsModalPath} />
 
-          {openEditTagsModal && (
+          {editTagsModalPath && (
             <EditTagsModal
               api={{
                 tags: apis.tags,
                 putTag: apis.putTag,
                 deleteTag: apis.deleteTag,
-                contentTags: () => apis.folderTags(path),
-                putContentTags: (tags) => apis.putFolderTags(path, tags),
+                contentTags: () => apis.folderTags(editTagsModalPath),
+                putContentTags: (tags) =>
+                  apis.putFolderTags(editTagsModalPath, tags),
               }}
               onClose={handleCloseEditTagsModal}
             />

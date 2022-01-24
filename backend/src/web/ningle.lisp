@@ -2,6 +2,7 @@
   (:use :cl)
   (:export :*file-store*
            :*tag-store*
+           :*static-root*
            :start
            :warmup))
 (in-package :mita.web.ningle)

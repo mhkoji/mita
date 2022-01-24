@@ -44,15 +44,24 @@ function ContentRow(props) {
 }
 
 export default function Contents(props) {
-  const contents = props.contents;
+  const folders = props.folders;
   const rowList = [];
   const inDeckCount = 2;
-  for (let i = 0; i < contents.length; i += inDeckCount) {
-    const subList = contents.slice(
-      i,
-      Math.min(i + inDeckCount, contents.length)
-    );
+  for (let i = 0; i < folders.length; i += inDeckCount) {
+    const subList = folders
+      .slice(i, Math.min(i + inDeckCount, folders.length))
+      .map((folder) => ({
+        id: folder.path,
+        name: folder.path,
+        url: folder.url,
+        thumbnail: folder.thumbnail,
+      }));
     rowList.push(<ContentRow key={i} contents={subList} />);
   }
-  return <div className="p-md-5">{rowList}</div>;
+  return (
+    <div className="p-md-5">
+      <p>Folders</p>
+      <div>{rowList}</div>
+    </div>
+  );
 }

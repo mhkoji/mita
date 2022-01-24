@@ -29,7 +29,9 @@ function App() {
         <div className="container">
           <h2>{path}</h2>
 
-          <TagEditButton onClick={handleClickTagEditButton} />
+          <div className="mb-4">
+            <TagEditButton onClick={handleClickTagEditButton} />
+          </div>
 
           <p>Images</p>
           <ImageList files={files} viewUrl={"/view/" + path} />

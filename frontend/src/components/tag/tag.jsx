@@ -12,11 +12,11 @@ function StatefulContents(props) {
       type: "loading",
       value: null,
     });
-    props.api.tagContents(props.tagId).then((contents) => {
+    props.api.tagFolders(props.tagId).then((folders) => {
       setState({
         type: "loaded",
         value: {
-          contents: contents,
+          folders: folders,
         },
       });
     });
@@ -27,7 +27,7 @@ function StatefulContents(props) {
   }
 
   if (state.type === "loaded") {
-    return <Contents contents={state.value.contents} />;
+    return <Contents folders={state.value.folders} />;
   }
 
   return null;

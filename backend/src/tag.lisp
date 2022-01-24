@@ -97,9 +97,9 @@
                         (remove-if (lambda (row)
                                      (string= content-id
                                               (row-content-id row)))))
-                   (mapcar (lambda (tag-id)
-                             (make-row content tag-id))
-                           tag-ids))))
+                   (->> tag-ids
+                        (mapcar (lambda (tag-id)
+                                  (make-row content tag-id)))))))
         (with-open-store-file (stream store "content-tag.csv"
                                       :direction :output
                                       :if-exists :supersede

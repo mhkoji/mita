@@ -1,3 +1,4 @@
+;; This package provides the file system like interface of mita.
 (defpackage :mita.file
   (:use :cl)
   (:export :file

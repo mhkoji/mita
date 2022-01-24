@@ -17,10 +17,9 @@
   (mita.web.view:make-folder-overview
    :path (mita.file:file-path folder)
    :thumbnail-file
-   (let ((file (first (remove-if #'mita.file:folder-p
-                                 (mita.file:folder-list-files
-                                  folder
-                                  file-store)))))
+   (let ((file (first
+                (->> (mita.file:folder-list-files folder file-store)
+                     (remove-if #'mita.file:folder-p)))))
      (when file
        (file->view file)))))
 
@@ -29,14 +28,13 @@
     (mita.web.view:make-folder-detail
      :path (mita.file:file-path folder)
      :file-list
-     (mapcar #'file->view
-             (remove-if #'mita.file:folder-p folder-files))
+     (->> (remove-if #'mita.file:folder-p folder-files)
+          (mapcar #'file->view))
      :folder-overview-list
-     (mapcar (lambda (f)
-               (folder->overview f file-store))
-             (sort (remove-if-not #'mita.file:folder-p folder-files)
-                   #'>
-                   :key #'mita.file:file-created-at)))))
+     (let ((folders (remove-if-not #'mita.file:folder-p folder-files)))
+       (->> (sort folders #'> :key #'mita.file:file-created-at)
+            (mapcar (lambda (f)
+                      (folder->overview f file-store))))))))
 
 ;;;
 

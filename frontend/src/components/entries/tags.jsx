@@ -8,7 +8,17 @@ import Tag from "../tag/tag";
 const Api = {
   tags: apis.tags,
   putTagName: apis.putTagName,
-  tagContents: apis.tagFolders,
+  tagContents: (tagId) =>
+    apis.tagFolders(tagId).then((folders) =>
+      folders.map((folder) => {
+        return {
+          id: folder.path,
+          name: folder.path,
+          url: folder.url,
+          thumbnail: folder.thumbnail,
+        };
+      })
+    ),
 };
 
 function TagList(props) {

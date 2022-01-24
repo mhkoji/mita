@@ -102,7 +102,7 @@
                            tag-ids))))
         (with-open-store-file (stream store "content-tag.csv"
                                       :direction :output
-                                      :if-exists :append
+                                      :if-exists :supersede
                                       :if-does-not-exist :create)
           (cl-csv:write-csv rows
                             :stream stream

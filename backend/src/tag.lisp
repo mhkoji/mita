@@ -9,7 +9,9 @@
            :store-get-tag
            :content-tags
            :content-tags-set
-           :make-store))
+           :make-store)
+  (:import-from :mita.util.threading
+                :->>))
 (in-package :mita.tag)
 
 (defstruct tag id name)
@@ -63,51 +65,56 @@
 
 ;;;
 
-(labels ((row->content-id (row)
-           (first row))
-         (row->content-type (row)
-           (second row))
-         (row->tag-id (row)
-           (third row))
-         #+nil
-         (->row (content tag-ids)
+(labels ((make-row (content tag-id)
            (list (content-id content)
                  (content-type content)
-                 (format nil "~{~A~^,~}" tag-ids))))
-  (defun content-tags (store content)
-    (let ((tag-ids
-           (with-open-store-file (stream store "content-tag.csv"
-                                         :if-does-not-exist nil)
-             (when (listen stream)
-               (let ((content-id (content-id content)))
-                 (mapcar #'row->tag-id
-                         (remove-if-not (lambda (row)
-                                          (string= (row->content-id row)
-                                                   content-id))
-                                        (cl-csv:read-csv stream))))))))
-      (store-list-tags-in store tag-ids)))
-
-  (defun content-tags-set (store content tag-ids)
-    #+nil
-    (with-open-store-file (stream store "content-tag.csv"
-                                    :direction :output
-                                    :if-exists :append
-                                    :if-does-not-exist :create)
-      (cl-csv:write-csv (list (->row content tag-ids))
-                        :stream stream
-                        :always-quote t)))
-
-  (defun tag-content-id-list (store tag type)
+                 tag-id))
+         (row-content-id (row)
+           (first row))
+         (row-content-type (row)
+           (second row))
+         (row-tag-id (row)
+           (third row)))
+  (defun read-rows (store)
     (with-open-store-file (stream store "content-tag.csv"
                                   :if-does-not-exist nil)
       (when (listen stream)
-        (let ((tag-id (tag-id tag))
-              (content-ids nil))
-          (dolist (row (cl-csv:read-csv stream))
-            (when (and (string= tag-id (row->tag-id row))
-                       (string= type (row->content-type row)))
-              (push (row->content-id row) content-ids)))
-          content-ids)))))
+        (cl-csv:read-csv stream))))
+  
+  (defun content-tags (store content)
+    (let ((content-id (content-id content)))
+      (let ((tag-ids (->> (read-rows store)
+                          (remove-if-not (lambda (row)
+                                           (string= content-id
+                                                    (row-content-id row))))
+                          (mapcar #'row-tag-id))))
+        (store-list-tags-in store tag-ids))))
+
+  (defun content-tags-set (store content tag-ids)
+    (let ((content-id (content-id content)))
+      (let ((rows (append
+                   (->> (read-rows store)
+                        (remove-if (lambda (row)
+                                     (string= content-id
+                                              (row-content-id row)))))
+                   (mapcar (lambda (tag-id)
+                             (make-row content tag-id))
+                           tag-ids))))
+        (with-open-store-file (stream store "content-tag.csv"
+                                      :direction :output
+                                      :if-exists :append
+                                      :if-does-not-exist :create)
+          (cl-csv:write-csv rows
+                            :stream stream
+                            :always-quote t)))))
+
+  (defun tag-content-id-list (store tag type)
+    (let ((tag-id (tag-id tag)))
+      (->> (read-rows store)
+           (remove-if-not (lambda (row)
+                            (and (string= tag-id (row-tag-id row))
+                                 (string= type (row-content-type row)))))
+           (mapcar #'row-content-id)))))
 
 ;;;
 

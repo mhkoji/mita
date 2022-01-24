@@ -2,7 +2,8 @@
   :serial t
   :pathname "src"
   :components
-  ((:file "file")
+  ((:file "util/threading")
+   (:file "file")
    (:file "tag"))
   :depends-on (:bordeaux-threads
                :cl-csv

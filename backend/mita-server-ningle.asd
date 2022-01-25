@@ -2,6 +2,5 @@
   :components
   ((:file "src/server/ningle"))
   :depends-on (:clack
-               :jsown
                :ningle
                :mita))

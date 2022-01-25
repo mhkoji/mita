@@ -1,4 +1,4 @@
-(defpackage :mita.web.view
+(defpackage :mita.view
   (:use :cl)
   (:export :file
            :file-path
@@ -13,7 +13,7 @@
            :folder-detail-file-list
            :folder-detail-folder-overview-list
            :make-folder-detail))
-(in-package :mita.web.view)
+(in-package :mita.view)
 
 (defstruct file
   path)

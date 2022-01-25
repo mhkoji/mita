@@ -2,8 +2,7 @@
   :serial t
   :pathname "src/web"
   :components
-  ((:file "view")
-   (:file "html")
+  ((:file "html")
    (:file "ningle"))
   :depends-on (:cl-who
                :clack

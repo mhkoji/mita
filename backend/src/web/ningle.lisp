@@ -1,49 +1,12 @@
 (defpackage :mita.web.ningle
   (:use :cl)
-  (:export :*file-store*
-           :*tag-store*
-           :*static-root*
+  (:export :*static-root*
            :start
            :warmup)
   (:import-from :mita.util.threading
                 :->
                 :->>))
 (in-package :mita.web.ningle)
-
-(defun file->view (file)
-  (mita.web.view:make-file :path (mita.file:file-path file)))
-
-(defun folder->overview (folder file-store)
-  (mita.web.view:make-folder-overview
-   :path (mita.file:file-path folder)
-   :thumbnail-file
-   (let ((file (first
-                (->> (mita.file:folder-list-files folder file-store)
-                     (remove-if #'mita.file:folder-p)))))
-     (when file
-       (file->view file)))))
-
-(defun folder->detail (folder file-store)
-  (let ((folder-files (mita.file:folder-list-files folder file-store)))
-    (mita.web.view:make-folder-detail
-     :path (mita.file:file-path folder)
-     :file-list
-     (->> (remove-if #'mita.file:folder-p folder-files)
-          (mapcar #'file->view))
-     :folder-overview-list
-     (let ((folders (remove-if-not #'mita.file:folder-p folder-files)))
-       (->> (sort folders #'> :key #'mita.file:file-created-at)
-            (mapcar (lambda (f)
-                      (folder->overview f file-store))))))))
-
-;;;
-
-(defvar *file-store*
-  nil)
-
-(defvar *tag-store*
-  (mita.tag:make-store
-   :dir *default-pathname-defaults*))
 
 (defun file->jsown (file)
   (jsown:new-js
@@ -89,45 +52,32 @@
 
 (setf
  (ningle:route *app* "/folder*")
- (labels
-     ((run (namestring)
-        (let ((file (mita.file:store-make-file *file-store* namestring)))
-          (cond ((uiop/filesystem:file-exists-p
-                  (mita.file:file-full-path file))
-                 `(200 (:cache-control "max-age=31536000")
-                       ,(mita.file:file-full-path file)))
-                ((uiop/filesystem:directory-exists-p
-                  (mita.file:file-full-path file))
-                 (assert (mita.file:folder-p file))
-                 `(200 (:content-type "text/html")
-                       (,(mita.web.html:folder
-                          (-> (folder->detail file *file-store*)
-                              (folder-detail->jsown))))))
-                (t
-                 `(404 (:content-type "text/plain")
-                       ("Not found")))))))
-   (lambda (params)
-     (run (cadr (assoc :splat params))))))
+ (lambda (params)
+   (mita.web.app:show-path (cadr (assoc :splat params))
+    :on-file
+    (lambda (path)
+      `(200 (:cache-control "max-age=31536000")
+            ,path))
+    :on-folder
+    (lambda (detail)
+      `(200 (:content-type "text/html")
+            (,(mita.web.html:folder (folder-detail->jsown detail)))))
+    :on-not-found
+    (lambda ()
+      (ningle:not-found *app*)))))
 
 (setf
  (ningle:route *app* "/view*")
- (labels
-     ((run (namestring)
-        (let ((file (mita.file:store-make-file *file-store* namestring)))
-          (cond ((uiop/filesystem:directory-exists-p
-                  (mita.file:file-full-path file))
-                 (assert (mita.file:folder-p file))
-                 `(200 (:content-type "text/html")
-                       (,(mita.web.html:view
-                          (->> (mita.file:folder-list-files file *file-store*)
-                               (remove-if #'mita.file:folder-p)
-                               (mapcar #'file->view)
-                               (mapcar #'file->jsown))))))
-                (t
-                 `(404 (:content-type "text/plain")
-                       ("Not found")))))))
-   (lambda (params)
-     (run (cadr (assoc :splat params))))))
+ (lambda (params)
+   (mita.web.app:folder-image-files (cadr (assoc :splat params))
+    :on-found
+    (lambda (files)
+      `(200 (:content-type "text/html")
+            (,(mita.web.html:view (mapcar #'file->jsown files)))))
+    :on-not-found
+    (lambda ()
+      (ningle:not-found *app*)))))
+
 
 (setf
  (ningle:route *app* "/tags")
@@ -138,67 +88,45 @@
 
 (setf
  (ningle:route *app* "/api/tags")
- (labels ((run ()
-            (let ((tags (mita.tag:store-list-tags *tag-store*)))
-              `(200 (:content-type "application/json")
-                    (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
-   (lambda (params)
-     (declare (ignore params))
-     (run))))
+ (lambda (params)
+   (declare (ignore params))
+   (let ((tags (mita.web.app:list-tags)))
+     `(200 (:content-type "application/json")
+           (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
 
 (setf
  (ningle:route *app* "/api/folder/tags")
- (labels
-     ((run (namestring)
-        (let* ((folder (mita.file:store-make-file *file-store* namestring))
-               (tags (mita.tag:content-tags *tag-store* folder)))
-          `(200 (:content-type "application/json")
-                (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
-   (lambda (params)
-     (run (cdr (assoc "path" params :test #'string=))))))
+ (lambda (params)
+   (let ((tags (mita.web.app:folder-tags
+                (cdr (assoc "path" params :test #'string=)))))
+     `(200 (:content-type "application/json")
+           (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
 
 (setf
  (ningle:route *app* "/api/folder/tags" :method :put)
- (labels
-     ((run (namestring tag-id-list)
-        (let ((folder (mita.file:store-make-file *file-store* namestring)))
-          (mita.tag:content-tags-set *tag-store* folder tag-id-list)
-          `(200 (:content-type "application/json")
-                (,(jsown:to-json (jsown:new-js)))))))
-   (lambda (params)
-     (run (cdr (assoc "path" params :test #'string=))
-          (cdr (assoc "tag-id-list" params :test #'string=))))))
+ (lambda (params)
+   (mita.web.app:folder-set-tags
+    (cdr (assoc "path" params :test #'string=))
+    (cdr (assoc "tag-id-list" params :test #'string=)))
+   `(200 (:content-type "application/json")
+         (,(jsown:to-json (jsown:new-js))))))
 
 (setf
  (ningle:route *app* "/api/tags/_create" :method :post)
- (labels ((run (name)
-            (let ((tag (mita.tag:store-add-tag *tag-store* name)))
-              `(200 (:content-type "application/json")
-                    (,(jsown:to-json (tag->jsown tag)))))))
-   (lambda (params)
-     (run (cdr (assoc "name" params :test #'string=))))))
+ (lambda (params)
+   (let ((tag (mita.web.app:tag-add
+               (cdr (assoc "name" params :test #'string=)))))
+     `(200 (:content-type "application/json")
+           (,(jsown:to-json (tag->jsown tag)))))))
 
 (setf
  (ningle:route *app* "/api/tags/:tag-id/folders")
- (labels ((run (tag-id)
-            (let* ((tag
-                    (mita.tag:store-get-tag *tag-store* tag-id))
-                   (folder-namestrings
-                    (mita.tag:tag-content-id-list *tag-store* tag "folder"))
-                   (folders
-                    (->> folder-namestrings
-                         (mapcar (lambda (namestring)
-                                   (mita.file:store-make-file
-                                    *file-store* namestring)))
-                         (remove-if-not #'mita.file:file-exists-p))))
-              `(200 (:content-type "application/json")
-                    (,(jsown:to-json
-                       (mapcar (lambda (f)
-                                 (folder-overview->jsown
-                                  (folder->overview f *file-store*)))
-                               folders)))))))
-   (lambda (params)
-     (run (cdr (assoc :tag-id params :test #'string=))))))
+ (lambda (params)
+   (let ((overview-list (mita.web.app:tag-folders
+                         (cdr (assoc :tag-id params :test #'string=)))))
+     `(200 (:content-type "application/json")
+           (,(jsown:to-json (mapcar #'folder-overview->jsown
+                                    overview-list)))))))
 
 ;;;
 

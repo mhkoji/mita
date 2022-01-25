@@ -6,8 +6,10 @@
    (:file "file")
    (:file "tag")
    (:file "view")
-   (:file "main"))
+   (:file "main")
+   (:file "html"))
   :depends-on (:bordeaux-threads
                :cl-csv
+               :cl-who
                :split-sequence
                :uuid))

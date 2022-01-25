@@ -1,4 +1,4 @@
-(defpackage :mita.web.html
+(defpackage :mita.html
   (:use :cl)
   (:export :make-file
            :make-folder
@@ -7,7 +7,7 @@
            :tags
            :not-found
            :internal-server-error))
-(in-package :mita.web.html)
+(in-package :mita.html)
 
 (defun folder (detail-jsown)
   (cl-who:with-html-output-to-string (s nil :prologue t)

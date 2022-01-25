@@ -8,13 +8,13 @@ exec ros -Q -- $0 "$@"
   #+quicklisp(ql:quickload '() :silent t)
   )
 
-(defpackage :ros.script.main.3851413662
+(defpackage :ros.script.ningle.3851413662
   (:use :cl))
-(in-package :ros.script.main.3851413662)
+(in-package :ros.script.ningle.3851413662)
 (ql:quickload :mita-web)
 
 (defun main (&rest argv)
   (declare (ignorable argv))
-  (mita.web.ningle:warmup)
-  (mita.web.ningle:start :use-thread nil))
+  (mita.main:warmup)
+  (mita.server.ningle:start :use-thread nil))
 ;;; vim: set ft=lisp lisp:

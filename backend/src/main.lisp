@@ -8,7 +8,8 @@
            :folder-set-tags
            :list-tags
            :tag-add
-           :tag-folders)
+           :tag-folders
+           :warmup)
   (:import-from :mita.util.threading
                 :->
                 :->>))
@@ -97,3 +98,9 @@
          (remove-if-not #'mita.file:file-exists-p)
          (mapcar (lambda (folder)
                    (folder->overview folder *file-store*))))))
+
+(defun warmup ()
+  (bt:make-thread
+   (lambda ()
+     (ignore-errors
+      (mita.file:store-prepare-cache *file-store*)))))

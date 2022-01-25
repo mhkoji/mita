@@ -12,7 +12,10 @@
            :folder-detail-path
            :folder-detail-file-list
            :folder-detail-folder-overview-list
-           :make-folder-detail))
+           :make-folder-detail
+           :viewer
+           :viewer-images
+           :make-viewer))
 (in-package :mita.view)
 
 (defstruct file
@@ -26,3 +29,6 @@
   path
   file-list
   folder-overview-list)
+
+(defstruct viewer
+  images)

@@ -9,7 +9,7 @@
            :internal-server-error))
 (in-package :mita.html)
 
-(defun folder (detail-jsown)
+(defun folder (detail-json-string)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -19,16 +19,14 @@
     (:body
      (cl-who:htm
       (:script :type "text/javascript"
-       (cl-who:str
-        (format nil "window['$d'] = ~A;"
-         (jsown:to-json detail-jsown)))))
+       (cl-who:str (format nil "window['$d'] = ~A;" detail-json-string))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script
       :type "text/javascript"
       :src "/static/gen/folder.bundle.js"))))
 
-(defun view (file-jsown-list)
+(defun view (viewer-json-string)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -38,11 +36,7 @@
     (:body
      (cl-who:htm
       (:script :type "text/javascript"
-       (cl-who:str
-        (format nil "window['$d'] = ~A;"
-         (jsown:to-json
-          (jsown:new-js
-            ("images" file-jsown-list)))))))
+       (cl-who:str (format nil "window['$d'] = ~A;" viewer-json-string))))
      (:div :id "app")
      (:script
       :type "text/javascript"

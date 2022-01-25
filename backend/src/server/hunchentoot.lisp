@@ -37,6 +37,10 @@
     ("id" (format nil "~A" (mita.tag:tag-id tag)))
     ("name" (mita.tag:tag-name tag))))
 
+(defun viewer->jsown (viewer)
+  (jsown:new-js
+    ("images" (mapcar #'file->jsown (mita.view:viewer-images viewer)))))
+
 ;;;
 
 (defvar *static-root*
@@ -87,17 +91,17 @@
    :on-folder
    (lambda (detail)
      (setf (hunchentoot:content-type*) "text/html")
-     (mita.html:folder (folder-detail->jsown detail)))
+     (mita.html:folder (jsown:to-json (folder-detail->jsown detail))))
    :on-not-found
    (lambda ()
      (not-found))))
 
 (connect! (params "/view*")
-  (mita.main:folder-image-files (car (getf params :splat))
+  (mita.main:show-viewer (car (getf params :splat))
   :on-found
-  (lambda (files)
+  (lambda (v)
     (setf (hunchentoot:content-type*) "text/html")
-    (mita.html:view (mapcar #'file->jsown files)))
+    (mita.html:view (jsown:to-json (viewer->jsown v))))
   :on-not-found
   (lambda ()
     (not-found))))
@@ -157,8 +161,9 @@
 (defvar *acceptor* nil)
 
 (defun stop ()
-  (when *acceptor*
-    (hunchentoot:stop *acceptor*)))
+  (when (and *acceptor*)
+    (ignore-errors
+     (hunchentoot:stop *acceptor*))))
   
 (defun start (&key (port 5000))
   (stop)

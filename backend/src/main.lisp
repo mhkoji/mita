@@ -3,7 +3,7 @@
   (:export :*file-store*
            :*tag-store*
            :show-path
-           :folder-image-files
+           :show-viewer
            :folder-tags
            :folder-set-tags
            :list-tags
@@ -63,16 +63,20 @@
             (t
              (funcall on-not-found))))))
 
-(defun folder-image-files (namestring &key on-found on-not-found)
+(defun show-viewer (namestring &key on-found on-not-found)
   ;; Assuming that all files in a folder are images.
   (let ((file (mita.file:store-make-file *file-store* namestring)))
     (let ((full-path (mita.file:file-full-path file)))
       (cond ((uiop/filesystem:directory-exists-p full-path)
              (assert (mita.file:folder-p file))
-             (funcall on-found
-                      (->> (mita.file:folder-list-files file *file-store*)
-                           (remove-if #'mita.file:folder-p)
-                           (mapcar #'file->view))))
+             (let ((viewer (mita.view:make-viewer
+                            :images
+                            (->> (mita.file:folder-list-files
+                                  file *file-store*)
+                                 (remove-if #'mita.file:folder-p)
+                                 (mapcar #'file->view)))))
+               (funcall on-found viewer)))
+                      
             (t
              (funcall on-not-found))))))
 

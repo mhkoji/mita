@@ -7,6 +7,40 @@
                 :->>))
 (in-package :mita.server.ningle)
 
+(defun file->jsown (file)
+  (jsown:new-js
+    ("path" (namestring (mita.view:file-path file)))
+    ("url"  (format nil "/folder/~A" (mita.view:file-path file)))))
+
+(defun folder-overview->jsown (overview)
+  (let ((path (mita.view:folder-overview-path overview)))
+    (jsown:new-js
+      ("path" (namestring path))
+      ("url" (format nil "/folder/~A" path))
+      ("thumbnail" (let ((file (mita.view:folder-overview-thumbnail-file
+                                overview)))
+                     (if file (file->jsown file) :null))))))
+
+(defun folder-detail->jsown (detail)
+  (jsown:new-js
+    ("path"
+     (namestring (mita.view:folder-detail-path detail)))
+    ("files"
+     (mapcar #'file->jsown
+             (mita.view:folder-detail-file-list detail)))
+    ("folders"
+     (mapcar #'folder-overview->jsown
+             (mita.view:folder-detail-folder-overview-list detail)))))
+
+(defun tag->jsown (tag)
+  (jsown:new-js
+    ("id" (format nil "~A" (mita.tag:tag-id tag)))
+    ("name" (mita.tag:tag-name tag))))
+
+(defun viewer->jsown (viewer)
+  (jsown:new-js
+    ("images" (mapcar #'file->jsown (mita.view:viewer-images viewer)))))
+
 ;;;
 
 (defvar *app* nil)
@@ -30,7 +64,8 @@
     :on-folder
     (lambda (detail)
       `(200 (:content-type "text/html")
-            (,(mita.html:folder (folder-detail->jsown detail)))))
+            (,(mita.html:folder
+               (jsown:to-json (folder-detail->jsown detail))))))
     :on-not-found
     (lambda ()
       (ningle:not-found *app*)))))
@@ -38,11 +73,11 @@
 (setf
  (ningle:route *app* "/view*")
  (lambda (params)
-   (mita.main:folder-image-files (cadr (assoc :splat params))
+   (mita.main:show-viewer (cadr (assoc :splat params))
     :on-found
-    (lambda (files)
+    (lambda (v)
       `(200 (:content-type "text/html")
-            (,(mita.html:view (mapcar #'file->jsown files)))))
+            (,(mita.html:view (jsown:to-json (viewer->jsown v))))))
     :on-not-found
     (lambda ()
       (ningle:not-found *app*)))))

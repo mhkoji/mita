@@ -11,7 +11,6 @@
   :depends-on (:bordeaux-threads
                :cl-csv
                :cl-who
-               :jsown
                :local-time
                :split-sequence
                :uuid))

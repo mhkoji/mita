@@ -1,6 +1,6 @@
-(asdf:defsystem :mita-db
+(asdf:defsystem :mita-util-db
   :serial t
-  :pathname "src/db"
+  :pathname "src/util/db"
   :components
   ((:file "b-plus-tree"))
   :depends-on

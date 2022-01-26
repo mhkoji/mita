@@ -76,7 +76,6 @@
                                  (remove-if #'mita.file:folder-p)
                                  (mapcar #'file->view)))))
                (funcall on-found viewer)))
-                      
             (t
              (funcall on-not-found))))))
 

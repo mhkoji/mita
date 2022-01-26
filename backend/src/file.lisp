@@ -95,10 +95,11 @@
                collect (make-file path full-path)))))))
 
 (defun store-make-file (store namestring)
-  (let ((path (uiop/pathname:relativize-pathname-directory namestring)))
-    (let ((full-path (uiop/pathname:ensure-absolute-pathname
-                      path (parse-namestring (store-root-path store)))))
-      (make-file path full-path))))
+  (make-file
+   (parse-namestring namestring)
+   (uiop/pathname:subpathname
+    (parse-namestring (store-root-path store))
+    (uiop/pathname:relativize-pathname-directory namestring))))
 
 (defun store-prepare-cache (store)
   (let ((path-list (list (store-root-path store))))

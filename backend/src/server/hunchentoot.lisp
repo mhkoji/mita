@@ -7,42 +7,6 @@
                 :->))
 (in-package :mita.server.hunchentoot)
 
-(defun file->jsown (file)
-  (jsown:new-js
-    ("path" (namestring (mita.view:file-path file)))
-    ("url"  (format nil "/folder/~A" (mita.view:file-path file)))))
-
-(defun folder-overview->jsown (overview)
-  (let ((path (mita.view:folder-overview-path overview)))
-    (jsown:new-js
-      ("path" (namestring path))
-      ("url" (format nil "/folder/~A" path))
-      ("thumbnail" (let ((file (mita.view:folder-overview-thumbnail-file
-                                overview)))
-                     (if file (file->jsown file) :null))))))
-
-(defun folder-detail->jsown (detail)
-  (jsown:new-js
-    ("path"
-     (namestring (mita.view:folder-detail-path detail)))
-    ("files"
-     (mapcar #'file->jsown
-             (mita.view:folder-detail-file-list detail)))
-    ("folders"
-     (mapcar #'folder-overview->jsown
-             (mita.view:folder-detail-folder-overview-list detail)))))
-
-(defun tag->jsown (tag)
-  (jsown:new-js
-    ("id" (format nil "~A" (mita.tag:tag-id tag)))
-    ("name" (mita.tag:tag-name tag))))
-
-(defun viewer->jsown (viewer)
-  (jsown:new-js
-    ("images" (mapcar #'file->jsown (mita.view:viewer-images viewer)))))
-
-;;;
-
 (defvar *static-root*
   (merge-pathnames "static/" (asdf:system-source-directory :mita)))
 
@@ -91,7 +55,7 @@
    :on-folder
    (lambda (detail)
      (setf (hunchentoot:content-type*) "text/html")
-     (mita.html:folder (jsown:to-json (folder-detail->jsown detail))))
+     (mita.html:folder (mita.server.json:folder-detail detail)))
    :on-not-found
    (lambda ()
      (not-found))))
@@ -101,7 +65,7 @@
   :on-found
   (lambda (v)
     (setf (hunchentoot:content-type*) "text/html")
-    (mita.html:view (jsown:to-json (viewer->jsown v))))
+    (mita.html:view (mita.server.json:viewer v)))
   :on-not-found
   (lambda ()
     (not-found))))
@@ -113,26 +77,26 @@
 (connect! (_ "/api/tags")
   (setf (hunchentoot:content-type*) "application/json")
   (let ((tags (mita.main:list-tags)))
-    (jsown:to-json (mapcar #'tag->jsown tags))))
+    (mita.server.json:tag-list tags)))
 
 (connect! (_ "/api/tags/_create" :method :post)
   (setf (hunchentoot:content-type*) "application/json")
   (let ((qp (query-params*)))
     (let ((tag (mita.main:tag-add
                 (cdr (assoc "name" qp :test #'string=)))))
-      (jsown:to-json (tag->jsown tag)))))
+      (mita.server.json:tag tag))))
 
 (connect! (params "/api/tags/:tag-id/folders")
   (setf (hunchentoot:content-type*) "application/json")
   (let ((overview-list (mita.main:tag-folders (getf params :tag-id))))
-    (jsown:to-json (mapcar #'folder-overview->jsown overview-list))))
+    (mita.server.json:folder-overview-list overview-list)))
 
 (connect! (_ "/api/folder/tags")
   (setf (hunchentoot:content-type*) "application/json")
   (let ((qp (query-params*)))
     (let ((tags (mita.main:folder-tags
                  (cdr (assoc "path" qp :test #'string=)))))
-      (jsown:to-json (mapcar #'tag->jsown tags)))))
+      (mita.server.json:tag-list tags))))  
 
 (connect! (_ "/api/folder/tags" :method :put)
   (setf (hunchentoot:content-type*) "application/json")
@@ -141,7 +105,7 @@
     (mita.main:folder-set-tags
      (cdr (assoc "path" qp :test #'string=))
      (jsown:val bj "tag-id-list")))
-  (jsown:to-json (jsown:new-js)))
+  (mita.server.json:empty))
 
 ;;;
 

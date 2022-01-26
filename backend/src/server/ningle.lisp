@@ -7,42 +7,6 @@
                 :->>))
 (in-package :mita.server.ningle)
 
-(defun file->jsown (file)
-  (jsown:new-js
-    ("path" (namestring (mita.view:file-path file)))
-    ("url"  (format nil "/folder/~A" (mita.view:file-path file)))))
-
-(defun folder-overview->jsown (overview)
-  (let ((path (mita.view:folder-overview-path overview)))
-    (jsown:new-js
-      ("path" (namestring path))
-      ("url" (format nil "/folder/~A" path))
-      ("thumbnail" (let ((file (mita.view:folder-overview-thumbnail-file
-                                overview)))
-                     (if file (file->jsown file) :null))))))
-
-(defun folder-detail->jsown (detail)
-  (jsown:new-js
-    ("path"
-     (namestring (mita.view:folder-detail-path detail)))
-    ("files"
-     (mapcar #'file->jsown
-             (mita.view:folder-detail-file-list detail)))
-    ("folders"
-     (mapcar #'folder-overview->jsown
-             (mita.view:folder-detail-folder-overview-list detail)))))
-
-(defun tag->jsown (tag)
-  (jsown:new-js
-    ("id" (format nil "~A" (mita.tag:tag-id tag)))
-    ("name" (mita.tag:tag-name tag))))
-
-(defun viewer->jsown (viewer)
-  (jsown:new-js
-    ("images" (mapcar #'file->jsown (mita.view:viewer-images viewer)))))
-
-;;;
-
 (defvar *app* nil)
 
 (setq *app* (make-instance 'ningle:app))
@@ -65,7 +29,7 @@
     (lambda (detail)
       `(200 (:content-type "text/html")
             (,(mita.html:folder
-               (jsown:to-json (folder-detail->jsown detail))))))
+               (mita.server.json:folder-detail detail)))))
     :on-not-found
     (lambda ()
       (ningle:not-found *app*)))))
@@ -77,7 +41,7 @@
     :on-found
     (lambda (v)
       `(200 (:content-type "text/html")
-            (,(mita.html:view (jsown:to-json (viewer->jsown v))))))
+            (,(mita.html:view (mita.server.json:viewer v)))))
     :on-not-found
     (lambda ()
       (ningle:not-found *app*)))))
@@ -96,7 +60,7 @@
    (declare (ignore params))
    (let ((tags (mita.main:list-tags)))
      `(200 (:content-type "application/json")
-           (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
+           (,(mita.server.json:tag-list tags))))))
 
 (setf
  (ningle:route *app* "/api/folder/tags")
@@ -104,7 +68,7 @@
    (let ((tags (mita.main:folder-tags
                 (cdr (assoc "path" params :test #'string=)))))
      `(200 (:content-type "application/json")
-           (,(jsown:to-json (mapcar #'tag->jsown tags)))))))
+           (,(mita.server.json:tag-list tags))))))
 
 (setf
  (ningle:route *app* "/api/folder/tags" :method :put)
@@ -113,7 +77,7 @@
     (cdr (assoc "path" params :test #'string=))
     (cdr (assoc "tag-id-list" params :test #'string=)))
    `(200 (:content-type "application/json")
-         (,(jsown:to-json (jsown:new-js))))))
+         (,(mita.server.json:empty)))))
 
 (setf
  (ningle:route *app* "/api/tags/_create" :method :post)
@@ -121,7 +85,7 @@
    (let ((tag (mita.main:tag-add
                (cdr (assoc "name" params :test #'string=)))))
      `(200 (:content-type "application/json")
-           (,(jsown:to-json (tag->jsown tag)))))))
+           (,(mita.server.json:tag tag))))))
 
 (setf
  (ningle:route *app* "/api/tags/:tag-id/folders")
@@ -129,8 +93,7 @@
    (let ((overview-list (mita.main:tag-folders
                          (cdr (assoc :tag-id params :test #'string=)))))
      `(200 (:content-type "application/json")
-           (,(jsown:to-json
-              (mapcar #'folder-overview->jsown overview-list)))))))
+           (,(mita.server.json:folder-overview-list overview-list))))))
 
 ;;;
 

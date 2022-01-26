@@ -4,4 +4,5 @@
   :depends-on (:clack
                :jsown
                :ningle
-               :mita))
+               :mita
+               :mita-json))

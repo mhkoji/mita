@@ -36,9 +36,9 @@ function Content(props) {
 function ContentRow(props) {
   return (
     <div className="row">
-      {props.contents.map((c) => {
-        return <Content key={c.type + ":" + c.id} content={c} />;
-      })}
+      {props.contents.map((c) => (
+        <Content key={c.type + ":" + c.id} content={c} />
+      ))}
     </div>
   );
 }

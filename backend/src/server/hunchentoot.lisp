@@ -7,16 +7,9 @@
                 :->))
 (in-package :mita.server.hunchentoot)
 
-(defvar *static-root*
-  (merge-pathnames "static/" (asdf:system-source-directory :mita)))
-
 (defvar *mapper* nil)
 
 (setq *mapper* (myway:make-mapper))
-
-(defun not-found ()
-  (setf (hunchentoot:return-code*) hunchentoot:+http-not-found+)
-  (hunchentoot:abort-request-handler))
 
 (defun query-params* ()
   (-> (hunchentoot:query-string*)
@@ -36,13 +29,6 @@
                        `(lambda (,params) ,@body))
                   ,@args))
 
-(connect! (params "/static/*")
-  (let ((path (merge-pathnames
-               (car (getf params :splat)) *static-root*)))
-    (if (uiop/filesystem:file-exists-p path)
-        (hunchentoot:handle-static-file path)
-        (not-found))))
-
 (connect! (_ "/")
   (hunchentoot:redirect "/folder/"))
 
@@ -56,19 +42,15 @@
    (lambda (detail)
      (setf (hunchentoot:content-type*) "text/html")
      (mita.html:folder (mita.server.json:folder-detail detail)))
-   :on-not-found
-   (lambda ()
-     (not-found))))
+   :on-not-found (lambda () nil)))
 
 (connect! (params "/view*")
   (mita.main:show-viewer (car (getf params :splat))
-  :on-found
-  (lambda (v)
-    (setf (hunchentoot:content-type*) "text/html")
-    (mita.html:view (mita.server.json:viewer v)))
-  :on-not-found
-  (lambda ()
-    (not-found))))
+   :on-found
+   (lambda (v)
+     (setf (hunchentoot:content-type*) "text/html")
+     (mita.html:view (mita.server.json:viewer v)))
+   :on-not-found (lambda () nil)))
 
 (connect! (_ "/tags")
   (setf (hunchentoot:content-type*) "text/html")
@@ -96,7 +78,7 @@
   (let ((qp (query-params*)))
     (let ((tags (mita.main:folder-tags
                  (cdr (assoc "path" qp :test #'string=)))))
-      (mita.server.json:tag-list tags))))  
+      (mita.server.json:tag-list tags))))
 
 (connect! (_ "/api/folder/tags" :method :put)
   (setf (hunchentoot:content-type*) "application/json")
@@ -114,13 +96,14 @@
 
 (defmethod hunchentoot:acceptor-dispatch-request ((acceptor acceptor)
                                                   request)
-  (let ((path (hunchentoot:script-name request))
-        (method (hunchentoot:request-method request)))
-    (multiple-value-bind (resp found-p)
-        (myway:dispatch *mapper* path :method method)
-      (if found-p
-          resp
-          (not-found)))))
+  (multiple-value-bind (resp found-p)
+      (let ((path (hunchentoot:script-name request))
+            (method (hunchentoot:request-method request)))
+        (myway:dispatch *mapper* path :method method))
+    (if (and resp found-p)
+        resp
+        ;; Serve static files by the base acceptor class.
+        (call-next-method))))
 
 (defvar *acceptor* nil)
 
@@ -129,7 +112,10 @@
     (ignore-errors
      (hunchentoot:stop *acceptor*))))
   
-(defun start (&key (port 5000))
+(defun start (&key (port 5000)
+                   (document-root (asdf:system-source-directory :mita)))
   (stop)
-  (setq *acceptor* (make-instance 'acceptor :port port))
+  (setq *acceptor* (make-instance 'acceptor
+                                  :port port
+                                  :document-root document-root))
   (hunchentoot:start *acceptor*))

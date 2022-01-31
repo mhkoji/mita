@@ -32,9 +32,8 @@
   (let ((folder-files (mita.file:folder-list-files folder file-store)))
     (mita.view:make-folder-detail
      :path (mita.file:file-path folder)
-     :file-list
-     (->> (remove-if #'mita.file:folder-p folder-files)
-          (mapcar #'file->view))
+     :file-list (->> (remove-if #'mita.file:folder-p folder-files)
+                     (mapcar #'file->view))
      :folder-overview-list
      (let ((folders (remove-if-not #'mita.file:folder-p folder-files)))
        (->> (sort folders #'> :key #'mita.file:file-created-at)

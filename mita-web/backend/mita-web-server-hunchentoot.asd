@@ -1,8 +1,7 @@
-(asdf:defsystem :mita-server-hunchentoot
+(asdf:defsystem :mita-web-server-hunchentoot
   :components
   ((:file "src/server/hunchentoot"))
   :depends-on (:hunchentoot
                :myway
                :quri
-               :mita
-               :mita-json))
+               :mita-web))

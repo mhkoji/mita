@@ -11,11 +11,11 @@ exec ros -Q -- $0 "$@"
 (defpackage :ros.script.hunchentoot.3852113395
   (:use :cl))
 (in-package :ros.script.hunchentoot.3852113395)
-(ql:quickload :mita-server-hunchentoot)
+(ql:quickload :mita-web-server-hunchentoot)
 
 (defun main (&rest argv)
   (declare (ignorable argv))
-  (mita.main:warmup)
-  (mita.server.hunchentoot:start)
+  (mita.web.server.hunchentoot:warmup)
+  (mita.web.server.hunchentoot:start)
   (loop do (sleep 1)))
 ;;; vim: set ft=lisp lisp:

@@ -1,13 +1,17 @@
-(defpackage :mita.server.hunchentoot
+(defpackage :mita.web.server.hunchentoot
   (:use :cl)
   (:export :*static-root*
+           :*service*
+           :warmup
            :start
            :stop)
   (:import-from :mita.util.threading
                 :->))
-(in-package :mita.server.hunchentoot)
+(in-package :mita.web.server.hunchentoot)
 
 (defvar *mapper* nil)
+
+(defvar *service* nil)
 
 (setq *mapper* (myway:make-mapper))
 
@@ -33,7 +37,8 @@
   (hunchentoot:redirect "/folder/"))
 
 (connect! (params "/folder*")
-  (mita.main:show-path (car (getf params :splat))
+  (mita.web:service-path-content
+   *service* (car (getf params :splat))
    :on-file
    (lambda (path)
      (setf (hunchentoot:header-out "cache-control") "max-age=31536000")
@@ -41,53 +46,59 @@
    :on-folder
    (lambda (detail)
      (setf (hunchentoot:content-type*) "text/html")
-     (mita.html:folder (mita.server.json:folder-detail detail)))
+     (mita.web.html:folder (mita.web.json:folder-detail detail)))
    :on-not-found (lambda () nil)))
 
 (connect! (params "/view*")
-  (mita.main:show-viewer (car (getf params :splat))
+  (mita.web:service-folder-images
+   *service* (car (getf params :splat))
    :on-found
-   (lambda (v)
+   (lambda (images)
      (setf (hunchentoot:content-type*) "text/html")
-     (mita.html:view (mita.server.json:viewer v)))
+     (mita.web.html:view (mita.web.json:viewer images)))
    :on-not-found (lambda () nil)))
 
 (connect! (_ "/tags")
   (setf (hunchentoot:content-type*) "text/html")
-  (mita.html:tags))
+  (mita.web.html:tags))
 
 (connect! (_ "/api/tags")
   (setf (hunchentoot:content-type*) "application/json")
-  (let ((tags (mita.main:list-tags)))
-    (mita.server.json:tag-list tags)))
+  (let ((tags (mita.web:service-list-tags *service*)))
+    (mita.web.json:tag-list tags)))
 
 (connect! (_ "/api/tags/_create" :method :post)
   (setf (hunchentoot:content-type*) "application/json")
   (let ((qp (query-params*)))
-    (let ((tag (mita.main:tag-add
+    (let ((tag (mita.web:service-tag-add
+                *service*
                 (cdr (assoc "name" qp :test #'string=)))))
-      (mita.server.json:tag tag))))
+      (mita.web.json:tag tag))))
 
 (connect! (params "/api/tags/:tag-id/folders")
   (setf (hunchentoot:content-type*) "application/json")
-  (let ((overview-list (mita.main:tag-folders (getf params :tag-id))))
-    (mita.server.json:folder-overview-list overview-list)))
+  (let ((overview-list (mita.web:service-tag-folders
+                        *service*
+                        (getf params :tag-id))))
+    (mita.web.json:folder-overview-list overview-list)))
 
 (connect! (_ "/api/folder/tags")
   (setf (hunchentoot:content-type*) "application/json")
   (let ((qp (query-params*)))
-    (let ((tags (mita.main:folder-tags
+    (let ((tags (mita.web:service-folder-tags
+                 *service*
                  (cdr (assoc "path" qp :test #'string=)))))
-      (mita.server.json:tag-list tags))))
+      (mita.web.json:tag-list tags))))
 
 (connect! (_ "/api/folder/tags" :method :put)
   (setf (hunchentoot:content-type*) "application/json")
   (let ((qp (query-params*))
         (bj (body-jsown*)))
-    (mita.main:folder-set-tags
+    (mita.web:service-folder-set-tags
+     *service*
      (cdr (assoc "path" qp :test #'string=))
      (jsown:val bj "tag-id-list")))
-  (mita.server.json:empty))
+  (mita.web.json:empty))
 
 ;;;
 
@@ -113,9 +124,12 @@
      (hunchentoot:stop *acceptor*))))
   
 (defun start (&key (port 5000)
-                   (document-root (asdf:system-source-directory :mita)))
+                   (document-root (asdf:system-source-directory :mita-web)))
   (stop)
   (setq *acceptor* (make-instance 'acceptor
                                   :port port
                                   :document-root document-root))
   (hunchentoot:start *acceptor*))
+
+(defun warmup ()
+  (mita.web:service-warmup *service*))

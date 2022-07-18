@@ -1,8 +1,7 @@
-(asdf:defsystem :mita-server-ningle
+(asdf:defsystem :mita-web-server-ningle
   :components
   ((:file "src/server/ningle"))
   :depends-on (:clack
                :jsown
                :ningle
-               :mita
-               :mita-json))
+               :mita-web))

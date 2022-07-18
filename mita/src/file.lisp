@@ -41,7 +41,7 @@
 ;;          + a/
 ;;             + b/
 ;;
-;; root:  /home/xxx/
+;; root:  /home/xxx(/)
 ;; full:  /home/xxx/a/b/
 ;; path:           /a/b/
 (defun namestring-subtract (root-namestring full-namestring)
@@ -50,7 +50,12 @@
            (string= root-namestring
                     full-namestring
                     :end2 (length root-namestring)))
-      (subseq full-namestring (length root-namestring))
+      (let ((path-namestring
+             (subseq full-namestring (length root-namestring))))
+        (if (or (string= path-namestring "")
+                (char/= (char path-namestring 0) #\/))
+            (concatenate 'string "/" path-namestring)
+            path-namestring))
       full-namestring))
 
 (defstruct store
@@ -89,9 +94,8 @@
                          (uiop/filesystem:directory*
                           uiop/pathname:*wild-file-for-directory*)))))
          (loop for full-path in full-path-list
-               for path = (uiop/pathname:relativize-pathname-directory
-                           (namestring-subtract root-namestring
-                                                (namestring full-path)))
+               for path = (namestring-subtract root-namestring
+                                               (namestring full-path))
                collect (make-file path full-path)))))))
 
 (defun store-make-file (store namestring)

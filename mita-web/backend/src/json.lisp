@@ -11,13 +11,13 @@
 (defun file->jsown (file)
   (jsown:new-js
     ("path" (namestring (mita.web.view:file-path file)))
-    ("url"  (format nil "/folder/~A" (mita.web.view:file-path file)))))
+    ("url"  (format nil "/folder~A" (mita.web.view:file-path file)))))
 
 (defun folder-overview->jsown (overview)
   (let ((path (mita.web.view:folder-overview-path overview)))
     (jsown:new-js
       ("path" (namestring path))
-      ("url" (format nil "/folder/~A" path))
+      ("url" (format nil "/folder~A" path))
       ("thumbnail"
        (let ((file (mita.web.view:folder-overview-thumbnail-file
                     overview)))

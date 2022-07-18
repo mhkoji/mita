@@ -1,17 +1,11 @@
 const path = require("path");
-const webpack = require("webpack");
-const TerserPlugin = require("terser-webpack-plugin");
-const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const webpack = require("webpack");
 
 module.exports = {
-  //  mode: "production",
-  mode: "development",
-
   plugins: [
-    new MiniCssExtractPlugin({
-      filename: "[name].bundle.css",
-    }),
+    new MiniCssExtractPlugin(),
     new webpack.ProvidePlugin({
       $: "jquery",
       jQuery: "jquery",
@@ -37,12 +31,7 @@ module.exports = {
   },
 
   optimization: {
-    minimizer: [
-      new TerserPlugin({
-        extractComments: false,
-      }),
-      new OptimizeCSSAssetsPlugin({}),
-    ],
+    minimizer: [new CssMinimizerPlugin()],
   },
 
   entry: {
@@ -53,12 +42,5 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname, "../backend/static/gen"),
-    filename: "[name].bundle.js",
-  },
-
-  performance: {
-    // Suppress warnings in size limits
-    maxEntrypointSize: 2048000,
-    maxAssetSize: 2048000,
   },
 };

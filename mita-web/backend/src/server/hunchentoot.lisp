@@ -122,10 +122,15 @@
   (when (and *acceptor*)
     (ignore-errors
      (hunchentoot:stop *acceptor*))))
-  
+
 (defun start (&key (port 5000)
-                   (document-root (asdf:system-source-directory :mita-web)))
+                   (document-root (asdf:system-source-directory :mita-web))
+                   use-webpack-dev-server-p)
   (stop)
+  (setq mita.web.html:*base-gen-path*
+        (if use-webpack-dev-server-p
+            "http://localhost:9000/"
+            "/static/gen/"))
   (setq *acceptor* (make-instance 'acceptor
                                   :port port
                                   :document-root document-root))

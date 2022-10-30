@@ -1,7 +1,6 @@
 (defpackage :mita.web.server.hunchentoot
   (:use :cl)
-  (:export :*static-root*
-           :*service*
+  (:export :*service*
            :warmup
            :start
            :stop)

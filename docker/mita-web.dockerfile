@@ -16,7 +16,8 @@ FROM ubuntu:20.04
 
 RUN apt update && apt install -y \
     wget \
-    sbcl
+    sbcl \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir \
     /app \
@@ -49,6 +50,6 @@ RUN sbcl \
       --load "/app/mita-web-backend/bin/docker.lisp" \
       --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.bin.docker:main :executable t)"
 
-COPY --from=static-builder /backend /mita-static
+COPY --from=static-builder /backend /mita-www
 
 CMD ["/mita"]

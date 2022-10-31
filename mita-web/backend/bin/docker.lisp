@@ -9,5 +9,5 @@
          :file-store (mita.file:make-store :root-path "/file-store/")
          :tag-store (mita.tag:make-store :dir "/tag-store/")))
   (mita.web.server.hunchentoot:warmup)
-  (mita.web.server.hunchentoot:start  :document-root "/mita-static/")
+  (mita.web.server.hunchentoot:start  :document-root "/mita-www/")
   (loop do (sleep 1)))

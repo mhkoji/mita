@@ -123,7 +123,9 @@
      (hunchentoot:stop *acceptor*))))
 
 (defun start (&key (port 5000)
-                   (document-root (asdf:system-source-directory :mita-web))
+                   (document-root (merge-pathnames
+                                   "www/"
+                                   (asdf:system-source-directory :mita-web)))
                    use-webpack-dev-server-p)
   (stop)
   (setq mita.web.html:*base-gen-path*

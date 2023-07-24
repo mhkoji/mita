@@ -1,40 +1,67 @@
-(defpackage :mita.web
+(defpackage :mita.web.folder
   (:use :cl)
-  (:export :service
-           :service-path-content
-           :service-folder-images
+  (:export :file
+           :file-path
+           :file-full-path
+           :make-file
+           :overview
+           :overview-path
+           :overview-thumbnail-file
+           :make-overview
+           :detail
+           :detail-path
+           :detail-file-list
+           :detail-overview-list
+           :make-detail
+           :service
            :service-folder-tags
            :service-folder-set-tags
-           :service-list-tags
-           :service-tag-add
-           :service-tag-folders
-           :service-warmup
-           :make-service)
+           :service-file-store
+           :service-path-content
+           :service-images
+           :service-tags
+           :service-set-tags
+           :service-list-folders)
   (:import-from :mita.util.threading
                 :->
                 :->>))
-(in-package :mita.web)
+(in-package :mita.web.folder)
+
+(defstruct file
+  path)
+
+(defstruct overview
+  path
+  thumbnail-file)
+
+(defstruct detail
+  path
+  file-list
+  overview-list)
 
 (defun file->view (file)
-  (mita.web.view:make-file :path (mita.file:file-path file)))
+  (make-file :path (mita.file:file-path file)))
 
 (defun folder->overview (folder file-store)
-  (mita.web.view:make-folder-overview
-   :path (mita.file:file-path folder)
+  (make-overview
+   :path
+   (mita.file:file-path folder)
    :thumbnail-file
-   (let ((file (first
-                (->> (mita.file:folder-list-files folder file-store)
-                     (remove-if #'mita.file:folder-p)))))
-     (when file
-       (file->view file)))))
+   (let ((folder-files
+          (->> (mita.file:folder-list-files folder file-store)
+               (remove-if #'mita.file:folder-p))))
+     (when folder-files
+       (file->view (first folder-files))))))
 
 (defun folder->detail (folder file-store)
   (let ((folder-files (mita.file:folder-list-files folder file-store)))
-    (mita.web.view:make-folder-detail
-     :path (mita.file:file-path folder)
-     :file-list (->> (remove-if #'mita.file:folder-p folder-files)
-                     (mapcar #'file->view))
-     :folder-overview-list
+    (make-detail
+     :path
+     (mita.file:file-path folder)
+     :file-list
+     (->> (remove-if #'mita.file:folder-p folder-files)
+          (mapcar #'file->view))
+     :overview-list
      (let ((folders (remove-if-not #'mita.file:folder-p folder-files)))
        (->> (sort folders #'> :key #'mita.file:file-created-at)
             (mapcar (lambda (f)
@@ -42,12 +69,9 @@
 
 ;;;
 
-(defstruct service
-  file-store
-  (tag-store (mita.tag:make-store
-              :dir *default-pathname-defaults*)))
-
-;;;
+(defgeneric service-file-store (service))
+(defgeneric service-folder-tags (service folder))
+(defgeneric service-folder-set-tags (service folder tag-id-set))
 
 (defun service-path-content (service namestring
                              &key on-file on-folder on-not-found)
@@ -62,8 +86,8 @@
           (t
            (funcall on-not-found)))))
 
-(defun service-folder-images (service namestring
-                              &key on-found on-not-found)
+(defun service-images (service namestring
+                       &key on-found on-not-found)
   ;; Assuming that all files in a folder are images.
   (let* ((file-store (service-file-store service))
          (file (mita.file:store-make-file file-store namestring))
@@ -77,40 +101,23 @@
           (t
            (funcall on-not-found)))))
 
-(defun service-folder-tags (service namestring)
+(defun service-tags (service namestring)
   (let ((folder (mita.file:store-make-file (service-file-store service)
                                            namestring)))
-    (mita.tag:content-tags (service-tag-store service)
-                           folder)))
+    (service-folder-tags service folder)))
 
-(defun service-folder-set-tags (service namestring tag-id-list)
+(defun service-set-tags (service namestring tag-id-list)
   (let ((folder (mita.file:store-make-file (service-file-store service)
                                            namestring)))
-    (mita.tag:content-tags-set (service-tag-store service)
-                               folder
-                               tag-id-list)))
+    (service-folder-set-tags service folder tag-id-list)))
 
-(defun service-list-tags (service)
-  (mita.tag:store-list-tags (service-tag-store service)))
+;;;
 
-(defun service-tag-add (service name)
-  (mita.tag:store-add-tag (service-tag-store service) name))
-
-(defun service-tag-folders (service tag-id)
-  (let ((file-store (service-file-store service))
-        (tag (mita.tag:store-get-tag (service-tag-store service)
-                                     tag-id)))
-    (->> (mita.tag:tag-content-id-list (service-tag-store service)
-                                       tag
-                                       "folder")
+(defun service-list-folders (service namestring-list)
+  (let ((file-store (service-file-store service)))
+    (->> namestring-list
          (mapcar (lambda (namestring)
                    (mita.file:store-make-file file-store namestring)))
          (remove-if-not #'mita.file:file-exists-p)
          (mapcar (lambda (folder)
                    (folder->overview folder file-store))))))
-
-(defun service-warmup (service)
-  (bt:make-thread
-   (lambda ()
-     (ignore-errors
-      (mita.file:store-prepare-cache (service-file-store service))))))

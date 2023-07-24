@@ -16,7 +16,7 @@
 (defun gen-path (filename)
   (format nil "~A~A" *base-gen-path* filename))
 
-(defun folder (detail-json-string)
+(defun folder (folder-detail)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -26,14 +26,15 @@
     (:body
      (cl-who:htm
       (:script :type "text/javascript"
-       (cl-who:str (format nil "window['$d'] = ~A;" detail-json-string))))
+       (cl-who:str (format nil "window['$d'] = ~A;" 
+                           (mita.web.json:folder-detail folder-detail)))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script
       :type "text/javascript"
       :src  (gen-path "folder.js")))))
 
-(defun view (viewer-json-string)
+(defun view (images)
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -43,7 +44,8 @@
     (:body
      (cl-who:htm
       (:script :type "text/javascript"
-       (cl-who:str (format nil "window['$d'] = ~A;" viewer-json-string))))
+       (cl-who:str (format nil "window['$d'] = ~A;"
+                           (mita.web.json:images images)))))
      (:div :id "app")
      (:script
       :type "text/javascript"

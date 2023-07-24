@@ -3,10 +3,12 @@
   (:export :tag
            :tag-id
            :tag-name
-           :tag-content-id-list
+           :content-id
+           :content-type
            :store-list-tags
            :store-add-tag
            :store-get-tag
+           :tag-content-id-list
            :content-tags
            :content-tags-set
            :make-store)
@@ -115,18 +117,3 @@
                             (and (string= tag-id (row-tag-id row))
                                  (string= type (row-content-type row)))))
            (mapcar #'row-content-id)))))
-
-;;;
-
-(defmethod content-id ((c mita.file:folder))
-  (namestring (mita.file:file-path c)))
-
-(defmethod content-type ((c mita.file:folder))
-  "folder")
-
-#+nil
-(progn
-  (defmethod content-id (c)
-    "id")
-  (defmethod content-type (c)
-    "type"))

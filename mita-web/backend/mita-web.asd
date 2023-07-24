@@ -2,10 +2,11 @@
   :pathname "src/"
   :serial t
   :components
-  ((:file "view")
-   (:file "web")
-   (:file "html")
-   (:file "json"))
+  ((:file "web/folder")
+   (:file "web/tag")
+   (:file "web/service")
+   (:file "json")
+   (:file "html"))
   :depends-on (:mita
                :bordeaux-threads
                :cl-who

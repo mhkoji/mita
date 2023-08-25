@@ -8,11 +8,42 @@
                 :->))
 (in-package :mita.web.server.hunchentoot)
 
-(defvar *mapper* nil)
+(defgeneric dispatch (dispatcher method path))
 
-(defvar *service* nil)
+(defclass acceptor (hunchentoot:acceptor)
+  ((dispatcher :initarg :dispatcher
+               :reader acceptor-dispatcher)))
 
-(setq *mapper* (myway:make-mapper))
+(defmethod hunchentoot:acceptor-dispatch-request ((acceptor acceptor)
+                                                  request)
+  (or (dispatch (acceptor-dispatcher acceptor)
+                (hunchentoot:request-method request)
+                (hunchentoot:script-name request))
+      ;; Serve static files by the base acceptor class.
+      (call-next-method)))
+
+;;;
+
+(defmethod dispatch ((mapper myway:mapper) method path)
+  (multiple-value-bind (resp found-p)
+      (myway:dispatch mapper path :method method)
+    (when found-p
+      resp)))
+
+(defmacro gen-mapper (&rest clauses)
+  `(let ((mapper (myway:make-mapper)))
+     (progn
+       ,@(mapcar (lambda (cls)
+                   (destructuring-bind (method url params &body body) cls
+                     `(myway:connect mapper ,url
+                                     ,(if (null params)
+                                          `(lambda (p)
+                                             (declare (ignore p))
+                                             ,@body)
+                                          `(lambda ,params ,@body))
+                                     :method ,method)))
+                 clauses)
+       mapper)))
 
 (defun query-params* ()
   (-> (hunchentoot:query-string*)
@@ -23,97 +54,74 @@
       (babel:octets-to-string :encoding :utf-8)
       (jsown:parse)))
 
-(defmacro connect! ((params url &rest args) &body body)
-  `(myway:connect *mapper* ,url
-                  ,(if (eq params '_)
-                       `(lambda (p)
-                          (declare (ignore p))
-                          ,@body)
-                       `(lambda (,params) ,@body))
-                  ,@args))
+(defvar *service* nil)
 
-(connect! (_ "/")
-  (hunchentoot:redirect "/folder/"))
+(defvar *mapper*
+  (gen-mapper
+   (:get "/" ()
+    (hunchentoot:redirect "/folder/"))
 
-(connect! (params "/folder*")
-  (mita.web:service-path-content
-   *service* (car (getf params :splat))
-   :on-file
-   (lambda (path)
-     (setf (hunchentoot:header-out "cache-control") "max-age=31536000")
-     (hunchentoot:handle-static-file path))
-   :on-folder
-   (lambda (detail)
-     (setf (hunchentoot:content-type*) "text/html")
-     (mita.web.html:folder (mita.web.json:folder-detail detail)))
-   :on-not-found (lambda () nil)))
+   (:get "/folder*" (params)
+    (mita.web:service-path-content
+     *service* (car (getf params :splat))
+     :on-file
+     (lambda (path)
+       (setf (hunchentoot:header-out "cache-control") "max-age=31536000")
+       (hunchentoot:handle-static-file path))
+     :on-folder
+     (lambda (detail)
+       (setf (hunchentoot:content-type*) "text/html")
+       (mita.web.html:folder (mita.web.json:folder-detail detail)))
+     :on-not-found (lambda () nil)))
 
-(connect! (params "/view*")
-  (mita.web:service-folder-images
-   *service* (car (getf params :splat))
-   :on-found
+   (:get "/view*" (params)
+    (mita.web:service-folder-images
+     *service* (car (getf params :splat))
+     :on-found
    (lambda (images)
      (setf (hunchentoot:content-type*) "text/html")
      (mita.web.html:view (mita.web.json:viewer images)))
    :on-not-found (lambda () nil)))
 
-(connect! (_ "/tags")
-  (setf (hunchentoot:content-type*) "text/html")
-  (mita.web.html:tags))
+   (:get "/tags" ()
+    (setf (hunchentoot:content-type*) "text/html")
+    (mita.web.html:tags))
+   (:get "/api/tags" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((tags (mita.web:service-list-tags *service*)))
+      (mita.web.json:tag-list tags)))
+   (:post "/api/tags/_create" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((qp (query-params*)))
+      (let ((tag (mita.web:service-tag-add
+                  *service*
+                  (cdr (assoc "name" qp :test #'string=)))))
+        (mita.web.json:tag tag))))
+   (:get "/api/tags/:tag-id/folders" (params)
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((overview-list (mita.web:service-tag-folders
+                          *service*
+                          (getf params :tag-id))))
+      (mita.web.json:folder-overview-list overview-list)))
 
-(connect! (_ "/api/tags")
-  (setf (hunchentoot:content-type*) "application/json")
-  (let ((tags (mita.web:service-list-tags *service*)))
-    (mita.web.json:tag-list tags)))
-
-(connect! (_ "/api/tags/_create" :method :post)
-  (setf (hunchentoot:content-type*) "application/json")
-  (let ((qp (query-params*)))
-    (let ((tag (mita.web:service-tag-add
-                *service*
-                (cdr (assoc "name" qp :test #'string=)))))
-      (mita.web.json:tag tag))))
-
-(connect! (params "/api/tags/:tag-id/folders")
-  (setf (hunchentoot:content-type*) "application/json")
-  (let ((overview-list (mita.web:service-tag-folders
-                        *service*
-                        (getf params :tag-id))))
-    (mita.web.json:folder-overview-list overview-list)))
-
-(connect! (_ "/api/folder/tags")
-  (setf (hunchentoot:content-type*) "application/json")
-  (let ((qp (query-params*)))
-    (let ((tags (mita.web:service-folder-tags
-                 *service*
-                 (cdr (assoc "path" qp :test #'string=)))))
-      (mita.web.json:tag-list tags))))
-
-(connect! (_ "/api/folder/tags" :method :put)
-  (setf (hunchentoot:content-type*) "application/json")
-  (let ((qp (query-params*))
-        (bj (body-jsown*)))
-    (mita.web:service-folder-set-tags
-     *service*
-     (cdr (assoc "path" qp :test #'string=))
-     (jsown:val bj "tag-id-list")))
-  (mita.web.json:empty))
+   (:get "/api/folder/tags" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((qp (query-params*)))
+      (let ((tags (mita.web:service-folder-tags
+                   *service*
+                   (cdr (assoc "path" qp :test #'string=)))))
+        (mita.web.json:tag-list tags))))
+   (:put "/api/folder/tags" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((qp (query-params*))
+          (bj (body-jsown*)))
+      (mita.web:service-folder-set-tags
+       *service*
+       (cdr (assoc "path" qp :test #'string=))
+       (jsown:val bj "tag-id-list")))
+    (mita.web.json:empty))))
 
 ;;;
-
-(defclass acceptor (hunchentoot:acceptor)
-  ())
-
-(defmethod hunchentoot:acceptor-dispatch-request ((acceptor acceptor)
-                                                  request)
-  (multiple-value-bind (resp found-p)
-      (let ((path (hunchentoot:script-name request))
-            (method (hunchentoot:request-method request)))
-        (myway:dispatch *mapper* path :method method))
-    (if (and resp found-p)
-        resp
-        ;; Serve static files by the base acceptor class.
-        (call-next-method))))
 
 (defvar *acceptor* nil)
 
@@ -134,6 +142,7 @@
             "/static/gen/"))
   (setq *acceptor* (make-instance 'acceptor
                                   :port port
+                                  :dispatcher *mapper*
                                   :document-root document-root))
   (hunchentoot:start *acceptor*))
 

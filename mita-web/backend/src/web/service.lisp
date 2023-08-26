@@ -2,10 +2,7 @@
   (:use :cl)
   (:export :service
            :service-warmup
-           :make-service)
-  (:import-from :mita.util.threading
-                :->
-                :->>))
+           :make-service))
 (in-package :mita.web.service)
 
 (defstruct service
@@ -16,21 +13,31 @@
 (defmethod mita.web.folder:service-file-store ((service service))
   (service-file-store service))
 
-(defmethod mita.web.folder:service-folder-tags ((service service)
-                                                (folder mita.file:file))
-  (mita.web.tag:service-content-tags service folder))
-
-(defmethod mita.web.folder:service-folder-set-tags ((service service)
-                                                    (folder mita.file:file)
-                                                    (tag-id-list list))
-  (mita.web.tag:service-content-set-tags service folder tag-id-list))
+;;;
 
 (defmethod mita.web.tag:service-tag-store ((service service))
   (service-tag-store service))
 
-(defmethod mita.web.tag:service-list-folders ((service service)
-                                              (content-id-list list))
-  (mita.web.folder:service-list-folders service content-id-list))
+;;;
+
+(defmethod mita.tag:content-id ((c mita.file:folder))
+  (namestring (mita.file:file-path c)))
+
+(defmethod mita.tag:content-type ((c mita.file:folder))
+  "folder")
+
+(defmethod mita.web.folder:service-get-tags ((service service)
+                                             (folder mita.file:file))
+  (mita.web.tag:service-content-tags service folder))
+
+(defmethod mita.web.folder:service-set-tags ((service service)
+                                             (folder mita.file:file)
+                                             (tag-id-list list))
+  (mita.web.tag:service-content-set-tags service folder tag-id-list))
+
+(defmethod mita.web.folder:service-tag-namestring-list ((service service)
+                                                        (tag-id string))
+  (mita.web.tag:service-tag-content-id-list service tag-id "folder"))
 
 ;;;
 

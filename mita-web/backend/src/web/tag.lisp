@@ -4,18 +4,18 @@
            :tag-name
            :service
            :service-tag-store
-           :service-list-folders
+           :service-folders
            :service-list-tags
            :service-tag-add
-           :service-tag-folders
            :service-content-tags
            :service-content-set-tags
+           :service-tag-content-id-list
            :service-warmup
            :make-service))
 (in-package :mita.web.tag)
 
 (defgeneric service-tag-store (service))
-(defgeneric service-list-folders (service content-id-list))
+(defgeneric service-folders (service content-id-list))
 
 (defstruct tag id name)
 
@@ -40,14 +40,7 @@
 (defun service-content-set-tags (service content tag-id-list)
   (mita.tag:content-tags-set (service-tag-store service) content tag-id-list))
 
-(defmethod mita.tag:content-id ((c mita.file:folder))
-  (namestring (mita.file:file-path c)))
-
-(defmethod mita.tag:content-type ((c mita.file:folder))
-  "folder")
-
-(defun service-tag-folders (service tag-id)
-  (let ((tag (mita.tag:store-get-tag (service-tag-store service) tag-id)))
-    (let ((content-id-list (mita.tag:tag-content-id-list
-                            (service-tag-store service) tag "folder")))
-      (service-list-folders service content-id-list))))
+(defun service-tag-content-id-list (service tag-id type)
+  (let ((tag (mita.tag:store-get-tag (service-tag-store service) tag-id))
+        (tag-store (service-tag-store service)))
+    (mita.tag:tag-content-id-list tag-store tag type)))

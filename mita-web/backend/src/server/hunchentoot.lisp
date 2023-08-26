@@ -69,21 +69,17 @@
      (setf (hunchentoot:content-type*) "application/json")
      ,@body))
 
-
-(defvar *service* nil)
-
-(defvar *mapper*
+(defun create-mapper (service)
   (gen-mapper
    (:get "/" ()
     (hunchentoot:redirect "/folder/"))
 
    (:get "/folder*" (params)
-    (mita.web:service-path-content
-     *service* (car (getf params :splat))
+    (mita.web.folder:service-path-content
+     service (car (getf params :splat))
      :on-file
      (lambda (path)
-       (setf (hunchentoot:header-out "cache-control") "max-age=31536000")
-       (hunchentoot:handle-static-file path))
+       (do-static path))
      :on-folder
      (lambda (detail)
        (do-html
@@ -91,12 +87,12 @@
      :on-not-found (lambda () nil)))
 
    (:get "/view*" (params)
-    (mita.web:service-folder-images
-     *service* (car (getf params :splat))
+    (mita.web.folder:service-folder-images
+     service (car (getf params :splat))
      :on-found
      (lambda (images)
        (do-html
-        (mita.web.html:view (mita.web.json:viewer images))))
+        (mita.web.html:view images)))
      :on-not-found (lambda () nil)))
 
    (:get "/tags" ()
@@ -104,35 +100,35 @@
      (mita.web.html:tags)))
    (:get "/api/tags" ()
     (do-json
-     (let ((tags (mita.web:service-list-tags *service*)))
+     (let ((tags (mita.web.tag:service-list-tags service)))
        (mita.web.json:tag-list tags))))
    (:post "/api/tags/_create" ()
     (do-json
      (let ((qp (query-params*)))
-       (let ((tag (mita.web:service-tag-add
-                   *service*
+       (let ((tag (mita.web.tag:service-tag-add
+                   service
                    (cdr (assoc "name" qp :test #'string=)))))
          (mita.web.json:tag tag)))))
    (:get "/api/tags/:tag-id/folders" (params)
     (do-json
-     (let ((overview-list (mita.web:service-tag-folders
-                           *service*
+     (let ((overview-list (mita.web.folder:service-tag-folders
+                           service
                            (getf params :tag-id))))
        (mita.web.json:folder-overview-list overview-list))))
 
    (:get "/api/folder/tags" ()
     (do-json
      (let ((qp (query-params*)))
-       (let ((tags (mita.web:service-folder-tags
-                    *service*
+       (let ((tags (mita.web.folder:service-folder-tags
+                    service
                     (cdr (assoc "path" qp :test #'string=)))))
          (mita.web.json:tag-list tags)))))
    (:put "/api/folder/tags" ()
     (do-json
      (let ((qp (query-params*))
            (bj (body-jsown*)))
-       (mita.web:service-folder-set-tags
-        *service*
+       (mita.web.folder:service-folder-set-tags
+        service
         (cdr (assoc "path" qp :test #'string=))
         (jsown:val bj "tag-id-list")))
       (mita.web.json:empty)))))
@@ -168,7 +164,7 @@
   (let ((taskmaster (make-instance 'taskmaster)))
     (setq *acceptor* (make-instance 'acceptor
                                     :port port
-                                    :dispatcher *mapper*
+                                    :dispatcher (create-mapper service)
                                     :taskmaster taskmaster
                                     :document-root document-root))
     (hunchentoot:start *acceptor*)

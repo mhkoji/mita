@@ -8,55 +8,82 @@
            :empty))
 (in-package :mita.web.json)
 
-(defun file->jsown (file)
-  (jsown:new-js
-    ("path" (namestring (mita.web.view:file-path file)))
-    ("url"  (format nil "/folder~A" (mita.web.view:file-path file)))))
+(defun file->obj (file)
+  (alexandria:plist-hash-table
+   (list "path" (namestring (mita.web.view:file-path file))
+         "url"  (format nil "/folder~A" (mita.web.view:file-path file)))
+   :test #'equal))
 
-(defun folder-overview->jsown (overview)
+(defun folder-overview->obj (overview)
   (let ((path (mita.web.view:folder-overview-path overview)))
-    (jsown:new-js
-      ("path" (namestring path))
-      ("url" (format nil "/folder~A" path))
-      ("thumbnail"
-       (let ((file (mita.web.view:folder-overview-thumbnail-file
-                    overview)))
-         (if file (file->jsown file) :null))))))
+    (alexandria:plist-hash-table
+     (list "path" (namestring path)
+           "url" (format nil "/folder~A" path)
+           "thumbnail"
+           (let ((file (mita.web.view:folder-overview-thumbnail-file
+                        overview)))
+             (if file (file->obj file) nil)))
+     :test #'equal)))
 
-(defun folder-detail->jsown (detail)
-  (jsown:new-js
-    ("path"
-     (namestring (mita.web.view:folder-detail-path detail)))
-    ("files"
-     (mapcar #'file->jsown
-             (mita.web.view:folder-detail-file-list detail)))
-    ("folders"
-     (mapcar #'folder-overview->jsown
-             (mita.web.view:folder-detail-folder-overview-list detail)))))
+(defun folder-detail->obj (detail)
+  (alexandria:plist-hash-table
+   (list "path"
+         (namestring (mita.web.view:folder-detail-path detail))
+         "files"
+         (or (mapcar #'file->obj
+                     (mita.web.view:folder-detail-file-list detail))
+             #())
+         "folders"
+         (or (mapcar #'folder-overview->obj
+                     (mita.web.view:folder-detail-folder-overview-list detail))
+             #()))
+   :test #'equal))
 
-(defun tag->jsown (tag)
-  (jsown:new-js
-    ("id" (format nil "~A" (mita.tag:tag-id tag)))
-    ("name" (mita.tag:tag-name tag))))
+(defun tag->obj (tag)
+  (alexandria:plist-hash-table
+   (list "id" (format nil "~A" (mita.tag:tag-id tag))
+         "name" (mita.tag:tag-name tag))
+   :test #'equal))
 
 ;;;
 
 (defun folder-detail (x)
-  (jsown:to-json (folder-detail->jsown x)))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode (folder-detail->obj x)
+                    stream))))
 
 (defun viewer (images)
-  (jsown:to-json
-   (jsown:new-js
-     ("images" (mapcar #'file->jsown images)))))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode
+       (alexandria:plist-hash-table
+        (list "images" (or (mapcar #'file->obj images)
+                           #()))
+        :test #'equal)
+       stream))))
 
 (defun tag (x)
-  (jsown:to-json (tag->jsown x)))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode (tag->obj x) stream))))
 
 (defun tag-list (xs)
-  (jsown:to-json (mapcar #'tag->jsown xs)))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode (or (mapcar #'tag->obj xs)
+                        #())
+                    stream))))
 
 (defun folder-overview-list (xs)
-  (jsown:to-json (mapcar #'folder-overview->jsown xs)))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode (or (mapcar #'folder-overview->obj xs)
+                        #())
+                    stream))))
 
 (defun empty ()
-  (jsown:to-json (jsown:new-js)))
+  (with-output-to-string (stream)
+    (yason:with-output (stream)
+      (yason:encode (make-hash-table :test #'equal)
+                    stream))))

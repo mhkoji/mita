@@ -49,10 +49,10 @@
   (-> (hunchentoot:query-string*)
       (quri:url-decode-params :lenient t)))
 
-(defun body-jsown* ()
+(defun body-yason* ()
   (-> (hunchentoot:raw-post-data :force-binary t)
       (babel:octets-to-string :encoding :utf-8)
-      (jsown:parse)))
+      (yason:parse)))
 
 (defvar *service* nil)
 
@@ -114,11 +114,11 @@
    (:put "/api/folder/tags" ()
     (setf (hunchentoot:content-type*) "application/json")
     (let ((qp (query-params*))
-          (bj (body-jsown*)))
+          (by (body-yason*)))
       (mita.web:service-folder-set-tags
        *service*
        (cdr (assoc "path" qp :test #'string=))
-       (jsown:val bj "tag-id-list")))
+       (gethash "tag-id-list" by)))
     (mita.web.json:empty))))
 
 ;;;

@@ -12,28 +12,55 @@ RUN mkdir -p /backend/static/gen/ && npm run build
 
 ##########################################
 
-FROM ubuntu:20.04
+FROM ubuntu:23.10
 
 RUN apt update && apt install -y \
-    wget \
-    sbcl \
- && rm -rf /var/lib/apt/lists/*
+      sbcl \
+      ## mita
+      cl-csv \
+      cl-local-time \
+      cl-uuid \
+      ## mita-web
+      cl-bordeaux-threads \
+      cl-who \
+      cl-split-sequence \
+      cl-yason \
+      ## mita-web-server-hunchentoot
+      cl-hunchentoot \
+      cl-quri \
+      ## myway
+      curl \
+      unzip \
+      cl-utilities && \
+    curl -L https://github.com/fukamachi/myway/archive/refs/heads/master.zip \
+         -o /tmp/myway.zip && \
+    curl -L https://github.com/stylewarning/map-set/archive/refs/heads/master.zip \
+         -o /tmp/map-set.zip && \
+    unzip /tmp/myway.zip -d /usr/share/common-lisp/source/ && \
+    unzip /tmp/map-set.zip -d /usr/share/common-lisp/source/ && \
+    cd /usr/share/common-lisp/systems/ && \
+      ln -s ../source/myway-master/myway.asd && \
+      ln -s ../source/map-set-master/map-set.asd
 
-RUN mkdir \
-    /app \
-    /app-build \
-    /output
-
-RUN wget \
-      https://beta.quicklisp.org/quicklisp.lisp \
-      --directory-prefix /app-build && \
-    sbcl \
+## cache
+RUN sbcl \
       --noinform \
       --no-userinit \
       --no-sysinit \
       --non-interactive \
-      --load /app-build/quicklisp.lisp \
-      --eval "(quicklisp-quickstart:install)"
+      --eval '(require :asdf)' \
+      --eval '(asdf:load-system :cl-csv)' \
+      --eval '(asdf:load-system :local-time)' \
+      --eval '(asdf:load-system :uuid)' \
+      --eval '(asdf:load-system :bordeaux-threads)' \
+      --eval '(asdf:load-system :cl-who)' \
+      --eval '(asdf:load-system :split-sequence)' \
+      --eval '(asdf:load-system :yason)' \
+      --eval '(asdf:load-system :hunchentoot)' \
+      --eval '(asdf:load-system :myway)' \
+      --eval '(asdf:load-system :quri)' && \
+    mkdir \
+      /app
 
 COPY mita             /app/mita
 COPY mita-web/backend /app/mita-web-backend
@@ -43,13 +70,15 @@ RUN sbcl \
       --no-userinit \
       --no-sysinit \
       --non-interactive \
-      --load "/root/quicklisp/setup.lisp" \
-      --eval '(push "/app/mita/" ql:*local-project-directories*)' \
-      --eval '(push "/app/mita-web-backend/" ql:*local-project-directories*)' \
-      --eval '(ql:quickload :mita-web-server-hunchentoot)' \
+      --eval '(require :asdf)' \
+      --eval '(push "/app/mita/" asdf:*central-registry*)' \
+      --eval '(push "/app/mita-web-backend/" asdf:*central-registry*)' \
+      --eval '(asdf:load-system :mita-web-server-hunchentoot)' \
       --load "/app/mita-web-backend/bin/docker.lisp" \
       --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.bin.docker:main :executable t)"
 
 COPY --from=static-builder /backend /mita-www
+
+ENV LANG ja_JP.UTF-8
 
 CMD ["/mita"]

@@ -11,7 +11,7 @@
 (defun file->obj (file)
   (alexandria:plist-hash-table
    (list "path" (namestring (mita.web.view:file-path file))
-         "url"  (format nil "/folder~A" (mita.web.view:file-path file)))
+         "url"  (format nil "/file~A" (mita.web.view:file-path file)))
    :test #'equal))
 
 (defun folder-overview->obj (overview)

@@ -61,18 +61,24 @@
    (:get "/" ()
     (hunchentoot:redirect "/folder/"))
 
+   (:get "/file*" (params)
+     (mita.web:service-file
+      *service* (car (getf params :splat))
+      :on-found
+      (lambda (path)
+        (setf (hunchentoot:header-out "cache-control")
+              "max-age=31536000")
+        (hunchentoot:handle-static-file path))
+      :on-not-found (lambda () nil)))
+   
    (:get "/folder*" (params)
-    (mita.web:service-path-content
-     *service* (car (getf params :splat))
-     :on-file
-     (lambda (path)
-       (setf (hunchentoot:header-out "cache-control") "max-age=31536000")
-       (hunchentoot:handle-static-file path))
-     :on-folder
-     (lambda (detail)
-       (setf (hunchentoot:content-type*) "text/html")
-       (mita.web.html:folder (mita.web.json:folder-detail detail)))
-     :on-not-found (lambda () nil)))
+     (mita.web:service-folder
+      *service* (car (getf params :splat))
+      :on-found
+      (lambda  (detail)
+        (mita.web.html:folder
+         (mita.web.json:folder-detail detail)))
+      :on-not-found (lambda () nil)))
 
    (:get "/view*" (params)
     (mita.web:service-folder-images

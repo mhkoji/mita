@@ -1,7 +1,8 @@
 (defpackage :mita.web
   (:use :cl)
   (:export :service
-           :service-path-content
+           :service-file
+           :service-folder
            :service-folder-images
            :service-folder-tags
            :service-folder-set-tags
@@ -49,16 +50,23 @@
 
 ;;;
 
-(defun service-path-content (service namestring
-                             &key on-file on-folder on-not-found)
+(defun service-file (service namestring
+                     &key on-found on-not-found)
   (let* ((file-store (service-file-store service))
          (file (mita.file:store-make-file file-store namestring))
          (full-path (mita.file:file-full-path file)))
-    (cond ((uiop/filesystem:file-exists-p full-path)
-           (funcall on-file full-path))
-          ((uiop/filesystem:directory-exists-p full-path)
+    (if (uiop/filesystem:file-exists-p full-path)
+        (funcall on-found full-path)
+        (funcall on-not-found))))
+
+(defun service-folder (service namestring
+                       &key on-found on-not-found)
+  (let* ((file-store (service-file-store service))
+         (file (mita.file:store-make-file file-store namestring))
+         (full-path (mita.file:file-full-path file)))
+    (cond ((uiop/filesystem:directory-exists-p full-path)
            (assert (mita.file:folder-p file))
-           (funcall on-folder (folder->detail file file-store)))
+           (funcall on-found (folder->detail file file-store)))
           (t
            (funcall on-not-found)))))
 

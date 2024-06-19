@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 import { ArrowLeft, ArrowRight } from "../fa";
@@ -9,8 +9,8 @@ import TagEditButton from "../edit-tags/edit-button";
 import EditTagsModal from "../edit-tags/edit-tags";
 import * as apis from "../../apis";
 
-function App() {
-  const { path, files, folders } = window["$d"];
+function AppLoaded(props) {
+  const { path, files, folders } = props.detail;
   const [editTagsModalPath, setEditTagsModalPath] = useState(false);
 
   function handleClickTagEditButton() {
@@ -57,5 +57,19 @@ function App() {
     </div>
   );
 }
+
+function App() {
+  const [detail, setDetail] = useState();
+  useEffect(() => {
+    const path =  window.location.pathname.substr("/folder".length);
+    apis.folder(path).then((detail) => setDetail(detail));
+  }, [window.location.pathname]);
+
+  if (detail) {
+    return <AppLoaded detail={detail} />;
+  }
+
+  return <div>Loading ...</div>;
+};
 
 ReactDOM.render(<App />, document.getElementById("app"));

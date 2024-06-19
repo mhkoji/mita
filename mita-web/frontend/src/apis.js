@@ -1,3 +1,12 @@
+export function folder(path) {
+  return fetch("/api/folder" + path, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then((resp) => resp.json());
+}
+
 export function tags() {
   return fetch("/api/tags", {
     method: "GET",

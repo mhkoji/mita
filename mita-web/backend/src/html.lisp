@@ -16,7 +16,7 @@
 (defun gen-path (filename)
   (format nil "~A~A" *base-gen-path* filename))
 
-(defun folder (detail-json-string)
+(defun folder ()
   (cl-who:with-html-output-to-string (s nil :prologue t)
     (:head
      (:meta :charset "utf-8")
@@ -24,9 +24,6 @@
      (:link :rel "stylesheet"
             :href (gen-path "folder.css")))
     (:body
-     (cl-who:htm
-      (:script :type "text/javascript"
-       (cl-who:str (format nil "window['$d'] = ~A;" detail-json-string))))
      (:div :id "app")
      (:div :id "app-modal")
      (:script

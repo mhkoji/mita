@@ -72,12 +72,14 @@
       :on-not-found (lambda () nil)))
    
    (:get "/folder*" (params)
+     (setf (hunchentoot:content-type*) "text/html")
+     (mita.web.html:folder))
+   (:get "/api/folder*" (params)
      (mita.web:service-folder
       *service* (car (getf params :splat))
       :on-found
       (lambda  (detail)
-        (mita.web.html:folder
-         (mita.web.json:folder-detail detail)))
+        (mita.web.json:folder-detail detail))
       :on-not-found (lambda () nil)))
 
    (:get "/view*" (params)

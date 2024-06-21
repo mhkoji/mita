@@ -74,8 +74,8 @@ RUN sbcl \
       --eval '(push "/app/mita/" asdf:*central-registry*)' \
       --eval '(push "/app/mita-web-backend/" asdf:*central-registry*)' \
       --eval '(asdf:load-system :mita-web-server-hunchentoot)' \
-      --load "/app/mita-web-backend/bin/docker.lisp" \
-      --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.bin.docker:main :executable t)"
+      --load "/app/mita-web-backend/src/docker.lisp" \
+      --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.docker:main :executable t)"
 
 COPY --from=static-builder /backend /mita-www
 

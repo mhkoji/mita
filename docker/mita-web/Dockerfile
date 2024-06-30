@@ -12,7 +12,7 @@ RUN mkdir -p /backend/static/gen/ && npm run build
 
 ##########################################
 
-FROM ubuntu:23.10
+FROM ubuntu:23.10 AS bin-builder
 
 RUN apt update && apt install -y \
       sbcl \
@@ -60,10 +60,10 @@ RUN sbcl \
       --eval '(asdf:load-system :myway)' \
       --eval '(asdf:load-system :quri)' && \
     mkdir \
-      /app
+      /build
 
-COPY mita             /app/mita
-COPY mita-web/backend /app/mita-web-backend
+COPY mita             /build/mita
+COPY mita-web/backend /build/mita-web-backend
 
 RUN sbcl \
       --noinform \
@@ -71,13 +71,22 @@ RUN sbcl \
       --no-sysinit \
       --non-interactive \
       --eval '(require :asdf)' \
-      --eval '(push "/app/mita/" asdf:*central-registry*)' \
-      --eval '(push "/app/mita-web-backend/" asdf:*central-registry*)' \
+      --eval '(push "/build/mita/" asdf:*central-registry*)' \
+      --eval '(push "/build/mita-web-backend/" asdf:*central-registry*)' \
       --eval '(asdf:load-system :mita-web-server-hunchentoot)' \
-      --load "/app/mita-web-backend/src/docker.lisp" \
+      --load "/build/mita-web-backend/src/docker.lisp" \
       --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.docker:main :executable t)"
 
+##########################################
+
+FROM ubuntu:23.10
+
+RUN apt update && apt install -y \
+      ## cl+ssl
+      libssl3
+
 COPY --from=static-builder /backend /mita-www
+COPY --from=bin-builder /mita /mita
 
 ENV LANG ja_JP.UTF-8
 

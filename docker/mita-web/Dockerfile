@@ -62,8 +62,10 @@ RUN sbcl \
     mkdir \
       /build
 
-COPY mita             /build/mita
-COPY mita-web/backend /build/mita-web-backend
+COPY mita \
+     /build/mita/
+COPY docker/mita-web/main.lisp mita-web/backend/ \
+     /build/mita-web-backend/
 
 RUN sbcl \
       --noinform \
@@ -74,8 +76,8 @@ RUN sbcl \
       --eval '(push "/build/mita/" asdf:*central-registry*)' \
       --eval '(push "/build/mita-web-backend/" asdf:*central-registry*)' \
       --eval '(asdf:load-system :mita-web-server-hunchentoot)' \
-      --load "/build/mita-web-backend/src/docker.lisp" \
-      --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.web.docker:main :executable t)"
+      --load "/build/mita-web-backend/main.lisp" \
+      --eval "(sb-ext:save-lisp-and-die \"/mita\" :toplevel #'mita.docker.mita-web:main :executable t)"
 
 ##########################################
 

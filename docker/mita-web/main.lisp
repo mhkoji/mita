@@ -1,7 +1,7 @@
-(defpackage :mita.web.docker
+(defpackage :mita.docker.mita-web
   (:use :cl)
   (:export :main))
-(in-package :mita.web.docker)
+(in-package :mita.docker.mita-web)
 
 (defun main ()
   (setq mita.web.server.hunchentoot:*service*

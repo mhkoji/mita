@@ -13,8 +13,21 @@
            :store-list-files
            :store-make-file
            :store-prepare-cache
+           :store-clear-cache
            :make-store))
 (in-package :mita.file)
+
+(defun fs-directory-files (dir-path)
+  (uiop/filesystem:with-current-directory (dir-path)
+    (uiop/filesystem:directory*
+     uiop/pathname:*wild-file-for-directory*)))
+
+(defun fs-file-exists-p (path)
+  (or (uiop/filesystem:file-exists-p path)
+      (uiop/filesystem:directory-exists-p path)))
+
+(defun fs-directory-pathname-p (path)
+  (uiop/pathname:directory-pathname-p path))
 
 (defclass file ()
   ((path
@@ -71,9 +84,11 @@
                  :full-path full-path))
 
 (defun file-exists-p (file)
-  (let ((full-path (file-full-path file)))
-    (or (uiop/filesystem:file-exists-p full-path)
-        (uiop/filesystem:directory-exists-p full-path))))
+  (fs-file-exists-p (file-full-path file)))
+
+(defun store-clear-cache (store)
+  (bt:with-lock-held ((store-list-files-cache-mutex store))
+    (clrhash (store-list-files-cache store))))
 
 (defun store-list-files-from-cache-or-update (store key list-fn)
   (bt:with-lock-held ((store-list-files-cache-mutex store))
@@ -90,9 +105,7 @@
               (namestring (store-root-path store)))
              (full-path-list
               (funcall (store-sort-file-fn store)
-                       (uiop/filesystem:with-current-directory (path)
-                         (uiop/filesystem:directory*
-                          uiop/pathname:*wild-file-for-directory*)))))
+                       (fs-directory-files path))))
          (loop for full-path in full-path-list
                for path = (namestring-subtract root-namestring
                                                (namestring full-path))
@@ -110,13 +123,12 @@
     (loop while path-list do
       (let ((path (pop path-list)))
         (store-list-files store path)
+        (sleep 1)
         (let ((next-path-list
-               (remove-if-not
-                #'uiop/pathname:directory-pathname-p
-                (uiop/filesystem:with-current-directory (path)
-                  (uiop/filesystem:directory*
-                   uiop/pathname:*wild-file-for-directory*)))))
-          (alexandria:appendf path-list next-path-list))))))
+               (remove-if-not #'fs-directory-pathname-p
+                              (fs-directory-files path))))
+          (alexandria:appendf path-list next-path-list)
+          (sleep 1))))))
 
 ;;;
 

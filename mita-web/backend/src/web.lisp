@@ -6,6 +6,7 @@
            :service-folder-images
            :service-folder-tags
            :service-folder-set-tags
+           :service-folder-reload
            :service-list-tags
            :service-tag-add
            :service-tag-folders
@@ -84,6 +85,11 @@
              (funcall on-found images)))
           (t
            (funcall on-not-found)))))
+
+(defun service-folder-reload (service)
+  (let ((store (service-file-store service)))
+    (mita.file:store-clear-cache store)
+    (mita.file:store-prepare-cache store)))
 
 (defun service-folder-tags (service namestring)
   (let ((folder (mita.file:store-make-file (service-file-store service)

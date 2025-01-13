@@ -16,19 +16,22 @@
 
 (defmethod hunchentoot:acceptor-dispatch-request ((acceptor acceptor)
                                                   request)
-  (or (dispatch (acceptor-dispatcher acceptor)
+  (multiple-value-bind (resp found-p)
+      (dispatch (acceptor-dispatcher acceptor)
                 (hunchentoot:request-method request)
                 (hunchentoot:script-name request))
-      ;; Serve static files by the base acceptor class.
-      (call-next-method)))
+    (if found-p
+        resp
+        ;; Serve static files by the base acceptor class.
+        (call-next-method))))
 
 ;;;
 
 (defmethod dispatch ((mapper myway:mapper) method path)
-  (multiple-value-bind (resp found-p)
+  (multiple-value-bind (fn found-p)
       (myway:dispatch mapper path :method method)
-    (when found-p
-      resp)))
+    (when (and fn found-p)
+      (values (funcall fn) found-p))))
 
 (defmacro gen-mapper (&rest clauses)
   `(let ((mapper (myway:make-mapper)))
@@ -36,11 +39,14 @@
        ,@(mapcar (lambda (cls)
                    (destructuring-bind (method url params &body body) cls
                      `(myway:connect mapper ,url
-                                     ,(if (null params)
-                                          `(lambda (p)
-                                             (declare (ignore p))
-                                             ,@body)
-                                          `(lambda ,params ,@body))
+                                     (lambda (p)
+                                       (declare (ignorable p))
+                                       (lambda ()
+                                         ,(if params
+                                              `(let ((,@params p))
+                                                 ,@body)
+                                              `(progn
+                                                 ,@body))))
                                      :method ,method)))
                  clauses)
        mapper)))
@@ -71,9 +77,27 @@
         (hunchentoot:handle-static-file path))
       :on-not-found (lambda () nil)))
    
-   (:get "/folder*" (params)
+   (:get "/folder*" ()
      (setf (hunchentoot:content-type*) "text/html")
      (mita.web.html:folder))
+
+   (:get "/api/folder/tags*" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((qp (query-params*)))
+      (let ((tags (mita.web:service-folder-tags
+                   *service*
+                   (cdr (assoc "path" qp :test #'string=)))))
+        (mita.web.json:tag-list tags))))
+   (:put "/api/folder/tags*" ()
+    (setf (hunchentoot:content-type*) "application/json")
+    (let ((qp (query-params*))
+          (by (body-yason*)))
+      (mita.web:service-folder-set-tags
+       *service*
+       (cdr (assoc "path" qp :test #'string=))
+       (gethash "tag-id-list" by)))
+    (mita.web.json:empty))
+   
    (:get "/api/folder*" (params)
      (mita.web:service-folder
       *service* (car (getf params :splat))
@@ -82,6 +106,9 @@
         (mita.web.json:folder-detail detail))
       :on-not-found (lambda () nil)))
 
+   (:put "/api/folder/_reload" ()
+     (mita.web:service-folder-reload *service*))
+   
    (:get "/view*" (params)
     (mita.web:service-folder-images
      *service* (car (getf params :splat))
@@ -110,24 +137,7 @@
     (let ((overview-list (mita.web:service-tag-folders
                           *service*
                           (getf params :tag-id))))
-      (mita.web.json:folder-overview-list overview-list)))
-
-   (:get "/api/folder/tags" ()
-    (setf (hunchentoot:content-type*) "application/json")
-    (let ((qp (query-params*)))
-      (let ((tags (mita.web:service-folder-tags
-                   *service*
-                   (cdr (assoc "path" qp :test #'string=)))))
-        (mita.web.json:tag-list tags))))
-   (:put "/api/folder/tags" ()
-    (setf (hunchentoot:content-type*) "application/json")
-    (let ((qp (query-params*))
-          (by (body-yason*)))
-      (mita.web:service-folder-set-tags
-       *service*
-       (cdr (assoc "path" qp :test #'string=))
-       (gethash "tag-id-list" by)))
-    (mita.web.json:empty))))
+      (mita.web.json:folder-overview-list overview-list)))))
 
 ;;;
 

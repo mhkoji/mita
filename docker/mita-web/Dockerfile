@@ -92,4 +92,4 @@ COPY --from=bin-builder /mita /mita
 
 ENV LANG ja_JP.UTF-8
 
-CMD ["/mita"]
+ENTRYPOINT ["/mita"]
